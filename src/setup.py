@@ -21,4 +21,5 @@ setuptools.setup(
         "Licence :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    install_requires=["pyserial"],
 )

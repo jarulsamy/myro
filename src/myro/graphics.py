@@ -133,8 +133,9 @@ from copy import copy
 from queue import Queue
 
 import myro.globvars
-from . import globvars
 from myro.widgets import AlertDialog
+
+from . import globvars
 
 # try:
 #     import PIL.Image as PyImage

@@ -3,9 +3,8 @@ import array
 import platform
 import time
 
-import serial
-
 import myro.globvars
+import serial
 from myro import Robot
 
 # -----------------------------------------------------------------------------
