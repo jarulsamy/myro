@@ -19,13 +19,14 @@ except:
     try:
         import numpy.oldnumeric as Numeric
     except:
-        raise ImportError, "The Python library Numeric or numpy is not installed"
+        raise ImportError("The Python library Numeric or numpy is not installed")
 import math, random, time, sys, operator
+from functools import reduce
 try:
     import psyco; psyco.full()
-    print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    print("Conx, version %s (psyco enabled)" % __version__.split()[1])
 except:
-    print "Conx, version %s (regular speed)" % __version__.split()[1]
+    print("Conx, version %s (regular speed)" % __version__.split()[1])
 
 def reverse(lyst):
     """ Returns a reversed list. """
@@ -53,7 +54,7 @@ def sumMerge(dict1, dict2):
     Returns first dict.
     """
     for key in dict2:
-        dict1[key] = map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key])
+        dict1[key] = list(map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key]))
     return dict1 # and also returns it, in case you want to do something to it
 
 def loadNetworkFromFile(filename, mode = 'pickle'):
@@ -105,7 +106,7 @@ def loadNetworkFromFile(filename, mode = 'pickle'):
                 elif netType == "srn":
                     network = SRN()
                 else:
-                    raise AttributeError, "unknown network type: '%s'" % netType
+                    raise AttributeError("unknown network type: '%s'" % netType)
             line = fp.readline()
         return network
 def ndim(n, *args):
@@ -113,7 +114,7 @@ def ndim(n, *args):
     Makes a multi-dimensional array of random floats. (Replaces RandomArray).
     """
     if not args: 
-        return [random.random() for i in xrange(n)]
+        return [random.random() for i in range(n)]
     A = [] 
     for i in range(n):
         A.append( ndim(*args) ) 
@@ -124,7 +125,7 @@ def ndim2(n, *args):
     This version generates random values from a probability distribution more appropriate for a Tanh activation function.
     """
     if not args: 
-        return [random.gauss(0, 1) for i in xrange(n)]
+        return [random.gauss(0, 1) for i in range(n)]
     A = [] 
     for i in range(n):
         A.append( ndim(*args) ) 
@@ -150,12 +151,12 @@ def displayArray(name, a, width = 0):
     """
     Prints an array (any sequence of floats, really) to the screen.
     """
-    print name + ": ",
+    print(name + ": ", end=' ')
     cnt = 0
     for i in a:
-        print "%4.2f" % i,
+        print("%4.2f" % i, end=' ')
         if width > 0 and (cnt + 1) % width == 0:
-            print ''
+            print('')
         cnt += 1
 
 def toStringArray(name, a, width = 0):
@@ -205,7 +206,7 @@ class Node:
     def __init__(self, layer = None, position = None, **keywords):
         self.__dict__["_layer"] = layer
         self.__dict__["_position"] = position
-        self.__dict__["_attributes"] = keywords.keys()
+        self.__dict__["_attributes"] = list(keywords.keys())
         for key in keywords:
             self.__dict__[key] = keywords[key]
     def __str__(self):
@@ -221,15 +222,15 @@ class Node:
             for key in self._attributes:
                 self.__dict__[key] = self._layer.__dict__[key][self._position]
         else:
-            raise AttributeError, "node is read-only"
+            raise AttributeError("node is read-only")
     def __setattr__(self, attribute, value):
         if self._layer != None:
             if attribute in self._layer.__dict__:
                 self._layer.__dict__[attribute][self._position] = value
             else:
-                raise AttributeError, "no such property '%s'" % attribute
+                raise AttributeError("no such property '%s'" % attribute)
         else:
-            raise AttributeError, ("node is read-only: use net['layerName'].%s[NUM] = %s" % (attribute, value))
+            raise AttributeError("node is read-only: use net['layerName'].%s[NUM] = %s" % (attribute, value))
 
 class Layer:
     """
@@ -243,7 +244,7 @@ class Layer:
         for the instance are passed as arguments.
         """
         if size <= 0:
-            raise LayerError, ('Layer was initialized with size zero.' , size)
+            raise LayerError('Layer was initialized with size zero.' , size)
         self.patternReport = 0 # flag to determine if layer should be in report
         # patternReport is set to 1 automatically for output layers (in .connect())
         self.name = name
@@ -314,7 +315,7 @@ class Layer:
                 weight = self.weight[i]
                 )
         else:
-            raise AttributeError, "expected integer instead of '%s'" % i
+            raise AttributeError("expected integer instead of '%s'" % i)
     # layer methods
     def setActive(self, value):
         """
@@ -333,7 +334,7 @@ class Layer:
         """
         # overwrites current data
         if newsize <= 0:
-            raise LayerError, ('Layer size changed to zero.', newsize)
+            raise LayerError('Layer size changed to zero.', newsize)
         minSize = min(self.size, newsize)
         bias = randomArray(newsize, self._maxRandom)
         Numeric.put(bias, Numeric.arange(minSize), self.weight)
@@ -383,19 +384,18 @@ class Layer:
         elif type == 'target':
             # note that backprop() resets self.targetSet flag
             if self.verify and self.targetSet == 0:
-                raise LayerError, \
-                      ('getWinner() called with \'target\' but target has not been set.', \
+                raise LayerError('getWinner() called with \'target\' but target has not been set.', \
                        self.targetSet)
             ttlvalue = Numeric.add.reduce(self.target)
             maxpos = Numeric.argmax(self.target)
             maxvalue = self.target[maxpos]
         else:
-            raise LayerError, ('getWinner() called with unknown layer attribute.', \
+            raise LayerError('getWinner() called with unknown layer attribute.', \
                                type)
         if self.size > 0:
             avgvalue = ttlvalue / float(self.size)
         else:
-            raise LayerError, ('getWinner() called for layer of size zero.', \
+            raise LayerError('getWinner() called for layer of size zero.', \
                                self.size)
         return maxpos, maxvalue, avgvalue
 
@@ -465,20 +465,20 @@ class Layer:
         """
         Displays the Layer instance to the screen.
         """
-        print "============================="
-        print "Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)" % (
-            self.name, self.kind, self.size, self.active, self.frozen)
+        print("=============================")
+        print("Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)" % (
+            self.name, self.kind, self.size, self.active, self.frozen))
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
         if (self.type != 'Input' and self._verbosity > 1):
             displayArray('Error     ', self.error, self.displayWidth)
         if (self._verbosity > 4 and self.type != 'Input'):
-            print "    ", ; displayArray('weight', self.weight)
-            print "    ", ; displayArray('dweight', self.dweight)
-            print "    ", ; displayArray('delta', self.delta)
-            print "    ", ; displayArray('netinput', self.netinput)
-            print "    ", ; displayArray('wed', self.wed)
+            print("    ", end=' ') ; displayArray('weight', self.weight)
+            print("    ", end=' ') ; displayArray('dweight', self.dweight)
+            print("    ", end=' ') ; displayArray('delta', self.delta)
+            print("    ", end=' ') ; displayArray('netinput', self.netinput)
+            print("    ", end=' ') ; displayArray('wed', self.wed)
         
 
     # activation methods
@@ -508,13 +508,11 @@ class Layer:
         """
         array = Numeric.array(arr)
         if not len(array) == self.size:
-            raise LayerError, \
-                  ('Mismatched activation size and layer size in call to copyActivations()', \
+            raise LayerError('Mismatched activation size and layer size in call to copyActivations()', \
                    (len(array), self.size))
         if self.verify and not self.activationSet == 0:
             if not reckless:
-                raise LayerError, \
-                      ('Activation flag not reset before call to copyActivations()', \
+                raise LayerError('Activation flag not reset before call to copyActivations()', \
                        self.activationSet) 
         self.activation = array
         self.activationSet = 1
@@ -542,7 +540,7 @@ class Layer:
         #        print "(Warning will not be issued again)"
         #        self.warningIssued = 1
         if value > self.maxActivation or value < self.minActivation:
-            raise LayerError, ('Targets for this layer are out of the proper interval.', (self.name, value))
+            raise LayerError('Targets for this layer are out of the proper interval.', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
         self.targetSet = 1
     def copyTargets(self, arr):
@@ -551,8 +549,7 @@ class Layer:
         """
         array = Numeric.array(arr)
         if not len(array) == self.size:
-            raise LayerError, \
-                  ('Mismatched target size and layer size in call to copyTargets()', \
+            raise LayerError('Mismatched target size and layer size in call to copyTargets()', \
                    (len(array), self.size))
         # Removed this because both propagate and backprop (via compute_error) set targets
         #if self.verify and not self.targetSet == 0:
@@ -562,8 +559,8 @@ class Layer:
         #        print "(Warning will not be issued again)"
         #        self.warningIssued = 1
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
-            print self.name, self.minTarget, self.maxTarget
-            raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
+            print(self.name, self.minTarget, self.maxTarget)
+            raise LayerError('Targets for this layer are out of range.', (self.name, array))
         self.target = array
         self.targetSet = 1
 
@@ -633,7 +630,7 @@ class Connection:
         called through Network.changeLayerSize().
         """
         if toLayerSize <= 0 or fromLayerSize <= 0:
-            raise LayerError, ('changeSize() called with invalid layer size.', \
+            raise LayerError('changeSize() called with invalid layer size.', \
                                (fromLayerSize, toLayerSize))
         dweight = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
         wed = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
@@ -660,38 +657,38 @@ class Connection:
         Displays connection information to the screen.
         """
         if self.toLayer._verbosity > 4:
-            print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
+            print("wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'")
             for j in range(self.toLayer.size):
-                print self.toLayer.name, "[", j, "]",
-            print ''
+                print(self.toLayer.name, "[", j, "]", end=' ')
+            print('')
             for i in range(self.fromLayer.size):
-                print self.fromLayer.name, "[", i, "]", ": ",
+                print(self.fromLayer.name, "[", i, "]", ": ", end=' ')
                 for j in range(self.toLayer.size):
-                    print self.wed[i][j],
-                print ''
-            print ''
-            print "dweight: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
+                    print(self.wed[i][j], end=' ')
+                print('')
+            print('')
+            print("dweight: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'")
             for j in range(self.toLayer.size):
-                print self.toLayer.name, "[", j, "]",
-            print ''
+                print(self.toLayer.name, "[", j, "]", end=' ')
+            print('')
             for i in range(self.fromLayer.size):
-                print self.fromLayer.name, "[", i, "]", ": ",
+                print(self.fromLayer.name, "[", i, "]", ": ", end=' ')
                 for j in range(self.toLayer.size):
-                    print self.dweight[i][j],
-                print ''
-            print ''
+                    print(self.dweight[i][j], end=' ')
+                print('')
+            print('')
         if self.toLayer._verbosity > 2:
-            print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
-            print "             ",
+            print("Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'")
+            print("             ", end=' ')
             for j in range(self.toLayer.size):
-                print self.toLayer.name, "[", j, "]",
-            print ''
+                print(self.toLayer.name, "[", j, "]", end=' ')
+            print('')
             for i in range(self.fromLayer.size):
-                print self.fromLayer.name, "[", i, "]", ": ",
+                print(self.fromLayer.name, "[", i, "]", ": ", end=' ')
                 for j in range(self.toLayer.size):
-                    print self.weight[i][j],
-                print ''
-            print ''
+                    print(self.weight[i][j], end=' ')
+                print('')
+            print('')
     # string method
     def toString(self):
         """
@@ -794,7 +791,7 @@ class Network(object):
         self.autoSaveNetworkFile = None
         self.autoSaveNetworkFileFormat = "conx"
         self.lastAutoSaveNetworkFilename = None
-        self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
+        self.lastLowestTSSError = sys.maxsize # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
         self._sweeping = 0 # flag set when sweeping through corpus (as apposed to just stepping)
         self._maxRandom = 0.1
@@ -848,7 +845,7 @@ class Network(object):
         next = {startLayer.name : startLayer}
         visited = {}
         while next != {}:
-            for item in next.items():
+            for item in list(next.items()):
                 # item[0] : name, item[1] : layer reference
                 # add layer to visited dict and del from next 
                 visited[item[0]] = item[1]
@@ -857,9 +854,9 @@ class Network(object):
                     if connection.fromLayer.name == item[0]:
                         if connection.toLayer.name == endLayer.name:
                             return 1 # a path!
-                        elif next.has_key(connection.toLayer.name):
+                        elif connection.toLayer.name in next:
                             pass # already in the list to be traversed
-                        elif visited.has_key(connection.toLayer.name):
+                        elif connection.toLayer.name in visited:
                             pass # already been there
                         else:
                             # add to next
@@ -941,7 +938,7 @@ class Network(object):
         fromLayer = self.getLayer(fromName)
         toLayer   = self.getLayer(toName)
         if self.getLayerIndex(fromLayer) >= self.getLayerIndex(toLayer):
-            raise NetworkError, ('Layers out of order.', (fromLayer.name, toLayer.name))
+            raise NetworkError('Layers out of order.', (fromLayer.name, toLayer.name))
         if (fromLayer.type == 'Output'):
             fromLayer.type = 'Hidden'
             fromLayer.patternReport = 0 # automatically turned off for hidden layers
@@ -953,7 +950,7 @@ class Network(object):
             if fromLayer.kind == 'Undefined':
                 fromLayer.kind = 'Input'
         if (toLayer.type == 'Input'):
-            raise NetworkError, ('Connections out of order', (fromLayer.name, toLayer.name))
+            raise NetworkError('Connections out of order', (fromLayer.name, toLayer.name))
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
             toLayer.patternReport = 1 # automatically turned on for output layers
@@ -998,7 +995,7 @@ class Network(object):
         elif len(arg) == 2:
             pass
         else:
-            raise AttributeError, "not enough layers! need >= 2"
+            raise AttributeError("not enough layers! need >= 2")
         self.addLayer('output', arg[-1])
         lastName = "input"
         for name in hiddens:
@@ -1054,7 +1051,7 @@ class Network(object):
         self.changeLayerSize(layerName, self[layerName].size + 1)
         if bias != None:
             self[layerName].weight[-1] = bias
-        for name in weights.keys():
+        for name in list(weights.keys()):
             for c in self.connections:
                 if c.fromLayer.name == name and c.toLayer.name == layerName:
                     for i in range(self[name].size):
@@ -1068,7 +1065,7 @@ class Network(object):
         """
         # for all connection from to this layer, change matrix:
         if self.sharedWeights:
-            raise AttributeError, "shared weights broken"
+            raise AttributeError("shared weights broken")
         for connection in self.connections:
             if connection.fromLayer.name == layername:
                 connection.changeSize(  newsize, connection.toLayer.size )
@@ -1088,9 +1085,9 @@ class Network(object):
         Initializes network by calling Connection.initialize() and
         Layer.initialize(). self.count is set to zero.
         """
-        print >> sys.stderr, "Initializing '%s' weights..." % self.name
+        print("Initializing '%s' weights..." % self.name, file=sys.stderr)
         if self.sharedWeights:
-            raise AttributeError, "shared weights broken"
+            raise AttributeError("shared weights broken")
         self.count = 0
         for connection in self.connections:
             connection.initialize()
@@ -1197,7 +1194,7 @@ class Network(object):
         """
         self.seed = value
         random.seed(self.seed)
-        print "Conx using seed:", self.seed
+        print("Conx using seed:", self.seed)
     def getConnection(self, lfrom, lto):
         """
         Returns the connection instance connecting the specified (string)
@@ -1207,7 +1204,7 @@ class Network(object):
             if connection.fromLayer.name == lfrom and \
                connection.toLayer.name == lto:
                 return connection
-        raise NetworkError, ('Connection was not found.', (lfrom, lto))
+        raise NetworkError('Connection was not found.', (lfrom, lto))
     def setVerbosity(self, value):
         """
         Sets network self._verbosity and each layer._verbosity to value.
@@ -1264,7 +1261,7 @@ class Network(object):
             if connection.fromLayer.name == fromName and \
                connection.toLayer.name == toName:
                 return connection.weight
-        raise NetworkError, ('Connection was not found.', (fromName, toName))
+        raise NetworkError('Connection was not found.', (fromName, toName))
     def setWeight(self, fromName, fromPos, toName, toPos, value):
         """
         Sets the weight of the connection between two layers (argument strings).
@@ -1274,7 +1271,7 @@ class Network(object):
                connection.toLayer.name == toName:
                 connection.weight[fromPos][toPos] = value
                 return value
-        raise NetworkError, ('Connection was not found.', (fromName, toName))
+        raise NetworkError('Connection was not found.', (fromName, toName))
     def setOrderedInputs(self, value):
         """
         Sets self.orderedInputs to value. Specifies if inputs
@@ -1297,7 +1294,7 @@ class Network(object):
                 return 0
             if type(l) == dict:
                 for i in l:
-                    if not type(i) == str and i not in self.layers.keys():
+                    if not type(i) == str and i not in list(self.layers.keys()):
                         return 0
             else:
                 for i in l:
@@ -1309,7 +1306,7 @@ class Network(object):
         Sets self.input to inputs. Load order is by default random. Use setOrderedInputs() to order inputs.
         """
         if not self.verifyArguments(inputs) and not self.patterned:
-            raise NetworkError, ('setInputs() requires [[...],[...],...] or [{"layerName": [...]}, ...].', inputs)
+            raise NetworkError('setInputs() requires [[...],[...],...] or [{"layerName": [...]}, ...].', inputs)
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1325,7 +1322,7 @@ class Network(object):
         Sets the targets.
         """
         if not self.verifyArguments(targets) and not self.patterned:
-            raise NetworkError, ('setTargets() requires [[...],[...],...] or [{"layerName": [...]}, ...].', targets)
+            raise NetworkError('setTargets() requires [[...],[...],...] or [{"layerName": [...]}, ...].', targets)
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1342,8 +1339,8 @@ class Network(object):
         
         """
         if data2 == None: # format #1
-            inputs = map(lambda x: x[0], data1)
-            targets = map(lambda x: x[1], data1)
+            inputs = [x[0] for x in data1]
+            targets = [x[1] for x in data1]
         else: # format 2
             inputs = data1
             targets = data2
@@ -1395,7 +1392,7 @@ class Network(object):
         vector2 = self.replacePatterns(vec2)
         length = min(len(vector1), len(vector2))
         if self.verbosity > 4:
-            print "Copying Vector: ", vector2[start:start+length]
+            print("Copying Vector: ", vector2[start:start+length])
         p = 0
         for i in range(start, start + length):
             vector1[p] = vector2[i]
@@ -1407,7 +1404,7 @@ class Network(object):
         """
         vector = self.replacePatterns(vec, layer.name)
         if self.verbosity > 4:
-            print "Copying Activations: ", vector[start:start+layer.size]
+            print("Copying Activations: ", vector[start:start+layer.size])
         layer.copyActivations(vector[start:start+layer.size])
     def copyTargets(self, layer, vec, start = 0):
         """
@@ -1416,7 +1413,7 @@ class Network(object):
         """
         vector = self.replacePatterns(vec, layer.name)
         if self.verbosity > 4:
-            print "Copying Target: ", vector[start:start+layer.size]
+            print("Copying Target: ", vector[start:start+layer.size])
         layer.copyTargets(vector[start:start+layer.size])
     def getDataCrossValidation(self, pos):
         """
@@ -1445,7 +1442,7 @@ class Network(object):
         elif intype == "target":
             vector = self.targets
         else:
-            raise AttributeError, "invalid map type '%s'" % intype
+            raise AttributeError("invalid map type '%s'" % intype)
         return vector[pos][offset:offset+self[name].size]
     def getData(self, pos):
         """
@@ -1453,8 +1450,8 @@ class Network(object):
         """
         retval = {}
         if pos >= len(self.inputs):
-            raise IndexError, ('getData() pattern beyond range.', pos)
-        if self.verbosity >= 1: print "Getting input", pos, "..."
+            raise IndexError('getData() pattern beyond range.', pos)
+        if self.verbosity >= 1: print("Getting input", pos, "...")
         if len(self.inputMap) == 0:
             if type(self.inputs[pos]) == dict: # allow inputs to be a dict
                 retval.update(self.inputs[pos])
@@ -1464,7 +1461,7 @@ class Network(object):
             for vals in self.inputMap:
                 (name, offset) = vals
                 retval[name] = self.getDataMap("input", pos, name, offset)
-        if self.verbosity > 1: print "Loading target", pos, "..."
+        if self.verbosity > 1: print("Loading target", pos, "...")
         if len(self.targets) == 0:
             pass # ok, no targets
         elif len(self.targetMap) == 0:
@@ -1492,10 +1489,10 @@ class Network(object):
         inputLayerFlag = 1
         # must have layers and connections
         if len(self.layers) == 0:
-            raise NetworkError, ('No network layers.', \
+            raise NetworkError('No network layers.', \
                                  self.layers)
         if len(self.connections) == 0:
-            raise NetworkError, ('No network connections.', \
+            raise NetworkError('No network connections.', \
                                  self.connections)
         # layers should not have the same name
         for x, y in [(x, y) for x in range(len(self.layers)) for y in range(len(self.layers))]:
@@ -1504,7 +1501,7 @@ class Network(object):
             else:
                 # different layers same name
                 if self.layers[x].name == self.layers[y].name:
-                    raise NetworkError, ('Two layers have the same name.', (x,y))
+                    raise NetworkError('Two layers have the same name.', (x,y))
         # no multiple connections between layers
         for x, y in [(x,y) for x in range(len(self.connections)) for y in range(len(self.connections))]:
             if x == y:
@@ -1513,14 +1510,14 @@ class Network(object):
                 # multiple connections between fromLayer and toLayer
                 if self.connections[x].fromLayer.name == self.connections[y].fromLayer.name and \
                    self.connections[x].toLayer.name == self.connections[y].toLayer.name:
-                    raise NetworkError, ('Multiple connections between two layers.', \
+                    raise NetworkError('Multiple connections between two layers.', \
                                          (self.connections[x].fromLayer.name, \
                                           self.connections[x].toLayer.name))
         # layer type tests
         for layer in self.layers:
             # no undefined layers
             if layer.type == 'Undefined':
-                raise NetworkError, ('There is an unconnected layer.', layer.name)
+                raise NetworkError('There is an unconnected layer.', layer.name)
             elif layer.type == 'Input':
                 for connection in self.connections:
                     # input layers must have outgoing connections 
@@ -1528,23 +1525,19 @@ class Network(object):
                         inputLayerFlag = 0
                     # input layers must have no incoming connections
                     if connection.toLayer.name == layer.name:
-                        raise NetworkError, \
-                              ('Layer has type \'Input\' and an incoming connection.', layer.name)
+                        raise NetworkError('Layer has type \'Input\' and an incoming connection.', layer.name)
                 if inputLayerFlag:
-                    raise NetworkError, \
-                          ('Layer has type \'Input\' but no outgoing connections', layer.name)
+                    raise NetworkError('Layer has type \'Input\' but no outgoing connections', layer.name)
             elif layer.type == 'Output':
                 for connection in self.connections:
                     # output layers must have no outgoing connections`
                     if connection.fromLayer.name == layer.name:
-                        raise NetworkError, \
-                              ('Layer has type \'Output\' and an outgoing connections.',layer.name)
+                        raise NetworkError('Layer has type \'Output\' and an outgoing connections.',layer.name)
                     # output layers must have an incoming connection
                     if connection.toLayer.name == layer.name:
                         outputLayerFlag = 0
                 if outputLayerFlag:
-                    raise NetworkError, \
-                          ('Layer has type \'Output\' and no incoming connections.', layer.name)           
+                    raise NetworkError('Layer has type \'Output\' and no incoming connections.', layer.name)           
             elif layer.type == 'Hidden':
                 for connection in self.connections:
                     # hidden layers must have incoming and outgoing connections.
@@ -1553,11 +1546,10 @@ class Network(object):
                     if connection.fromLayer.name == layer.name:
                         hiddenOutput = 0
                 if hiddenInput or hiddenOutput:
-                    raise NetworkError, \
-                          ('Layer has type \'Hidden\' but does not have both input and output connections.',\
+                    raise NetworkError('Layer has type \'Hidden\' but does not have both input and output connections.',\
                            layer.name)
             else:
-                raise LayerError, ('Unknown layer encountered in verifyArchitecture().', layer.name)
+                raise LayerError('Unknown layer encountered in verifyArchitecture().', layer.name)
         # network should not have unconnected sub networks
         # every input layer should have a path to every output layer
         for inLayer in self.layers:
@@ -1565,12 +1557,12 @@ class Network(object):
                 for outLayer in self.layers:
                     if outLayer.type == 'Output':
                         if not self.path(inLayer, outLayer):
-                            raise NetworkError, ('Network contains disconnected sub networks.', \
+                            raise NetworkError('Network contains disconnected sub networks.', \
                                                  (inLayer.name, outLayer.name))
         # network should not have directed cycles
         for layer in self.layers:
             if self.path(layer, layer):
-                raise NetworkError, ('Network contains a cycle.', layer.name)   
+                raise NetworkError('Network contains a cycle.', layer.name)   
     def verifyInputs(self):
         """
         Used in propagate() to verify that the network input
@@ -1578,7 +1570,7 @@ class Network(object):
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
-                raise LayerError, "Inputs are not set and verifyInputs() was called on layer '%s'." % layer.name
+                raise LayerError("Inputs are not set and verifyInputs() was called on layer '%s'." % layer.name)
             else:
                 layer.resetActivationFlag()
     def verifyTargets(self):
@@ -1588,7 +1580,7 @@ class Network(object):
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Output' and layer.active and not layer.targetSet:
-                raise LayerError, ('Targets are not set and verifyTargets() was called.',\
+                raise LayerError('Targets are not set and verifyTargets() was called.',\
                                    (layer.name, layer.type))
             else:
                 layer.resetTargetFlag()
@@ -1620,7 +1612,7 @@ class Network(object):
         if self.log:
             self.log.write(msg + "\n")
         else:
-            print msg
+            print(msg)
     def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = {}):
         # pcorrect is a dict of layer error/correct data:
         #   {layerName: [correct, total, pattern correct, pattern total]...}
@@ -1671,7 +1663,7 @@ class Network(object):
             self.reportStart()
             self.resetCount = 1
             self.epoch = 1
-            self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
+            self.lastLowestTSSError = sys.maxsize # some maximum value (not all pythons have Infinity)
             if sweeps != None:
                 self.resetEpoch = sweeps
         else:
@@ -1713,7 +1705,7 @@ class Network(object):
                 tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalPCorrect = {}
                 continue
             self.epoch += 1
-        print "----------------------------------------------------"
+        print("----------------------------------------------------")
         if totalCount > 0:
             self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr, totalPCorrect)
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
@@ -1729,8 +1721,8 @@ class Network(object):
                     self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
                     self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
         else:
-            print "Final: nothing done"
-        print "----------------------------------------------------"
+            print("Final: nothing done")
+        print("----------------------------------------------------")
     def step(self, **args):
         """
         Network.step()
@@ -1740,7 +1732,7 @@ class Network(object):
         
         """
         if self.verbosity > 0:
-            print "Network.step() called with:", args
+            print("Network.step() called with:", args)
         # First, copy the values into either activations or targets:
         retargs = self.preStep(**args)
         if retargs: args = retargs # replace the args
@@ -1756,11 +1748,11 @@ class Network(object):
             (inName, outName) = aa
             inLayer = self.getLayer(inName)
             if inLayer.type not in ['Input', "Hidden"]:
-                raise LayerError, ('Associated input layer not type \'Input\' or \'Hidden\'.', \
+                raise LayerError('Associated input layer not type \'Input\' or \'Hidden\'.', \
                                    inLayer.type)
             outLayer = self.getLayer(outName)
             if not outLayer.type == 'Output':
-                raise LayerError, ('Associated output layer not type \'Output\'.', \
+                raise LayerError('Associated output layer not type \'Output\'.', \
                                    outLayer.type)
             outLayer.copyTargets(inLayer.activation)
         # Compute error, and back prop it:
@@ -1796,10 +1788,10 @@ class Network(object):
         """
         self.preSweep()
         if self.loadOrder == []:
-            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
+            raise NetworkError('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
         if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
-            raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
-        if self.verbosity >= 1: print "Epoch #", self.epoch, "Cycle..."
+            raise NetworkError("Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs)))
+        if self.verbosity >= 1: print("Epoch #", self.epoch, "Cycle...")
         if not self.orderedInputs:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = {}
@@ -1808,7 +1800,7 @@ class Network(object):
             self.results = [(0,0,0) for x in self.loadOrder]
         for i in self.loadOrder:
             if self.verbosity >= 1 or self.interactive:
-                print "-----------------------------------Pattern #", self.loadOrder[i] + 1
+                print("-----------------------------------Pattern #", self.loadOrder[i] + 1)
             datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
             if cnt < len(self.loadOrder) - 1:
                 self.currentSweepCount = cnt
@@ -1824,8 +1816,8 @@ class Network(object):
             totalCount += total
             sumMerge(totalPCorrect, pcorrect)
             if (cnt + 1) % self.sweepReportRate == 0:
-                print "   Step # %6d | TSS Error: %.4f | Correct: %.4f" % \
-                      (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
+                print("   Step # %6d | TSS Error: %.4f | Correct: %.4f" % \
+                      (cnt + 1, tssError, totalCorrect * 1.0 / totalCount))
             if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
                 self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
             cnt += 1
@@ -1917,7 +1909,7 @@ class Network(object):
         startLayers. Make sure startLayers are initialized with the
         desired activations. NO ERROR CHECKING.
         """
-        if self.verbosity > 2: print "Partially propagating network:"
+        if self.verbosity > 2: print("Partially propagating network:")
         # find all the layers involved in the propagation
         propagateLayers = []
         # propagateLayers should not include startLayers (no loops)
@@ -1958,14 +1950,14 @@ class Network(object):
             layer = self.getLayer(key)
             if layer.kind == 'Input':
                 if self[key].verify and not self[key].activationSet == 0: 
-                    raise AttributeError, "attempt to set activations on input layer '%s' without reset" % key
+                    raise AttributeError("attempt to set activations on input layer '%s' without reset" % key)
                 self.copyActivations(layer, args[key])
             elif layer.kind == 'Context':
                 self.copyActivations(layer, args[key])
             elif layer.kind == 'Output' and len(args[key]) == layer.size: # in case you expect propagate to handle the outputs
                 self.copyTargets(layer, args[key])
         self.verifyInputs() # better have inputs set
-        if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
+        if self.verbosity > 2: print("Propagate Network '" + self.name + "':")
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
@@ -1992,7 +1984,7 @@ class Network(object):
                 if layer.type == "Output":
                     dict[layer.name] = layer.activation.tolist()
             if len(dict) == 1:
-                return dict[dict.keys()[0]]
+                return dict[list(dict.keys())[0]]
             else:
                 return dict
     def propagateTo(self, toLayer, **args):
@@ -2073,7 +2065,7 @@ class Network(object):
                 if layer.type == "Output":
                     dict[layer.name] = layer.activation.tolist()
             if len(dict) == 1:
-                return dict[dict.keys()[0]]
+                return dict[list(dict.keys())[0]]
             else:
                 return dict
     #Perhaps these activation functions could be encapsulated in objects?
@@ -2087,7 +2079,7 @@ class Network(object):
             if   v < -15.0: return 0.0
             elif v >  15.0: return 1.0
             else: return 1.0 / (1.0 + Numeric.exp(-v))
-        return Numeric.array(map(act, x), 'f')
+        return Numeric.array(list(map(act, x)), 'f')
     def ACTPRIMEASIG(self, act):
         """
         Used in compute_error.
@@ -2110,7 +2102,7 @@ class Network(object):
             if   v < -15.0: return -0.5
             elif v >  15.0: return 0.5
             else: return 1.0 / (1.0 + Numeric.exp(-v)) - 0.5
-        return Numeric.array(map(act, x), 'f')
+        return Numeric.array(list(map(act, x)), 'f')
     def ACTPRIME_Fahlman(self, act):
         return self.sigmoid_prime_offset+0.25 - act*act
     def actDerivFahlman(self, x):
@@ -2126,7 +2118,7 @@ class Network(object):
             if   v < -15.0: return -1.0
             elif v >  15.0: return 1.0
             else: return 1.7159 * Numeric.tanh(0.66666 * v)
-        return Numeric.array(map(act, x), 'f')
+        return Numeric.array(list(map(act, x)), 'f')
     def ACTPRIMETANH(self, act):
         return 1 - act*act + self.sigmoid_prime_offset
     def actDerivTANH(self, x):
@@ -2291,7 +2283,7 @@ class Network(object):
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
         if self.verbosity >= 1:
-            print "WEIGHTS CHANGED"
+            print("WEIGHTS CHANGED")
             if self.verbosity > 2:
                 self.display()
         return (dw_count, dw_sum)
@@ -2313,7 +2305,7 @@ class Network(object):
                 elif v >  0.9999999: return  17.0
                 else: return math.log( (1.0 + v) / (1.0 - v) )
                 #else: return Numeric.arctanh(v) # half that above
-        return map(difference, t - a)
+        return list(map(difference, t - a))
 
     def ce_init(self):
         """
@@ -2362,9 +2354,9 @@ class Network(object):
         totalSquaredError, totalSize, totalCorrect, pcorrect = 0.0, 0, 0, {}
         for layerName in layerNames:
             layer = self.layersByName[layerName]
-            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, (layer.target - layer.activation) ))
+            totalSquaredError += reduce(operator.add, [v ** 2 for v in (layer.target - layer.activation)])
             totalSize += len(layer.error)
-            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, layer.target - layer.activation))
+            totalCorrect += reduce(operator.add, [abs(d) < self.tolerance for d in layer.target - layer.activation])
             if layer.patternReport: 
                 lyst = [0,0,0,0]  # correct, total, pcorrect, ptotal
                 lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.target - layer.activation) < self.tolerance)
@@ -2426,14 +2418,14 @@ class Network(object):
             output += layer.toString()
         return output
     def prompt(self):
-        print "--More-- [<enter>, <q>uit, <g>o] ",
+        print("--More-- [<enter>, <q>uit, <g>o] ", end=' ')
         try:
             stdoutName = sys.stdout.name
         except:
             stdoutName = "<other>" # probably IDLE
         if stdoutName == "<tkgui>":
             chr = "\n"
-            print
+            print()
             sys.stdout.flush()
         else:
             chr = sys.stdin.readline()
@@ -2447,67 +2439,67 @@ class Network(object):
         fromColWidth    = 8
         decimals        = 2
         colWidth        = 7
-        print title + ":"
-        print "-" * (len(title) + 1)
+        print(title + ":")
+        print("-" * (len(title) + 1))
         for c in self.connections:
-            print "Weights (%s, %s) from '%s' (%s, %s) to '%s' (%s, %s):" % (
+            print("Weights (%s, %s) from '%s' (%s, %s) to '%s' (%s, %s):" % (
                 ["not frozen","frozen"][c.frozen],
                 ["not active","active"][c.active],
                 c.fromLayer.name, ["not frozen","frozen"][c.fromLayer.frozen], ["not active","active"][c.fromLayer.active], 
-                c.toLayer.name, ["not frozen","frozen"][c.toLayer.frozen], ["not active","active"][c.toLayer.active] )
+                c.toLayer.name, ["not frozen","frozen"][c.toLayer.frozen], ["not active","active"][c.toLayer.active] ))
             # top bar
             line = ("=" * fromColWidth) + "="
             line += ("=" * colWidth) + "="
             for i in range(c.toLayer.size):
                 line += ("=" * colWidth) + "="
-            print line
+            print(line)
             # to layer name:
             line = " " * fromColWidth + "|" + pad(c.toLayer.name, (colWidth * (c.toLayer.size + 1)) + c.toLayer.size, align="center", )
-            print line
+            print(line)
             # sep bar:
             line = ("-" * fromColWidth) + "+"
             line += ("-" * colWidth) + "+"
             for i in range(c.toLayer.size):
                 line += ("-" * colWidth) + "+"
-            print line
+            print(line)
             # col header:
             line = pad(c.fromLayer.name, fromColWidth, align="center")
             line += pad("bias", colWidth, align="center")
             for i in range(c.toLayer.size):
                 line += pad(str(i), colWidth, align = "center")
-            print line
+            print(line)
             # sep bar:
             line = ("-" * fromColWidth) + "+"
             line += ("-" * colWidth) + "+"
             for i in range(c.toLayer.size):
                 line += ("-" * colWidth) + "+"
-            print line
+            print(line)
             # biases, to layer:
             line = pad("bias", fromColWidth, align = "center")
             line += (" " * colWidth) + "|"
             for j in range(c.toLayer.size):
                 line += pad(("%." + str(decimals) + "f") % c.toLayer.weight[j], colWidth, align = "right")
-            print line
+            print(line)
             # weights:
             for i in range(c.fromLayer.size):
                 line = pad(str(i), fromColWidth, align = "center")
                 line += pad(("%." + str(decimals) + "f") % c.fromLayer.weight[i], colWidth, align = "right")
                 for j in range(c.toLayer.size):
                     line += pad(("%." + str(decimals) + "f") % c.weight[i][j], colWidth, align = "right")
-                print line
+                print(line)
             # bottom bar:
             line = ("=" * fromColWidth) + "="
             line += ("=" * colWidth) + "="
             for i in range(c.toLayer.size):
                 line += ("=" * colWidth) + "="
-            print line
+            print(line)
                 
     def display(self):
         """
         Displays the network to the screen.
         """
-        print "Display network '" + self.name + "':"
-        size = range(len(self.layers))
+        print("Display network '" + self.name + "':")
+        size = list(range(len(self.layers)))
         size.reverse()
         for i in size:
             if self.layers[i].active:
@@ -2516,23 +2508,23 @@ class Network(object):
                     targetWord, diff = self.getWord( self.layers[i].target, returnDiff = 1)
                     if self.layers[i].kind == 'Output':
                         if targetWord == None:
-                            print "Target Pattern   = %s" % "No match"
+                            print("Target Pattern   = %s" % "No match")
                         else:
                             if diff == 0.0:
-                                print "Target Pattern   = '%s'; (exact)" % targetWord
+                                print("Target Pattern   = '%s'; (exact)" % targetWord)
                             else:
-                                print "Target Pattern   = '%s'; Match difference = %f)" % (targetWord, diff)
+                                print("Target Pattern   = '%s'; Match difference = %f)" % (targetWord, diff))
                     actWord, diff = self.getWord( self.layers[i].activation, returnDiff = 1 )
                     if (self.layers[i].kind == 'Input' or self.layers[i].kind == 'Output'):
                         if actWord == None:
-                            print "Matching Pattern = %s" % "No match"
+                            print("Matching Pattern = %s" % "No match")
                         else:
                             if diff == 0.0:
-                                print "Matching Pattern = '%s'; (exact)" % actWord
+                                print("Matching Pattern = '%s'; (exact)" % actWord)
                             else:
-                                print "Matching Pattern = '%s'; Match difference = %f" % (actWord, diff)
+                                print("Matching Pattern = '%s'; Match difference = %f" % (actWord, diff))
                 if self.verbosity >= 1:
-                    weights = range(len(self.connections))
+                    weights = list(range(len(self.connections)))
                     weights.reverse()
                     for j in weights:
                         if self.connections[j].toLayer.name == self.layers[i].name:
@@ -2573,7 +2565,7 @@ class Network(object):
                     g += 1
         # if gene is too long we may have a problem
         if len(gene) > g:
-            raise IndexError, ('Argument to unArrayify is too long.', len(gene))
+            raise IndexError('Argument to unArrayify is too long.', len(gene))
 
     # file IO 
     def logMsg(self, layerName, message):
@@ -2658,7 +2650,7 @@ class Network(object):
                         cnt += 1
             fp.close()            
         else:
-            raise ValueError, ('Unknown mode in saveWeightsToFile().', mode)
+            raise ValueError('Unknown mode in saveWeightsToFile().', mode)
     def loadWeightsFromFile(self, filename, mode = 'pickle'):
         """
         Loads weights from a file in pickle, plain, or tlearn mode.
@@ -2679,7 +2671,7 @@ class Network(object):
                 if line == '' or line[0] == '#':
                     pass
                 else:
-                    data = map( float, line.split())
+                    data = list(map( float, line.split()))
                     arr.extend( data )
             self.unArrayify( arr )
             fp.close()
@@ -2742,7 +2734,7 @@ class Network(object):
                 while line and line[0] != "#":
                     data += " " + line.strip()
                     line = fp.readline()
-                weights = map(float, data.split())
+                weights = list(map(float, data.split()))
                 self["output"].weight[outcount] = weights[0] # bias
                 next = 1
                 for i in range(self["input"].size):
@@ -2759,7 +2751,7 @@ class Network(object):
             for hidcount in range(hiddens):
                 weights = []
                 while line and line[0] != "$" and line[0] != "#": # next line is a weight line
-                    weights.extend( map(float, line.split())) # bias, input to hidden, hidden to hidden?
+                    weights.extend( list(map(float, line.split()))) # bias, input to hidden, hidden to hidden?
                     line = fp.readline() 
                 self[("hidden%d" % hidcount)].weight[0] = weights[0] # bias first
                 next = 1
@@ -2775,7 +2767,7 @@ class Network(object):
                 line = fp.readline() # $
                 line = fp.readline() # beginning of weights
         else:
-            raise ValueError, ('Unknown mode in loadWeightsFromFile()', mode)
+            raise ValueError('Unknown mode in loadWeightsFromFile()', mode)
     def saveNetworkToFile(self, filename, makeWrapper = 1, mode = "pickle", counter = None):
         """
         Saves network to file using pickle.
@@ -2812,14 +2804,14 @@ class Network(object):
                 fp.write("network = pickle.load(fp)")
                 fp.close()
             # give some help:
-            print "To load network:"
-            print "   %% python -i %s " % (basename + ".py")
-            print "   >>> network.train() # for example"
-            print "--- OR ---"
-            print "   % python"
-            print "   >>> from pyrobot.brain.conx import *"
-            print "   >>> network = loadNetworkFromFile(%s)" % filename
-            print "   >>> network.train() # for example"
+            print("To load network:")
+            print("   %% python -i %s " % (basename + ".py"))
+            print("   >>> network.train() # for example")
+            print("--- OR ---")
+            print("   % python")
+            print("   >>> from pyrobot.brain.conx import *")
+            print("   >>> network = loadNetworkFromFile(%s)" % filename)
+            print("   >>> network.train() # for example")
         elif mode in ["plain", "conx"]:
             fp = open(filename, "w")
             fp.write("network, %s\n" % (self.__class__.__name__))
@@ -2956,7 +2948,7 @@ class Network(object):
         self.targets = []
         self.inputs = []
         while line:
-            data = map(float, line.split())
+            data = list(map(float, line.split()))
             cnt = len(data)
             icnt = cnt - ocnt
             self.inputs.append(self.patternVector(data[0:icnt]))
@@ -3043,10 +3035,10 @@ class Network(object):
         Example: net.getPattern("tom") => [0, 0, 0, 1]
         
         """
-        if self.patterns.has_key(word):
+        if word in self.patterns:
             return self.patterns[word]
         else:
-            raise ValueError, ('Unknown pattern in getPattern().', word)
+            raise ValueError('Unknown pattern in getPattern().', word)
     def getWord(self, pattern, returnDiff = 0):
         """
         Returns the word associated with pattern.
@@ -3060,7 +3052,7 @@ class Network(object):
         for w in self.patterns:
             # There may be some patterns that are scalars; we don't search
             # those in this function:
-            if type(self.patterns[w]) in [int, float, long]: continue
+            if type(self.patterns[w]) in [int, float, int]: continue
             if len(self.patterns[w]) == len(pattern):
                 dist = reduce(operator.add, [(a - b) ** 2 for (a,b) in zip(self.patterns[w], pattern )])
                 if dist == 0.0:
@@ -3092,9 +3084,8 @@ class Network(object):
         Example: net.addPattern("tom", [0, 0, 0, 1])
         
         """
-        if self.patterns.has_key(word):
-            raise NetworkError, \
-                  ('Pattern key already in use. Call delPattern to free key.', word)
+        if word in self.patterns:
+            raise NetworkError('Pattern key already in use. Call delPattern to free key.', word)
         else:
             self.patterns[word] = vector
     # will raise KeyError if word is not in dict
@@ -3145,7 +3136,7 @@ class Network(object):
             for c in self.connections:
                 listOfLayerNamePairs.append( [c.fromLayer.name, c.toLayer.name] )
         if self.verbosity > 1:
-            print "sharing weights:", self.name, listOfLayerNamePairs
+            print("sharing weights:", self.name, listOfLayerNamePairs)
         # first, check to see if this will work:
         count = 0
         for (fromLayerName, toLayerName) in listOfLayerNamePairs:
@@ -3157,10 +3148,10 @@ class Network(object):
                                network.connections[c2].toLayer.name == toLayerName:
                             if (self.connections[c1].fromLayer.size != network.connections[c2].fromLayer.size) or \
                                (self.connections[c1].toLayer.size != network.connections[c2].toLayer.size):
-                                raise AttributeError, "shareSomeWeights: layer sizes did not match"
+                                raise AttributeError("shareSomeWeights: layer sizes did not match")
                             count += 1
         if count != len(listOfLayerNamePairs):
-            raise AttributeError, "shareSomeWeights: layer names did not match"
+            raise AttributeError("shareSomeWeights: layer names did not match")
         # ok, now let's share!
         self.sharedWeights = 1
         network.sharedWeights = 1
@@ -3185,7 +3176,7 @@ class Network(object):
         sum - use for SigmaNetworks
         FIXME: currently just works with one output layer
         """
-        print "Testing Generalization:", self.name
+        print("Testing Generalization:", self.name)
         resolution = int((stop - start) / incr)
         retString = ""
         for x in range(resolution):
@@ -3248,7 +3239,7 @@ class SigmaNetwork(Network):
         for name in dict:
             layer = self[name]
             if layer.kind == "Output":
-                vector = map(myround, self[name].activation)
+                vector = list(map(myround, self[name].activation))
                 score = abs(sum(vector)/float(self[name].size) - dict[name][0])
                 if score > self.tolerance:
                     vector = mutate(vector, score)
@@ -3313,7 +3304,7 @@ class SRN(Network):
             self.orderedInputs = 1
             self.initContext = 1
         else:
-            raise AttributeError, "invalid sequence type: '%s'" % value
+            raise AttributeError("invalid sequence type: '%s'" % value)
         self.sequenceType = value
     # set and get methods for attributes
     def predict(self, inName, outName):
@@ -3358,8 +3349,8 @@ class SRN(Network):
         """
         # better not add context layer first if using sweep() without mapInput
         SRN.add(self, layer, verbosity)
-        if self.contextLayers.has_key(hiddenLayerName):
-            raise KeyError, ('There is already a context layer associated with this hidden layer.', \
+        if hiddenLayerName in self.contextLayers:
+            raise KeyError('There is already a context layer associated with this hidden layer.', \
                              hiddenLayerName)
         else:
             self.contextLayers[hiddenLayerName] = layer
@@ -3371,16 +3362,16 @@ class SRN(Network):
         Uses key to identify the hidden layer associated with each
         layer in the self.contextLayers dictionary. 
         """
-        for item in self.contextLayers.items():
-            if self.verbosity > 2: print 'Hidden layer: ', self.getLayer(item[0]).activation
-            if self.verbosity > 2: print 'Context layer before copy: ', item[1].activation
+        for item in list(self.contextLayers.items()):
+            if self.verbosity > 2: print('Hidden layer: ', self.getLayer(item[0]).activation)
+            if self.verbosity > 2: print('Context layer before copy: ', item[1].activation)
             item[1].copyActivations(self.getLayer(item[0]).activation)
-            if self.verbosity > 2: print 'Context layer after copy: ', item[1].activation
+            if self.verbosity > 2: print('Context layer after copy: ', item[1].activation)
     def setContext(self, value = .5):
         """
         Clears the context layer by setting context layer to (default) value 0.5. 
         """
-        for context in self.contextLayers.values():
+        for context in list(self.contextLayers.values()):
             context.resetFlags() # hidden activations have already been copied in
             context.setActivations(value)
     def propagate(self, **args):
@@ -3395,11 +3386,11 @@ class SRN(Network):
         layer activations to the context layer.
         """
         if self.sequenceType == None:
-            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType() """
+            raise AttributeError("""sequenceType not set! Use SRN.setSequenceType() """)
         # take care of any params other than layer names:
         # two ways to clear context:
         # 1. force it to right now with arg initContext = 1:
-        if args.has_key('initContext'):
+        if 'initContext' in args:
             if args['initContext']:
                 self.setContext()
             del args['initContext']
@@ -3409,7 +3400,7 @@ class SRN(Network):
         # if initContext is off, then we assume user knows that,
         # so we reset the flags on all context layers:
         if self.initContext == 0:
-            for context in self.contextLayers.values():
+            for context in list(self.contextLayers.values()):
                 context.activationSet = 1
         # replace all patterns
         for key in args:
@@ -3427,7 +3418,7 @@ class SRN(Network):
         totalPCorrect = {}
         for step in range(sequenceLength):
             if self.verbosity >= 1 or self.interactive:
-                print "-----------------------------------Step #", step + 1
+                print("-----------------------------------Step #", step + 1)
             dict = {}
             dict.update(args) # in case context, or others
             # now, overwrite input and output, if necessary
@@ -3456,14 +3447,14 @@ class SRN(Network):
                 (inName, outName) = p
                 inLayer = self.getLayer(inName)
                 if not inLayer.type == 'Input':
-                    raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
+                    raise LayerError('Prediction input layer not type \'Input\'.', inLayer.type)
                 outLayer = self.getLayer(outName)
                 if not outLayer.type == 'Output':
-                    raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
+                    raise LayerError('Prediction output layer not type \'Output\'.', outLayer.type)
                 if step == sequenceLength - 1: # last one in sequence; what do we do?
                     start = 0 # wrap to next input vector
                     if not self._sweeping: # not in sweep, in step, no target
-                        raise LayerError, "Attempting to predict last item in sequence, but using step(). Use sweep() instead."
+                        raise LayerError("Attempting to predict last item in sequence, but using step(). Use sweep() instead.")
                     else: # in a sweep, so get the next pattern if one:
                         if self.currentSweepCount == None: # last item in epoch, predict back to first pattern
                             # Train it to predict first pattern, first sequence item
@@ -3491,7 +3482,7 @@ class SRN(Network):
                     self.learning = 0
             retvals = self.networkStep(**dict)
             self.learning = learning # in case we turned it off
-            totalRetvals = map(lambda x,y: x+y, totalRetvals[:3], retvals[:3])
+            totalRetvals = list(map(lambda x,y: x+y, totalRetvals[:3], retvals[:3]))
             sumMerge(totalPCorrect, retvals[3])
             totalRetvals.append( totalPCorrect)
         return totalRetvals
@@ -3522,7 +3513,7 @@ if __name__ == '__main__':
     # http://emergent.brynmawr.edu/
 
     def ask(question):
-        print question, '[y/n/q] ',
+        print(question, '[y/n/q] ', end=' ')
         ans = sys.stdin.readline()[0].lower()
         if ans == 'q':
             sys.exit()
@@ -3558,107 +3549,107 @@ if __name__ == '__main__':
         net = Network()
         net.addThreeLayers(3, 2, 3)
         net.setTolerance(.4)
-        print "Setting patterns to one 0,0,0; two 1,1,1..."
+        print("Setting patterns to one 0,0,0; two 1,1,1...")
         net.setPatterns( {"one" : [0, 0, 0], "two" :  [1, 1, 1]} )
-        print net.getPattern("one")
-        print net.getPattern("two")
-        print "Replacing patterns... (should return [0, 0, 0, 1, 1, 1])"
-        print net.replacePatterns(["one", "two"])
+        print(net.getPattern("one"))
+        print(net.getPattern("two"))
+        print("Replacing patterns... (should return [0, 0, 0, 1, 1, 1])")
+        print(net.replacePatterns(["one", "two"]))
         net.setInputs([ "one", "two" ])
         net.copyActivations(net["input"], net.inputs[0])
         net.resetFlags()
-        print "one is: ",
-        print net["input"].getActivations()
+        print("one is: ", end=' ')
+        print(net["input"].getActivations())
         net.copyActivations(net["input"], net.inputs[1])
         net.resetFlags()
-        print "two is: ",
-        print net["input"].getActivations()
+        print("two is: ", end=' ')
+        print(net["input"].getActivations())
         net.addPattern("1", 1)
         net.addPattern("0", 0)
-        print "Setting patterns to 0 and 1..."
+        print("Setting patterns to 0 and 1...")
         net.setInputs([ [ "0", "1", "0" ], ["1", "1", "1"]])
-        print "Testing replacePatterns and patternVector..."
-        print net.replacePatterns(net.inputs[0])
-        print net.patternVector(net.replacePatterns(net.inputs[0]))
+        print("Testing replacePatterns and patternVector...")
+        print(net.replacePatterns(net.inputs[0]))
+        print(net.patternVector(net.replacePatterns(net.inputs[0])))
         net.copyActivations(net["input"], net.inputs[0])
         net.resetFlags()
-        print "0 1 0 is: ",
-        print net["input"].getActivations()
+        print("0 1 0 is: ", end=' ')
+        print(net["input"].getActivations())
         net.copyActivations(net["input"], net.inputs[1])
-        print "1 1 1 is: ",
-        print net["input"].getActivations()
-        print "Reverse look up of .2, .3, .2 is ", net.getWord([.2, .3, .2])
-        print "Reverse look up of .8, .7, .5 is ", net.getWord([.8, .7, .5])
-        print "Reverse look up of .8, .9, 1 is ", net.getWord([.8, .9, 1])
+        print("1 1 1 is: ", end=' ')
+        print(net["input"].getActivations())
+        print("Reverse look up of .2, .3, .2 is ", net.getWord([.2, .3, .2]))
+        print("Reverse look up of .8, .7, .5 is ", net.getWord([.8, .7, .5]))
+        print("Reverse look up of .8, .9, 1 is ", net.getWord([.8, .9, 1]))
         if ask("Do you want to test saving and loading of patterned inputs and targets?"):
-            print net.patterns
-            print net.patterned
+            print(net.patterns)
+            print(net.patterned)
             net.setInputs(['one','two'])
             net.setTargets([['1'],['0']])
-            print "Filename to save inputs: ",
+            print("Filename to save inputs: ", end=' ')
             filename = sys.stdin.readline().strip()
-            print "Saving Inputs: ", net.inputs
+            print("Saving Inputs: ", net.inputs)
             net.saveInputsToFile(filename)
             net.loadInputsFromFile(filename)
-            print "Loading Inputs: ", net.inputs
-            print "Filename to save targets: ",
+            print("Loading Inputs: ", net.inputs)
+            print("Filename to save targets: ", end=' ')
             filename = sys.stdin.readline().strip()
-            print "Saving Targets: ", net.targets
+            print("Saving Targets: ", net.targets)
             net.saveTargetsToFile(filename)
             net.loadTargetsFromFile(filename)
-            print "Loading Targets: ", net.targets
+            print("Loading Targets: ", net.targets)
         if ask("Do you want to test saving and loading patterned data?"):
-            print "Setting inputs and targets..."
+            print("Setting inputs and targets...")
             net.setInputs(['one','two'])
             net.setTargets([['1'],['0']])
-            print "Filename to save data: ",
+            print("Filename to save data: ", end=' ')
             filename = sys.stdin.readline().strip()
-            print "Saving data: "
-            print net.inputs
-            print net.targets
+            print("Saving data: ")
+            print(net.inputs)
+            print(net.targets)
             net.saveDataToFile(filename)
-            print "Loading data: "
+            print("Loading data: ")
             net.loadDataFromFile(filename, 1)
-            print net.inputs
-            print net.targets
+            print(net.inputs)
+            print(net.targets)
             
     if ask("Do you want to test saving and loading inputs and targets with XOR?"):
-        print "Filename to save inputs: ",
+        print("Filename to save inputs: ", end=' ')
         filename = sys.stdin.readline().strip()
-        print "Saving Inputs: ", n.inputs
+        print("Saving Inputs: ", n.inputs)
         n.saveInputsToFile(filename)
         n.loadInputsFromFile(filename)
-        print "Loading Inputs: ", n.inputs
-        print "Filename to save targets: ",
+        print("Loading Inputs: ", n.inputs)
+        print("Filename to save targets: ", end=' ')
         filename = sys.stdin.readline().strip()
-        print "Saving Targets: ", n.targets
+        print("Saving Targets: ", n.targets)
         n.saveTargetsToFile(filename)
         n.loadTargetsFromFile(filename)
-        print "Loading Targets: ", n.targets
+        print("Loading Targets: ", n.targets)
 
     if ask("Do you want to test saving and loading XOR data?"):
-        print "Filename to save data: ",
+        print("Filename to save data: ", end=' ')
         filename = sys.stdin.readline().strip()
-        print "Saving data: "
-        print n.inputs
-        print n.targets
+        print("Saving data: ")
+        print(n.inputs)
+        print(n.targets)
         n.saveDataToFile(filename)
-        print "Loading data: "
+        print("Loading data: ")
         n.loadDataFromFile(filename, 1)
-        print n.inputs
-        print n.targets
+        print(n.inputs)
+        print(n.targets)
         
     if ask("Do you want to see some test values?"):
-        print 'Input Activations:', n.getLayer('input').getActivations()
-        print "Setting target to .5"
+        print('Input Activations:', n.getLayer('input').getActivations())
+        print("Setting target to .5")
         n.getLayer("output").copyTargets([.5])
-        print 'Output Targets:', n.getLayer('output').getTargets()
+        print('Output Targets:', n.getLayer('output').getTargets())
         n.compute_error()
-        print 'Output TSS Error:', n.TSSError("output")
-        print 'Output Correct:', n.getCorrect('output')
+        print('Output TSS Error:', n.TSSError("output"))
+        print('Output Correct:', n.getCorrect('output'))
 
     if ask("Do you want to run an XOR BACKPROP network in QUICKPROP mode?"):
-        print "XOR Quickprop mode: .............................."
+        print("XOR Quickprop mode: ..............................")
         n = Network()
         n.addLayers(2, 2, 1)
         n.quickprop = 1
@@ -3672,10 +3663,10 @@ if __name__ == '__main__':
         n.resetEpoch = 100
         n.resetLimit = 5
         n.train()
-        print "getError('output') = (tss, correct, total):", n.getError("output")
-        print "getError('output', 'output') :", n.getError("output", "output")
+        print("getError('output') = (tss, correct, total):", n.getError("output"))
+        print("getError('output', 'output') :", n.getError("output", "output"))
         # test crossvalidation ---------------------------------
-        print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
+        print("Testing crossvalidation.. saving network sweep in 'sample.cv'...")
         import posix, posixpath
         if posixpath.exists("sample.cv"):
             posix.unlink("sample.cv")
@@ -3685,9 +3676,9 @@ if __name__ == '__main__':
         n.sweep()
         n.learning = 1
         n.crossValidationSampleRate = 0
-        print "Loading crossvalidation from 'sample.cv'..."
+        print("Loading crossvalidation from 'sample.cv'...")
         n.loadCrossValidation("sample.cv")
-        print "Corpus:", n.crossValidationCorpus
+        print("Corpus:", n.crossValidationCorpus)
         # reset to something normal
         n = Network()
         n.addLayers(2, 2, 1)
@@ -3695,7 +3686,7 @@ if __name__ == '__main__':
         n.setTargets( [[0], [1], [1], [0]] )
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode with cross validation?"):
-        print "XOR Backprop batch mode: .............................."
+        print("XOR Backprop batch mode: ..............................")
         n.crossValidationCorpus = ({"input" : [0.1, 0.1], "output" : [0.0]},
                                    {"input" : [0.2, 0.2], "output" : [0.0]},
                                    {"input" : [0.3, 0.3], "output" : [0.0]},
@@ -3714,7 +3705,7 @@ if __name__ == '__main__':
         n.train()
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with NON-HYPERBOLIC ERROR?"):
-        print "XOR Backprop non-batch mode non-hyperbloc error..........."
+        print("XOR Backprop non-batch mode non-hyperbloc error...........")
         n.setBatch(0)
         n.hyperbolicError = 0
         n.reset()
@@ -3723,7 +3714,7 @@ if __name__ == '__main__':
         n.setReportRate(10)
         n.train()
         if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with cross validation?"):
-            print "XOR Backprop non-batch mode: .........................."
+            print("XOR Backprop non-batch mode: ..........................")
             n.setBatch(0)
             n.reset()
             n.setEpsilon(0.5)
@@ -3732,24 +3723,24 @@ if __name__ == '__main__':
             n.train()
         if ask("Do you want to test prop_from() method?"):
             n.prop_from([n.getLayer('input')])
-            print "Output activations: ", n.getLayer('output').getActivations()
-            print "Hidden activations: ", n.getLayer('hidden').getActivations()
-            print "Now propagating directly from hidden layer..."
+            print("Output activations: ", n.getLayer('output').getActivations())
+            print("Hidden activations: ", n.getLayer('hidden').getActivations())
+            print("Now propagating directly from hidden layer...")
             n.prop_from([n.getLayer('hidden')])
-            print "Output activations (should not have changed): ",  n.getLayer('output').getActivations()
-            print "Hidden activations (should not have changed): ", n.getLayer('hidden').getActivations()
-            print "Now setting hidden activations..."
+            print("Output activations (should not have changed): ",  n.getLayer('output').getActivations())
+            print("Hidden activations (should not have changed): ", n.getLayer('hidden').getActivations())
+            print("Now setting hidden activations...")
             n.getLayer('hidden').setActivations([0.0, 0.0])
-            print "Output activations: ", n.getLayer('output').getActivations()
-            print "Hidden activations: ", n.getLayer('hidden').getActivations()
-            print "Now propagating directly from hidden layer..."
+            print("Output activations: ", n.getLayer('output').getActivations())
+            print("Hidden activations: ", n.getLayer('hidden').getActivations())
+            print("Now propagating directly from hidden layer...")
             n.prop_from([n.getLayer('hidden')])
-            print "Output activations: ",  n.getLayer('output').getActivations()
-            print "Hidden activations: ", n.getLayer('hidden').getActivations()
+            print("Output activations: ",  n.getLayer('output').getActivations())
+            print("Hidden activations: ", n.getLayer('hidden').getActivations())
 
             
     if ask("Do you want to test an AND network?"):
-        print "Creating and running and network..."
+        print("Creating and running and network...")
         n = Network()
         n.setSeed(114366.64)
         n.add(Layer('input',2)) 
@@ -3763,26 +3754,26 @@ if __name__ == '__main__':
         n.train() 
         if ask("Do you want to pickle the previous network?"):
             import pickle
-            print "Pickling network..."
-            print "Filename to save data (.pickle): ",
+            print("Pickling network...")
+            print("Filename to save data (.pickle): ", end=' ')
             filename = sys.stdin.readline().strip()
-            print "Setting log layer..."
+            print("Setting log layer...")
             n.logLayer('input', 'input.log')
             # previously did not work if layer had a file pointer
             n.saveNetworkToFile(filename)
-            print "Loading file..."
+            print("Loading file...")
             fp = open(filename + ".pickle")
             n = pickle.load(fp)
             fp.close()
-            print "Sweeping..."
+            print("Sweeping...")
             n.setInteractive(1)
             n.sweep()
 
     if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2?"):
-        print "SRN ..................................................."
-        print "It is not possible to perfectly predict the sequences"
-        print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
-        print "follow."
+        print("SRN ...................................................")
+        print("It is not possible to perfectly predict the sequences")
+        print("1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may")
+        print("follow.")
         n = SRN()
         n.setSeed(114366.64)
         n.addSRNLayers(3,2,3)
@@ -3804,9 +3795,9 @@ if __name__ == '__main__':
         temp = time.time()
         n.train()
         timer = time.time() - temp
-        print "Time...", timer
+        print("Time...", timer)
     if ask("Do you want to train an SRN to predict the seqences 1,2,3,2,1?"):
-        print "SRN ..................................................."
+        print("SRN ...................................................")
         n = SRN()
         n.setSeed(114366.64)
         n.addSRNLayers(3,5,3)
@@ -3826,12 +3817,12 @@ if __name__ == '__main__':
         temp = time.time()
         n.train()
         timer = time.time() - temp
-        print "Time...", timer
+        print("Time...", timer)
         n.setLearning(0)
         n.setInteractive(1)
         n.sweep()
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
-        print "Auto-associate .........................................."
+        print("Auto-associate ..........................................")
         n = Network()
         n.setSeed(114366.64)
         n.addThreeLayers(3,2,3)
@@ -3848,7 +3839,7 @@ if __name__ == '__main__':
         n.train()
 
     if ask("Do you want to test a raam network?"):
-        print "Raam ...................................................."
+        print("Raam ....................................................")
         # create network:
         raam = SRN()
         raam.setSeed(114366.64)
@@ -3887,41 +3878,41 @@ if __name__ == '__main__':
         temp = time.time()
         raam.train()
         timer = time.time() - temp
-        print "Time...", timer
+        print("Time...", timer)
         raam.setLearning(0)
         raam.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
-            print "Filename to save network (.pickle): ",
+            print("Filename to save network (.pickle): ", end=' ')
             filename = sys.stdin.readline().strip()
             raam.saveNetworkToFile(filename)
             raam.sweep()
         if ask("Do you want to save weights of previous network?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             raam.saveWeightsToFile(filename)
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
-                print "Loading standard style weights..."
+                print("Loading standard style weights...")
                 raam.loadWeightsFromFile(filename)
                 raam.sweep()
         if ask("Do you want to save weights of previous network in plain format?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             raam.saveWeightsToFile(filename, 'plain')
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
-                print"Loading plain style weights..."
+                print("Loading plain style weights...")
                 raam.loadWeightsFromFile(filename, 'plain')
                 raam.sweep()
         if ask("Do you want to save weights of previous network in tlearn format?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             raam.saveWeightsToFile(filename, 'tlearn')
             if ask("Do you want to try loading the tlearn style weights you just saved (and sweep())?"):
-                print "Loading tlearn style weights..."
+                print("Loading tlearn style weights...")
                 raam.loadWeightsFromFile(filename, 'tlearn')
                 raam.sweep()
                 
     if ask("Do you want to train a network to both predict and auto-associate?"):
-        print "SRN and auto-associate ..................................."
+        print("SRN and auto-associate ...................................")
         n = SRN()
         n.setSeed(114366.64)
         n.addSRNLayers(3,3,3)
@@ -3943,343 +3934,343 @@ if __name__ == '__main__':
         temp = time.time()
         n.train()
         timer = time.time() - temp
-        print "Time...", timer
+        print("Time...", timer)
         n.setLearning(0)
         n.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
-            print "Filename to save network (.pickle): ",
+            print("Filename to save network (.pickle): ", end=' ')
             filename = sys.stdin.readline().strip()
             n.saveNetworkToFile(filename)
             n.sweep()
         if ask("Do you want to save weights of previous network?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             n.saveWeightsToFile(filename)
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
-                print "Loading standard style weights..."
+                print("Loading standard style weights...")
                 n.loadWeightsFromFile(filename)
                 n.sweep()
         if ask("Do you want to save weights of previous network in plain format?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             n.saveWeightsToFile(filename, 'plain')
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
-                print"Loading plain style weights..."
+                print("Loading plain style weights...")
                 n.loadWeightsFromFile(filename, 'plain')
                 n.sweep()
         if ask("Do you want to save weights of previous network in tlearn format?"):
-            print "Filename to save weights (.wts): ",
+            print("Filename to save weights (.wts): ", end=' ')
             filename = sys.stdin.readline().strip() + ".wts"
             n.saveWeightsToFile(filename, 'tlearn')
             if ask("Do you want to try loading the tlearn style weights you just saved (and sweep())?"):
-                print "Loading tlearn style weights..."
+                print("Loading tlearn style weights...")
                 n.loadWeightsFromFile(filename, 'tlearn')
                 n.sweep()
                 
     if ask("Do you want to change the size of a hidden layer in 3-3-3 network?"):
-        print "Creating 3-3-3 network..."
+        print("Creating 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
         n.display()
-        print "New hidden layer size: ",
+        print("New hidden layer size: ", end=' ')
         size = int(sys.stdin.readline().strip())
         if not isinstance(size, int):
             size = 0
-        print "Changing size of hidden layer..."
+        print("Changing size of hidden layer...")
         try:
             # exception thrown from changeSize in Connection class
             n.changeLayerSize('hidden', size)
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
             n.display()
 
     if ask("Do you want to test LayerError exceptions in Layer class?"):
-        print "Trying to create a layer with size zero..."
+        print("Trying to create a layer with size zero...")
         try:
             l = Layer('broken', 0)
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to change a layer of size three to size zero with changeSize()..."
+            print("No exception caught.")
+        print("Trying to change a layer of size three to size zero with changeSize()...")
         l = Layer('broken', 3)
         try:
             l.changeSize(0)
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to call getWinner for a layer attribute that doesn't exist..."
+            print("No exception caught.")
+        print("Trying to call getWinner for a layer attribute that doesn't exist...")
         l = Layer('broken', 3)
         try:
             l.getWinner('someAttribute')
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         # note that backprop() resets target flag
-        print "Trying to call getWinner('target') where target has not been set..."
+        print("Trying to call getWinner('target') where target has not been set...")
         l = Layer('broken', 3)
         try:
             l.getWinner('target')
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to call setActivations() for a layer whose activations have already been set..."
+            print("No exception caught.")
+        print("Trying to call setActivations() for a layer whose activations have already been set...")
         l = Layer('broken', 3)
         l.setActivations(.5)
         try:
             l.setActivations(.2)
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."     
-        print "Trying to call copyActivations() for a layer whose activations have already been set..."
+            print("No exception caught.")     
+        print("Trying to call copyActivations() for a layer whose activations have already been set...")
         l = Layer('broken', 3)
         l.setActivations(.5)
         try:
             l.copyActivations([.2,.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to call copyActivations() with an array of incorrect size..."
+            print("No exception caught.")
+        print("Trying to call copyActivations() with an array of incorrect size...")
         l = Layer('broken', 3)
         try:
             l.copyActivations([.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         l = Layer('broken', 3)
         try:
             l.copyActivations([.2,.2,.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to call setTargets() for a layer whose activations have already been set..."
+            print("No exception caught.")
+        print("Trying to call setTargets() for a layer whose activations have already been set...")
         l = Layer('broken', 3)
         l.setTargets(.5)
         try:
             l.setTargets(.2)
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."     
-        print "Trying to call copyTargets() for a layer whose activations have already been set..."
+            print("No exception caught.")     
+        print("Trying to call copyTargets() for a layer whose activations have already been set...")
         l = Layer('broken', 3)
         l.setTargets(.5)
         try:
             l.copyTargets([.2,.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to call copyTargets() with an array of incorrect size..."
+            print("No exception caught.")
+        print("Trying to call copyTargets() with an array of incorrect size...")
         l = Layer('broken', 3)
         try:
             l.copyTargets([.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         l = Layer('broken', 3)
         try:
             l.copyTargets([.2,.2,.2,.2])
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
                                  
     if ask("Do you want to test arrayify and unArrayify?"):
-        print "Creating a 3-3-3 network..."
+        print("Creating a 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
-        print "Arrayifying network..."
+        print("Arrayifying network...")
         array = n.arrayify()
         displayArray('Test Array', array, 6)
-        print "unArrayifying network..."
+        print("unArrayifying network...")
         n.unArrayify(array)
-        print "Now test unArrayify() for a short gene..."
+        print("Now test unArrayify() for a short gene...")
         del array[-1:]
         try:
             n.unArrayify(array)
-        except IndexError, err:
-            print err
+        except IndexError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Now test unArrayigy() for long gene..."
+            print("No exception caught.")
+        print("Now test unArrayigy() for long gene...")
         array.extend([0.1,0.2])
         try:
             n.unArrayify(array)
-        except IndexError, err:
-            print err
+        except IndexError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
 
     if ask("Do you want to test load exception?"):
-        print "Creating a 3-3-3 network..."
+        print("Creating a 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
-        print "Loading input..."
+        print("Loading input...")
         try:
             n.copyActivations(n["input"], n.inputs[0])
-        except IndexError, err:
-            print err
+        except IndexError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         
     if ask("Do you want to test association and prediction exceptions?"):
-        print "Creating a 3-3-3 network..."
+        print("Creating a 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.associate('hidden','output')
-        print "Attempting to associate hidden and output layers..."
+        print("Attempting to associate hidden and output layers...")
         try:
             n.step()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         n.resetFlags()
         n.associate('input','hidden')
-        print "Attempting to associate input and hidden layers..."
+        print("Attempting to associate input and hidden layers...")
         try:
             n.step()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Creating SRN network..."
+            print("No exception caught.")
+        print("Creating SRN network...")
         n = SRN()
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.predict('hidden','output')
         n.setSequenceType("ordered-continuous")
-        print "Attempting to predict hidden and output layers..."
+        print("Attempting to predict hidden and output layers...")
         try:
             n.step()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         n.resetFlags()
         n.predict('input','hidden')
-        print "Attempting to predict input and hidden layers..."
+        print("Attempting to predict input and hidden layers...")
         try:
             n.step()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
 
     if ask("Do you want to test verifyInputs and verifyTargets?"):
-        print "Creating a 3-3-3 network..."
+        print("Creating a 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
         try:
             n.verifyInputs()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         try:
             n.verifyTargets()
-        except LayerError, err:
-            print err
+        except LayerError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
 
     if ask("Do you want to test NetworkError exceptions?"):
-        print "Creating a 3-3-3 network..."
+        print("Creating a 3-3-3 network...")
         n = Network()
         n.addThreeLayers(3,3,3)
-        print "Calling sweep() without inputs..."
+        print("Calling sweep() without inputs...")
         try:
             # NetworkError here indicates that no inputs have been set
             n.sweep()
-        except NetworkError, err:
-            print err
+        except NetworkError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Calling propagate on empty network..."
+            print("No exception caught.")
+        print("Calling propagate on empty network...")
         n = Network()
         try:
             n.propagate()
-        except NetworkError, err:
-            print err
+        except NetworkError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Calling propagate with no connections..."
+            print("No exception caught.")
+        print("Calling propagate with no connections...")
         n.add(Layer('input', 3))
         n.add(Layer('output',3))
         try:
             n.propagate()
-        except NetworkError, err:
-            print err
+        except NetworkError as err:
+            print(err)
         else:
-            print "No exception caught."
-        print "Trying to use a nonexistant connection..."
+            print("No exception caught.")
+        print("Trying to use a nonexistant connection...")
         try:
             n.getConnection('input','output')
-        except NetworkError, err:
-            print err
+        except NetworkError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
         try:
             n.getWeights('input','output')
-        except NetworkError, err:
-            print err
+        except NetworkError as err:
+            print(err)
         else:
-            print "No exception caught."
+            print("No exception caught.")
 
     if ask("Do you want to test SRN exceptions?"):
-        print "Creating SRN network..."
+        print("Creating SRN network...")
         n = SRN()
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.setSequenceType("ordered-continuous")
 
     if ask("Do you want to test verifyArchitecture()?"):
-        print "Creating normal 3-3-3 architecture..."
+        print("Creating normal 3-3-3 architecture...")
         n = Network()
         n.addThreeLayers(3,3,3)
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "ERROR: Caught exception. ", err
+        except Exception as err:
+            print("ERROR: Caught exception. ", err)
         else:
-            print "Good! Didn't catch exception."
-        print "Giving two layers the same name..."
+            print("Good! Didn't catch exception.")
+        print("Giving two layers the same name...")
         n.getLayer('hidden').name = 'input'
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
-        print "Creating 3-3-3 architecture with context layer..."
+            print("ERROR: Didn't catch exception.")
+        print("Creating 3-3-3 architecture with context layer...")
         n = SRN()
         n.addSRNLayers(3,3,3)
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "ERROR: Caught exception. ", err
+        except Exception as err:
+            print("ERROR: Caught exception. ", err)
         else:
-            print "Good! Didn't catch exception."
-        print "Connecting context to hidden layer again..."
+            print("Good! Didn't catch exception.")
+        print("Connecting context to hidden layer again...")
         n.connect('context','hidden')
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
-        print "Creating an architecture with a cycle..."
+            print("ERROR: Didn't catch exception.")
+        print("Creating an architecture with a cycle...")
         try:
             n = Network()
             n.add(Layer('1',1))
@@ -4293,11 +4284,11 @@ if __name__ == '__main__':
             n.connect('4','3') #cycle
             n.connect('4','5')
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
-        print "Creating an architecture with an unconnected layer..."
+            print("ERROR: Didn't catch exception.")
+        print("Creating an architecture with an unconnected layer...")
         n = Network()
         n.add(Layer('1',1))
         n.add(Layer('2',1))
@@ -4305,11 +4296,11 @@ if __name__ == '__main__':
         n.connect('1','3')
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
-        print "Creating an architecture with two unconnected subarchitectures..."
+            print("ERROR: Didn't catch exception.")
+        print("Creating an architecture with two unconnected subarchitectures...")
         n = Network()
         n.add(Layer('1',1))
         n.add(Layer('2',1))
@@ -4319,11 +4310,11 @@ if __name__ == '__main__':
         n.connect('2','4')
         try:
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
-        print "Creating an architecture with a connection between a layer and itself."
+            print("ERROR: Didn't catch exception.")
+        print("Creating an architecture with a connection between a layer and itself.")
         n = Network()
         try:
             n.add(Layer('1',1))
@@ -4331,10 +4322,10 @@ if __name__ == '__main__':
             n.connect('1','2')
             n.connect('2','2')
             n.verifyArchitecture()
-        except Exception, err:
-            print "Good! Caught exception. ", err
+        except Exception as err:
+            print("Good! Caught exception. ", err)
         else:
-            print "ERROR: Didn't catch exception."
+            print("ERROR: Didn't catch exception.")
 
     if ask("Test the mapping input/target system?"):
             n = Network()
@@ -4359,25 +4350,25 @@ if __name__ == '__main__':
                           [0.0]])
             n.train()
     if ask("Test the new step() method?"):
-        print "Creating 2-2-1 network..."
+        print("Creating 2-2-1 network...")
         n = Network()
         n.addThreeLayers(2,2,1)
         #n.setInteractive(1)
-        print "Using step with arguments..."
+        print("Using step with arguments...")
         n.step(input = [1.0,0.0], output = [1.0])
-        print "Using step without arguments..."
+        print("Using step without arguments...")
         n.getLayer('input').copyActivations([1.0,1.0])
         n.getLayer('output').copyTargets([0.0])
         n.step()
-        print "Creating SRN Network..."
+        print("Creating SRN Network...")
         n = SRN()
         n.addSRNLayers(3,3,3)
         n.setSequenceType("ordered-continuous")
         #n.setInteractive(1)
-        print "Using step with arguments..."
+        print("Using step with arguments...")
         n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], initContext = 1)
         n.step(input = [0.0,1.0,1.0], output = [0.0, 1.0, 1.0], initContext = 0)
-        print "Using step without arguments..."
+        print("Using step without arguments...")
         n.getLayer('input').copyActivations([1.0,0.0,0.0])
         n.getLayer('output').copyTargets([1.0, 0.0, 0.0])
         n.step() # if you don't want context cleared, initContext = 0
@@ -4387,23 +4378,23 @@ if __name__ == '__main__':
         n.addThreeLayers(2,2,1)
         try:
             n.setInputs([0.0,1.0])
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
         try:
             n.setInputs([[[0.0]]])
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
         try:
             n.setTargets([['two']])
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
         n.patterned = 1
         try:
             n.setTargets([['two']])
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
         else:
-            print "Ok, No exception caught. (changed setTargets)"
+            print("Ok, No exception caught. (changed setTargets)")
         try:
             n = Network()
             n.add(Layer('1',2))
@@ -4426,8 +4417,8 @@ if __name__ == '__main__':
             n.setEpsilon(0.5)
             n.setMomentum(.975)
             n.train()
-        except Exception, err:
-            print "Good!", err
+        except Exception as err:
+            print("Good!", err)
         try:
             n = Network()
             n.add(Layer('input',2))
@@ -4451,5 +4442,5 @@ if __name__ == '__main__':
                           [1.0],
                           [0.0]])
             n.train()
-        except Exception, err:
-            print "Good!", err
+        except Exception as err:
+            print("Good!", err)

@@ -24,7 +24,7 @@ import threading
 try:
     import serial
 except:
-    print "WARNING: pyserial not loaded: roomba won't work!"
+    print("WARNING: pyserial not loaded: roomba won't work!")
 import time
 
 def lookupRC(val):
@@ -110,7 +110,7 @@ class Roomba(Robot): # myro robot
                 elif sensor == "all":
                     return {"ir": self.get("ir"),}
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             for position in positions:
                 if sensor == "ir":
                     if position in ["left", "right"]:
@@ -119,7 +119,7 @@ class Roomba(Robot): # myro robot
                         position = int(position)
                     retvals.append(self._getIR(position))
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             if len(retvals) == 1:
                 return retvals[0]
             else:
@@ -146,7 +146,7 @@ class Roomba(Robot): # myro robot
             self.startsong = position
             return None
         else:
-            raise ("invalid set item name: '%s'" % item)
+            raise "invalid set item name: '%s'"
 
 def freq2num(f):
     # 32.70 is arbitrarily zero octave
@@ -163,8 +163,8 @@ def freq2num(f):
 def bitOfByte( bit, byte ):
     """ returns a 0 or 1: the value of the 'bit' of 'byte' """
     if bit < 0 or bit > 7:
-        print 'Your bit of', bit, 'is out of range (0-7)'
-        print 'returning 0'
+        print('Your bit of', bit, 'is out of range (0-7)')
+        print('returning 0')
         return 0
     return ((byte >> bit) & 0x01)
 
@@ -241,7 +241,7 @@ class RoombaIRDevice(Device):
                        'rightCliff': 4,
                        'virtualWall': 5,
                        'commIR': 6,
-                       'all': range(7)}
+                       'all': list(range(7))}
         self.startDevice()
     def __len__(self):
         return 7
@@ -318,7 +318,7 @@ class RoombaRobot(PyroRobot):
         self.buffer = ''
         self.debug = 0
         if simulator == 1:
-            raise AttributeError, "simulator no longer supported"
+            raise AttributeError("simulator no longer supported")
         else:
             if subtype == "Roomba":
                 if port == None:
@@ -329,7 +329,7 @@ class RoombaRobot(PyroRobot):
                 portnum = int(port[3:])
                 if portnum >= 10:
                     port = r'\\.\COM%d' % (portnum)
-            print "Roomba opening port '%s' with baudrate %s ..." % (port, rate)
+            print("Roomba opening port '%s' with baudrate %s ..." % (port, rate))
             try:
                 myro.globvars.robot.sc.close()
             except KeyboardInterrupt:
@@ -356,7 +356,7 @@ class RoombaRobot(PyroRobot):
 	for name in self.builtinDevices:
             self.startDevice(name)
 	self.update() 
-        print "Done loading Roomba."
+        print("Done loading Roomba.")
 
     def startDeviceBuiltin(self, name, index=0):
         if name == "ir":
@@ -522,11 +522,11 @@ class RoombaRobot(PyroRobot):
         
     def getSensor(dev, value = None):
         if value == None:
-                return dev.sensorData.keys()
-	elif dev.sensorData.has_key(value):
+                return list(dev.sensorData.keys())
+	elif value in dev.sensorData:
                 return dev.sensorData[value]
 	else:
-		print "Sorry not a valid Sensor. Use %s" % dev.sensorData.keys()
+		print("Sorry not a valid Sensor. Use %s" % list(dev.sensorData.keys()))
 		return None
     
     def setMode(dev, value):

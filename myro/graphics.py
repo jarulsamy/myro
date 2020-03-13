@@ -125,17 +125,17 @@ http://mcsp.wartburg.edu/zelle/python for a quick reference"""
 #     Added Entry boxes.
 
 import time, os, sys
-import Tkinter
-import globvars
+import tkinter
+from . import globvars
 try: 	 
      import PIL.Image as PyImage	     
 except: 	 
-     print >> sys.stderr, "WARNING: Image not found; do you need Python Imaging Library?" 	 
+     print("WARNING: Image not found; do you need Python Imaging Library?", file=sys.stderr) 	 
 
 try:
      import ImageTk
 except:
-     print >> sys.stderr, "WARNING: ImageTk not found; do you need the TkInter Library?"
+     print("WARNING: ImageTk not found; do you need the TkInter Library?", file=sys.stderr)
 
 
 tk = Tkinter	 
@@ -170,8 +170,8 @@ DEAD_THREAD = "Graphics thread quit unexpectedly"
 
 import myro.globvars
 from copy import copy
-from Queue import Queue
-import thread
+from queue import Queue
+import _thread
 import atexit
 
 _tk_request = Queue(0)
@@ -194,7 +194,7 @@ def _tk_thread():
         _root.mainloop()
     except:
         _root = None
-        print >> sys.stderr, "ERROR: graphics did not start"
+        print("ERROR: graphics did not start", file=sys.stderr)
 
 def _tk_pump():
     global _thread_running
@@ -219,7 +219,7 @@ def _tk_pump():
         try:
             _root.after(_POLL_INTERVAL, _tk_pump)
         except:
-            print "Graphics: Can't pump anymore"
+            print("Graphics: Can't pump anymore")
 
 if myro.globvars.runtkthread:
     def _tkCall(f, *args, **kw):
@@ -228,7 +228,7 @@ if myro.globvars.runtkthread:
         #   f is required or when synchronizing the threads.
         # call to _tkCall in Tk thread == DEADLOCK !
         if not _thread_running:
-            raise GraphicsError, DEAD_THREAD
+            raise GraphicsError(DEAD_THREAD)
         def func():
             return f(*args, **kw)
         _tk_request.put((func,True),True)
@@ -241,7 +241,7 @@ if myro.globvars.runtkthread:
         #global _exception_info
         #_exception_info = None
         if not _thread_running:
-            raise GraphicsError, DEAD_THREAD
+            raise GraphicsError(DEAD_THREAD)
         def func():
             return f(*args, **kw)
         _tk_request.put((func,False),True)
@@ -264,7 +264,7 @@ def _tkShutdown():
 
 # Fire up the separate Tk thread
 if myro.globvars.runtkthread:
-    thread.start_new_thread(_tk_thread,())
+    _thread.start_new_thread(_tk_thread,())
 else:
     _root = tk.Tk()
     myro.globvars.gui = _root
@@ -287,7 +287,7 @@ def moveToTop(window):
 ############################################################################
 # Graphics classes start here
 
-import tkFileDialog, tkColorChooser, Dialog
+import tkinter.filedialog, tkinter.colorchooser, tkinter.dialog
 from myro.widgets import AlertDialog
 
 def distance(tuple1, tuple2):
@@ -315,7 +315,7 @@ class AskDialog(AlertDialog):
         AlertDialog.SetupDialog(self)
         self.bitmap['bitmap'] = 'question'
         first = 1
-        qlist = self.qdict.keys()
+        qlist = list(self.qdict.keys())
         qlist.sort()
         for text in qlist:
             default = self.qdict[text]
@@ -330,9 +330,9 @@ class AskDialog(AlertDialog):
         self.CreateButton("Cancel", self.CancelPressed)
 
 def askQuestion(question, answers = ["Yes", "No"], title = "Myro Question",
-                default = 0, bitmap=Dialog.DIALOG_ICON):
+                default = 0, bitmap=tkinter.dialog.DIALOG_ICON):
     """ Displays a question and returns answer. """
-    d = _tkCall(Dialog.Dialog, myro.globvars.gui,
+    d = _tkCall(tkinter.dialog.Dialog, myro.globvars.gui,
                 title=title, default=default, bitmap=bitmap,
                 text=question, strings=answers)
     return answers[int(d.num)]
@@ -341,18 +341,18 @@ _askQuestion = askQuestion
 
 def pickAFile():
     """ Returns a filename """
-    path = _tkCall(tkFileDialog.askopenfilename)
+    path = _tkCall(tkinter.filedialog.askopenfilename)
     return path
 
 def pickAColor():
     """ Returns an RGB color tuple """
-    color = _tkCall(tkColorChooser.askcolor)
+    color = _tkCall(tkinter.colorchooser.askcolor)
     if color[0] != None:
         return Color(color[0][0], color[0][1], color[0][2])
 
 def pickAFolder():
     """ Returns a folder path/name """
-    folder = _tkCall(tkFileDialog.askdirectory)
+    folder = _tkCall(tkinter.filedialog.askdirectory)
     if folder == '':
         folder = myro.globvars.mediaFolder
     return folder
@@ -416,7 +416,7 @@ class GraphWin(tk.Canvas):
 
     def __checkOpen(self):
         if self.closed:
-            raise GraphicsError, "window is closed"
+            raise GraphicsError("window is closed")
 
     def setBackground(self, color):
         """Set background color of the window"""
@@ -479,7 +479,7 @@ class GraphWin(tk.Canvas):
         while self.mouseX == None or self.mouseY == None:
             #self.update()
             _tkCall(self.update)
-            if self.isClosed(): raise GraphicsError, "getMouse in closed window"
+            if self.isClosed(): raise GraphicsError("getMouse in closed window")
             time.sleep(.1) # give up thread
         x,y = self.toWorld(self.mouseX, self.mouseY)
         self.mouseX = None
@@ -490,7 +490,7 @@ class GraphWin(tk.Canvas):
         """Return mouse click last mouse click or None if mouse has
         not been clicked since last call"""
         if self.isClosed():
-            raise GraphicsError, "checkMouse in closed window"
+            raise GraphicsError("checkMouse in closed window")
         _tkCall(self.update)
         if self.mouseX != None and self.mouseY != None:
             x,y = self.toWorld(self.mouseX, self.mouseY)
@@ -622,8 +622,8 @@ class GraphicsObject:
         window. Raises an error if attempt made to draw an object that
         is already visible."""
 
-        if self.canvas and not self.canvas.isClosed(): raise GraphicsError, OBJ_ALREADY_DRAWN
-        if graphwin.isClosed(): raise GraphicsError, "Can't draw to closed window"
+        if self.canvas and not self.canvas.isClosed(): raise GraphicsError(OBJ_ALREADY_DRAWN)
+        if graphwin.isClosed(): raise GraphicsError("Can't draw to closed window")
         self.canvas = graphwin
         #self.id = self._draw(graphwin, self.config)
         self.id = _tkCall(self._draw, graphwin, self.config)
@@ -672,8 +672,8 @@ class GraphicsObject:
         # Internal method for changing configuration of the object
         # Raises an error if the option does not exist in the config
         #    dictionary for this object
-        if not self.config.has_key(option):
-            raise GraphicsError, UNSUPPORTED_METHOD
+        if option not in self.config:
+            raise GraphicsError(UNSUPPORTED_METHOD)
         options = self.config
         options[option] = setting
         if self.canvas and not self.canvas.isClosed():
@@ -813,7 +813,7 @@ class Line(_BBox):
         
     def setArrow(self, option):
         if not option in ["first","last","both","none"]:
-            raise GraphicsError, BAD_OPTION
+            raise GraphicsError(BAD_OPTION)
         self._reconfig("arrow", option)
         
 
@@ -823,7 +823,7 @@ class Polygon(GraphicsObject):
         # if points passed as a list, extract it
         if len(points) == 1 and type(points[0] == type([])):
             points = points[0]
-        self.points = map(Point.clone, points)
+        self.points = list(map(Point.clone, points))
         self.p1 = Point(min([p.x for p in self.points]),
                         min([p.y for p in self.points]))
         self.p2 = Point(max([p.x for p in self.points]),
@@ -831,12 +831,12 @@ class Polygon(GraphicsObject):
         GraphicsObject.__init__(self, ["outline", "width", "fill"])
         
     def clone(self):
-        other = apply(Polygon, self.points)
+        other = Polygon(*self.points)
         other.config = self.config.copy()
         return other
 
     def getPoints(self):
-        return map(Point.clone, self.points)
+        return list(map(Point.clone, self.points))
 
     def _move(self, dx, dy):
         for p in self.points:
@@ -851,7 +851,7 @@ class Polygon(GraphicsObject):
             args.append(x)
             args.append(y)
         args.append(options)
-        return apply(GraphWin.create_polygon, args) 
+        return GraphWin.create_polygon(*args) 
 
 class Text(GraphicsObject):
     
@@ -889,21 +889,21 @@ class Text(GraphicsObject):
                 f,s,b = self.config['font']
                 self._reconfig("font",(face,s,b))
             else:
-                raise GraphicsError, BAD_OPTION
+                raise GraphicsError(BAD_OPTION)
 
         def setSize(self, size):
             if 5 <= size <= 36:
                 f,s,b = self.config['font']
                 self._reconfig("font", (f,size,b))
             else:
-                raise GraphicsError, BAD_OPTION
+                raise GraphicsError(BAD_OPTION)
 
         def setStyle(self, style):
             if style in ['bold','normal','italic', 'bold italic']:
                 f,s,b = self.config['font']
                 self._reconfig("font", (f,s,style))
             else:
-                raise GraphicsError, BAD_OPTION
+                raise GraphicsError(BAD_OPTION)
 
         def setTextColor(self, color):
             self.setFill(color)
@@ -981,19 +981,19 @@ class Entry(GraphicsObject):
         if face in ['helvetica','arial','courier','times roman']:
             self._setFontComponent(0, face)
         else:
-            raise GraphicsError, BAD_OPTION
+            raise GraphicsError(BAD_OPTION)
 
     def setSize(self, size):
         if 5 <= size <= 36:
             self._setFontComponent(1,size)
         else:
-            raise GraphicsError, BAD_OPTION
+            raise GraphicsError(BAD_OPTION)
 
     def setStyle(self, style):
         if style in ['bold','normal','italic', 'bold italic']:
             self._setFontComponent(2,style)
         else:
-            raise GraphicsError, BAD_OPTION
+            raise GraphicsError(BAD_OPTION)
 
     def setTextColor(self, color):
         self.color=color
@@ -1049,7 +1049,7 @@ class Picture(object):
         self.palette = self.image.getpalette()
         self.filename = 'Camera Image'
         if self.pixels == None:
-            raise AttributeError, "Myro needs at least Python Imaging Library version 1.1.6"
+            raise AttributeError("Myro needs at least Python Imaging Library version 1.1.6")
         #self.image = ImageTk.PhotoImage(self.temp, master=_root)
         maxsize = max(self.width, self.height) 
         smallWindowThreshold = 250
@@ -1088,7 +1088,7 @@ class Picture(object):
         self.palette = self.image.getpalette()
         self.filename = filename
         if self.pixels == None:
-            raise AttributeError, "Myro needs at least Python Imaging Library version 1.1.6"
+            raise AttributeError("Myro needs at least Python Imaging Library version 1.1.6")
     def __repr__(self):
         return "<Picture instance (%d x %d)>" % (self.width, self.height)
     def getPixels(self):
@@ -1206,8 +1206,8 @@ class Color(object):
             self.rgb = rgb[:-1]
             self.alpha = rgb[-1]
         else:
-            raise AttributeError, "invalid arguments to Color(); needs at least 3 integers: red, green, blue (transparency optional)"
-        self.rgb = map(lambda v: int(max(min(v,255),0)), self.rgb)
+            raise AttributeError("invalid arguments to Color(); needs at least 3 integers: red, green, blue (transparency optional)")
+        self.rgb = [int(max(min(v,255),0)) for v in self.rgb]
     def __repr__(self):
         return "<Color instance (r=%d, g=%d, b=%d, a=%d)>" % (self.rgb[0],
                                                                self.rgb[1],
@@ -1274,7 +1274,7 @@ class Image(GraphicsObject):
             self.anchor = center_point_and_pixmap[0].clone()
             self.pixmap = center_point_and_pixmap[1]
         else:
-            raise AttributeError, "invalid parameters to Image(); need 1 or 2"
+            raise AttributeError("invalid parameters to Image(); need 1 or 2")
 
 
         self.imageId = Image.idCount        # give this image a number
@@ -1378,14 +1378,14 @@ class Pixmap:
         if type(value) ==  int:
             return [value, value, value]
         else:
-            return map(int, value.split()) 
+            return list(map(int, value.split())) 
 
-    def setPixel(self, x, y, (r,g,b)):
+    def setPixel(self, x, y, xxx_todo_changeme):
         """Sets pixel (x,y) to the color given by RGB values r, g, and b.
         r,g,b should be in range(256)
 
         """
-        
+        (r,g,b) = xxx_todo_changeme
         _tkExec(self.image.put, "{%s}"%color_rgb(r,g,b), (x, y))
 
     def clone(self):
@@ -1417,7 +1417,7 @@ def rgb_color( color ):
    if color[0] == '#':
       color=color[1:]
    if len(color) != 6:
-      raise ValueError, "#%s incorrect format use #rrggbb" % color
+      raise ValueError("#%s incorrect format use #rrggbb" % color)
    r, g, b = color[:2], color[2:4], color[4:]
    r, g, b = [int(n, 16) for n in (r, g, b)]
    return (r, g, b)
@@ -1518,12 +1518,12 @@ def _beep(duration, frequency1, frequency2):
     time.sleep(.1) # simulated delay, like real robot
 
 
-class Joystick(Tkinter.Toplevel):
+class Joystick(tkinter.Toplevel):
     def __init__(self, robot = None, showSensors = 0):
         _tkCall(self.__init_help, _root, robot, showSensors)
 
     def __init_help(self, parent = None, robot = None, showSensors = 0):
-        Tkinter.Toplevel.__init__(self, parent)
+        tkinter.Toplevel.__init__(self, parent)
         self.debug = 0
         self._running = 0
         self.robot = robot
@@ -1532,30 +1532,30 @@ class Joystick(Tkinter.Toplevel):
         self.wm_title('Joystick')
         moveToTop(self)
         self.protocol('WM_DELETE_WINDOW',self.destroy)
-        self.frame = Tkinter.Frame(self)
-        label = Tkinter.Label(self.frame, text = "Forward")
+        self.frame = tkinter.Frame(self)
+        label = tkinter.Label(self.frame, text = "Forward")
         label.pack(side = "top")
-        label = Tkinter.Label(self.frame, text = "Reverse")
+        label = tkinter.Label(self.frame, text = "Reverse")
         label.pack(side = "bottom")
-        label = Tkinter.Label(self.frame, text = "Turn\nLeft")
+        label = tkinter.Label(self.frame, text = "Turn\nLeft")
         label.pack(side = "left")
-        label = Tkinter.Label(self.frame, text = "Turn\nRight")
+        label = tkinter.Label(self.frame, text = "Turn\nRight")
         label.pack(side = "right")
-        self.canvas = Tkinter.Canvas(self.frame,
+        self.canvas = tkinter.Canvas(self.frame,
                                               width = 220,
                                               height = 220,
                                               bg = 'white')
         self.widgets = {}
         if self.showSensors:
-            newFrame = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
+            newFrame = tkinter.Frame(self, relief=tkinter.RAISED, borderwidth=2)
             items = []
             if self.robot != None:
                  d = self.robot.get("config")
-                 items = [(key, d[key]) for key in d.keys()]
+                 items = [(key, d[key]) for key in list(d.keys())]
             self.addWidgets(newFrame, *items)
             newFrame.pack(side="bottom", fill="both", expand="y")
         self.initHandlers()
-        self.canvas.pack(side=Tkinter.BOTTOM)
+        self.canvas.pack(side=tkinter.BOTTOM)
 
         self.circle_dim = (10, 10, 210, 210) #x0, y0, x1, y1
         self.circle = self.canvas.create_oval(self.circle_dim, fill = 'white')
@@ -1587,18 +1587,18 @@ class Joystick(Tkinter.Toplevel):
         self.running = 0
         if self.robot != None:
             self.robot.lock.acquire()
-        Tkinter.Toplevel.destroy(self)
+        tkinter.Toplevel.destroy(self)
         if self.robot != None:
             self.robot.lock.release()
 
     def addWidgets(self, window, *items):
         for name, size in items:
             text = name + ":"
-            frame = Tkinter.Frame(window)
-            self.widgets[name + ".label"] = Tkinter.Label(frame, text=text, width=10)
+            frame = tkinter.Frame(window)
+            self.widgets[name + ".label"] = tkinter.Label(frame, text=text, width=10)
             self.widgets[name + ".label"].pack(side="left")
             for i in range(size - 1, -1, -1):
-                self.widgets["%s%d.entry" % (name, i)] = Tkinter.Entry(frame, bg="white", width = 10)
+                self.widgets["%s%d.entry" % (name, i)] = tkinter.Entry(frame, bg="white", width = 10)
                 self.widgets["%s%d.entry" % (name, i)].insert(0, "")
                 self.widgets["%s%d.entry" % (name, i)].pack(side="right", fill="both", expand="y")
             frame.pack(side="bottom", fill="both", expand="y")
@@ -1661,7 +1661,7 @@ class Joystick(Tkinter.Toplevel):
         elif self.rotate > 0.0:
             self.rotate -= self.threshold
         if self.debug:
-            print self.translate, self.rotate
+            print(self.translate, self.rotate)
         if self.robot != None:
             #self.robot.lock.acquire()
             self.robot.move(self.translate, self.rotate)
@@ -1721,12 +1721,12 @@ class Joystick(Tkinter.Toplevel):
             trans = 0.0
         return (trans, rot)
 
-class senses(Tkinter.Toplevel):
+class senses(tkinter.Toplevel):
     def __init__(self, robot = None):
         _tkCall(self.__init_help, _root, robot)
 
     def __init_help(self, parent = None, robot = None):
-        Tkinter.Toplevel.__init__(self, parent)
+        tkinter.Toplevel.__init__(self, parent)
         self.debug = 0
         self._running = 0
         if robot == None:
@@ -1738,11 +1738,11 @@ class senses(Tkinter.Toplevel):
         moveToTop(self)
         self.protocol('WM_DELETE_WINDOW',self.destroy)
         self.widgets = {}
-        self.frame = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
+        self.frame = tkinter.Frame(self, relief=tkinter.RAISED, borderwidth=2)
         items = []
         if self.robot != None:
              d = self.robot.get("config")
-             items = [(key, d[key]) for key in d.keys()]
+             items = [(key, d[key]) for key in list(d.keys())]
         self.addWidgets(self.frame, *items)
         self.frame.pack(side="bottom", fill="both", expand="y")
         self.translate = 0.0
@@ -1771,18 +1771,18 @@ class senses(Tkinter.Toplevel):
         self.running = 0
         if self.robot != None:
             self.robot.lock.acquire()
-        Tkinter.Toplevel.destroy(self)
+        tkinter.Toplevel.destroy(self)
         if self.robot != None:
             self.robot.lock.release()
 
     def addWidgets(self, window, *items):
         for name, size in items:
             text = name + ":"
-            frame = Tkinter.Frame(window)
-            self.widgets[name + ".label"] = Tkinter.Label(frame, text=text, width=10)
+            frame = tkinter.Frame(window)
+            self.widgets[name + ".label"] = tkinter.Label(frame, text=text, width=10)
             self.widgets[name + ".label"].pack(side="left")
             for i in range(size - 1, -1, -1):
-                self.widgets["%s%d.entry" % (name, i)] = Tkinter.Entry(frame, bg="white", width = 10)
+                self.widgets["%s%d.entry" % (name, i)] = tkinter.Entry(frame, bg="white", width = 10)
                 self.widgets["%s%d.entry" % (name, i)].insert(0, "")
                 self.widgets["%s%d.entry" % (name, i)].pack(side="right", fill="both", expand="y")
             frame.pack(side="bottom", fill="both", expand="y")
@@ -1825,12 +1825,12 @@ class senses(Tkinter.Toplevel):
             time.sleep(self.delay)
 
 
-class Calibrate(Tkinter.Toplevel):
+class Calibrate(tkinter.Toplevel):
     def __init__(self, robot = None):
         _tkCall(self.__init_help, _root, robot)
 
     def __init_help(self, parent = None, robot = None):
-        Tkinter.Toplevel.__init__(self, parent)
+        tkinter.Toplevel.__init__(self, parent)
         self.debug = 0
         self._running = 0
 
@@ -1842,27 +1842,27 @@ class Calibrate(Tkinter.Toplevel):
         self.wm_title('calibstick')
         moveToTop(self)
         self.protocol('WM_DELETE_WINDOW',self.destroy)
-        self.frame = Tkinter.Frame(self)
-        label = Tkinter.Label(self.frame, text = "Forward")
+        self.frame = tkinter.Frame(self)
+        label = tkinter.Label(self.frame, text = "Forward")
         label.pack(side = "top")
-        label = Tkinter.Label(self.frame, text = "Reverse")
+        label = tkinter.Label(self.frame, text = "Reverse")
         label.pack(side = "bottom")
-        label = Tkinter.Label(self.frame, text = "Turn\nLeft")
+        label = tkinter.Label(self.frame, text = "Turn\nLeft")
         label.pack(side = "left")
-        label = Tkinter.Label(self.frame, text = "Turn\nRight")
+        label = tkinter.Label(self.frame, text = "Turn\nRight")
         label.pack(side = "right")
-        self.canvas = Tkinter.Canvas(self.frame,
+        self.canvas = tkinter.Canvas(self.frame,
                                               width = 220,
                                               height = 220,
                                               bg = 'white')
         self.widgets = {}
-        newFrame = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
+        newFrame = tkinter.Frame(self, relief=tkinter.RAISED, borderwidth=2)
         self.addWidgets(newFrame, ("-1 Tweak", 1), ("-0.5 Tweak", 1), ("0.5 Tweak", 1), ("1 Tweak", 1))
         newFrame.pack(side="bottom", fill="both", expand="y")
 
 
         self.initHandlers()
-        self.canvas.pack(side=Tkinter.BOTTOM)
+        self.canvas.pack(side=tkinter.BOTTOM)
 
 ##        self.circle_dim = (10, 100, 210, 120) #x0, y0, x1, y1
 ##        
@@ -1900,16 +1900,16 @@ class Calibrate(Tkinter.Toplevel):
 
     def destroy(self):
          self.running = 0
-         Tkinter.Toplevel.destroy(self)
+         tkinter.Toplevel.destroy(self)
 
     def addWidgets(self, window, *items):
         for name, size in items:
             text = name + ":"
-            frame = Tkinter.Frame(window)
-            self.widgets[name + ".label"] = Tkinter.Label(frame, text=text, width=10)
+            frame = tkinter.Frame(window)
+            self.widgets[name + ".label"] = tkinter.Label(frame, text=text, width=10)
             self.widgets[name + ".label"].pack(side="left")
             for i in range(size):
-                self.widgets["%s%d.entry" % (name, i)] = Tkinter.Entry(frame, bg="white", width = 10)
+                self.widgets["%s%d.entry" % (name, i)] = tkinter.Entry(frame, bg="white", width = 10)
                 self.widgets["%s%d.entry" % (name, i)].insert(0, "")
                 self.widgets["%s%d.entry" % (name, i)].pack(side="right", fill="both", expand="y")
             frame.pack(side="bottom", fill="both", expand="y")
@@ -1955,7 +1955,7 @@ class Calibrate(Tkinter.Toplevel):
         elif self.rotate > 0.0:
             self.rotate -= self.threshold
         if self.debug:
-            print self.translate, self.rotate
+            print(self.translate, self.rotate)
         if self.robot != None:
             #self.robot.lock.acquire()
             self.robot.move(self.translate, self.rotate)

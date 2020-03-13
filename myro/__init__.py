@@ -10,7 +10,7 @@ __VERSION__  = "2.9.5"
 __AUTHOR__   = "Doug Blank <dblank@cs.brynmawr.edu>"
 
 import sys, atexit, time, random, pickle, threading, os, types, copy
-import StringIO, traceback, urllib, glob
+import io, traceback, urllib.request, urllib.parse, urllib.error, glob
 import myro.globvars
 from myro.media import *
 from myro.speech import *
@@ -24,11 +24,11 @@ try:
     _pil_version = Image.VERSION
     del Image
 except:
-    print >> sys.stderr, "ERROR: you need to install Python Image Library to make pictures"
+    print("ERROR: you need to install Python Image Library to make pictures", file=sys.stderr)
 if _pil_version != None:
     if _pil_version.split(".") < ["1", "1", "5"]:
-        print >> sys.stderr, ("ERROR: you need to upgrade Python Image Library to at least 1.1.5 (you're running %s)" % 
-                              _pil_version)
+        print(("ERROR: you need to upgrade Python Image Library to at least 1.1.5 (you're running %s)" %
+                              _pil_version), file=sys.stderr)
 del _pil_version
 
 def timer(seconds=0):
@@ -73,22 +73,22 @@ def sendPicture(picture, photoname, password, robotname = None):
         if myro.globvars.robot != None:
             robotname = myro.globvars.robot.getName()
         else:
-            raise AttributeError, "no robot name given and robot not connected"
+            raise AttributeError("no robot name given and robot not connected")
     ch = Chat(robotname, password)
     if ch.ok == 1:
         image = picture.image
         if image.mode != "RGB":
             image = image.convert("RGB")
-        sio = StringIO.StringIO()
+        sio = io.StringIO()
         image.save(sio, "jpeg")
         compressed = sio.getvalue()
         pickled = pickle.dumps(compressed)
         try:
             ch.send("admin", ("photo\nname: %s\n" % photoname) + pickled)
         except IOError:
-            print "ERROR: image file is too big"
+            print("ERROR: image file is too big")
             return
-        print "Sent!"
+        print("Sent!")
 
 def register(oldname = None):
     answers = ask(["Your email address",
@@ -116,17 +116,17 @@ keyword: %s
         while len(messages) == 0:
             messages = ch.receive()
             wait(1)
-            print "   waiting for confirmation..."
-        print "received messages:"
+            print("   waiting for confirmation...")
+        print("received messages:")
         for message in messages:
-            print message[1]
-            print
+            print(message[1])
+            print()
         # if you have your robot on, then set its name:
         if myro.globvars.robot != None:
             myro.globvars.robot.set("name", answers["Your robot's name"])
-            print "Your robot's name was set to", myro.globvars.robot.get("name")
+            print("Your robot's name was set to", myro.globvars.robot.get("name"))
     else:
-        print "The name '%s' has already been taken. Please try another." % answers["Your robot's name"]
+        print("The name '%s' has already been taken. Please try another." % answers["Your robot's name"])
 
 def setPassword(robotName, emailAddress, newPassword):
     ch = Chat("myro", "request")
@@ -139,13 +139,13 @@ def setPassword(robotName, emailAddress, newPassword):
         while len(messages) == 0:
             messages = ch.receive()
             wait(1)
-            print "   waiting for confirmation..."
-        print "received messages:"
+            print("   waiting for confirmation...")
+        print("received messages:")
         for message in messages:
-            print message[1]
-            print
+            print(message[1])
+            print()
     else:
-        print "The Myro chat account doesn't seem to be taking requests right now."
+        print("The Myro chat account doesn't seem to be taking requests right now.")
 
 
 def wait(seconds):
@@ -156,7 +156,7 @@ def wait(seconds):
 
 def currentTime():
     """
-    Returns current time in seconds since 
+    Returns current time in seconds since
     """
     return time.time()
 
@@ -195,19 +195,19 @@ def gamepad(*phrases, **kwargs):
     Run the gamepad controller.
     """
     if "darwin" in sys.platform:
-        print "Sorry gamepad not supported on mac os x yet :("
+        print("Sorry gamepad not supported on mac os x yet :(")
         return
-        
+
     if len(phrases) == 0:
         try:
             name = getName()
         except AttributeError:
             name = "Scribby"
-        phrases = ["Hello. My name is %s." % name, 
-                   "Ouch! I'm a sensitive robot.", 
+        phrases = ["Hello. My name is %s." % name,
+                   "Ouch! I'm a sensitive robot.",
                    "I'm hungry. Do you have any batteries?" ]
     elif type(phrases[0]) == type(gamepad):
-        print "Gamepad is now running..."
+        print("Gamepad is now running...")
         while True:
             retval = getGamepad()
             button = retval["button"]
@@ -217,39 +217,39 @@ def gamepad(*phrases, **kwargs):
                     if retval == 'exit':
                         break
         return
-    print "        Pad   Action"
-    print "     ------   -------"
-    print " Left/Right   turnLeft() and turnRight()"
-    print "    Up/Down   forward() and backward()"
-    print ""
+    print("        Pad   Action")
+    print("     ------   -------")
+    print(" Left/Right   turnLeft() and turnRight()")
+    print("    Up/Down   forward() and backward()")
+    print("")
 
     #Added by JWS to make sure that retval and button are defined.
     retval = getGamepadNow()
     button = retval["button"]
 
     if len(button) > 0:
-        print "     Button   Action"
-        print "     ------   -------"
+        print("     Button   Action")
+        print("     ------   -------")
         if len(button) > 0:
-            print "          1   stop()"
+            print("          1   stop()")
         if len(button) > 1:
-            print "          2   takePicture()"
+            print("          2   takePicture()")
         if len(button) > 2:
-            print "          3   beep(.25, 523)"  
+            print("          3   beep(.25, 523)")
         if len(button) > 3:
-            print "          4   beep(.25, 587)"  
+            print("          4   beep(.25, 587)")
         if len(button) > 4:
-            print "          5   beep(.25, 659)"  
+            print("          5   beep(.25, 659)")
         if len(button) > 5:
-            print "          6   speak('%s')" % phrases[0]
+            print("          6   speak('%s')" % phrases[0])
         if len(button) > 6:
-            print "          7   speak('%s')" % phrases[1]
+            print("          7   speak('%s')" % phrases[1])
         if len(button) > 7:
-            print "          8   speak('%s')" % phrases[2]
-        print ""
+            print("          8   speak('%s')" % phrases[2])
+        print("")
 
 
-    print "Gamepad is now running... Press button 1 to stop."
+    print("Gamepad is now running... Press button 1 to stop.")
     lastMove = [0, 0]
     doneSpeaking = True
     retval = getGamepadNow()
@@ -309,16 +309,16 @@ def gamepad(*phrases, **kwargs):
                 beep(.25, *freqs)
             except:
                 computer.beep(.25, *freqs)
-                
+
 def getGamepad(*what, **kwargs):
     """
-    Return readings from a gamepad/joystick when there is a change. 
+    Return readings from a gamepad/joystick when there is a change.
 
     what can be empty, "init", "name", "axis", "ball", "button",
     "hat", or "count".  If what is more than 1 item, then getGamepad
     will return a dictionary, else it will return the 1 item's
     value(s). If the first arg given to this function is an int, then
-    it refers to that joystick ID. If the first arg is a list of ints, 
+    it refers to that joystick ID. If the first arg is a list of ints,
     then it will return those joystick data.
     """
     if "count" in what:
@@ -367,17 +367,17 @@ def _or(a, b):
             retval[k] = _or(a[k], b[k])
         return retval
     else:
-        raise AttributeError, ("invalid type: %s" % str(a))
+        raise AttributeError("invalid type: %s" % str(a))
 
 def getGamepadNow(*what):
     """
-    Return readings from a gamepad/joystick immediately. 
+    Return readings from a gamepad/joystick immediately.
 
     what can be empty, "init", "name", "axis", "ball", "button",
     "hat", or "count".  If what is more than 1 item, then getGamepad
     will return a dictionary, else it will return the 1 item's
     value(s). If the first arg given to this function is an int, then
-    it refers to that joystick ID. If the first arg is a list of ints, 
+    it refers to that joystick ID. If the first arg is a list of ints,
     then it will return those joystick data.
     """
     if len(what) > 0:
@@ -421,11 +421,11 @@ def getGamepadNow(*what):
             elif item == "hat":
                 retval["hat"] = [js.get_hat(i) for i in range(js.get_numhats())]
         else:
-            raise AttributeError, ("not a valid gamepad id: %d" % id)
-    if len(retval.keys()) == 0:
+            raise AttributeError("not a valid gamepad id: %d" % id)
+    if len(list(retval.keys())) == 0:
         return None
-    elif len(retval.keys()) == 1:
-        return retval[retval.keys()[0]]
+    elif len(list(retval.keys())) == 1:
+        return retval[list(retval.keys())[0]]
     else:
         return retval
 
@@ -440,9 +440,9 @@ def ask(item, title = "Information Request", useCache=0, useDict=0):
         if "ok" in retval:
             del retval["ok"]
         return retval
-    elif len(retval.keys()) == 1:
+    elif len(list(retval.keys())) == 1:
         return retval[item]
-    elif len(retval.keys()) == 2 and "ok" in retval.keys():
+    elif len(list(retval.keys())) == 2 and "ok" in list(retval.keys()):
         return retval[item]
     else:
         return retval
@@ -459,8 +459,8 @@ def _ask(data, title = "Information Request", forceAsk=1, forceConsole=0, useCac
     if useCache:
         # get data, if in cache:
         needToAsk = 0
-        for question in data.keys():
-            if question in myro.globvars.askData.keys():
+        for question in list(data.keys()):
+            if question in list(myro.globvars.askData.keys()):
                 data[question] = myro.globvars.askData[question]
             else:
                 needToAsk = 1
@@ -468,7 +468,7 @@ def _ask(data, title = "Information Request", forceAsk=1, forceConsole=0, useCac
         needToAsk = 1
     # if I got it all, and don't need to ask, return
     # else, ask it all:
-    if needToAsk or forceAsk: 
+    if needToAsk or forceAsk:
         if myro.globvars.gui == None or forceConsole:
             _askConsole(data, title)
         else:
@@ -476,7 +476,7 @@ def _ask(data, title = "Information Request", forceAsk=1, forceConsole=0, useCac
             if data["ok"] == 0:
                 raise KeyboardInterrupt
         # cache data in globals:
-        for text in data.keys():
+        for text in list(data.keys()):
             myro.globvars.askData[text] = data[text]
     return data
 
@@ -485,7 +485,7 @@ def _askGUI(qdict, title = "Information Request"):
    ok = d.run()
    if ok:
       retval = {"ok": 1}
-      for name in qdict.keys():
+      for name in list(qdict.keys()):
           retval[name] = d.textbox[name].get()
       d.stop()
       return retval
@@ -494,14 +494,14 @@ def _askGUI(qdict, title = "Information Request"):
       return {"ok" : 0}
 
 def _askConsole(data, title = "Information Request"):
-    print "+-----------------------------------------------------------------+"
-    print "|" + title.center(65) + "|"
-    print "+-----------------------------------------------------------------+"
-    print "| Please enter the following information. Default values are in   |"
-    print "| brackets. To accept default values, just press enter.           |"
-    print "------------------------------------------------------------------"
-    for key in data.keys():
-        retval = raw_input("   " + key + (" [%s]" % data[key])+ ": ")
+    print("+-----------------------------------------------------------------+")
+    print("|" + title.center(65) + "|")
+    print("+-----------------------------------------------------------------+")
+    print("| Please enter the following information. Default values are in   |")
+    print("| brackets. To accept default values, just press enter.           |")
+    print("------------------------------------------------------------------")
+    for key in list(data.keys()):
+        retval = input("   " + key + (" [%s]" % data[key])+ ": ")
         retval.strip() # remove any spaces on either side
         if retval != "":
             data[key] = retval
@@ -519,7 +519,7 @@ class BackgroundThread(threading.Thread):
         self._stopevent = threading.Event()
         self._sleepperiod = pause
         threading.Thread.__init__(self, name="MyroThread")
-        
+
     def run(self):
         """
         overload of threading.thread.run()
@@ -545,7 +545,7 @@ class Robot(object):
         Base robot class.
         """
         self.lock = threading.Lock()
-    
+
     def initializeRemoteControl(self, password):
         self.chat = Chat(self.getName(), password)
 
@@ -570,26 +570,26 @@ class Robot(object):
                 self.chat.send(name.lower(), pickle.dumps(retval))
 
     def translate(self, amount):
-        raise AttributeError, "this method needs to be written"
+        raise AttributeError("this method needs to be written")
 
     def rotate(self, amount):
-        raise AttributeError, "this method needs to be written"
+        raise AttributeError("this method needs to be written")
 
     def move(self, translate, rotate):
-        raise AttributeError, "this method needs to be written"
+        raise AttributeError("this method needs to be written")
 
     def beep(self, duration, frequency1, frequency2 = None):
         import myro.graphics
-        print "beep!"
+        print("beep!")
         return myro.graphics._tkCall(myro.graphics._beep, duration, frequency1, frequency2)
-        
+
     def getLastSensors(self):
         """ Should not get the current, but the last. This is default behavior. """
         return self.get("all")
 
     def update(self):
         """ Update the robot """
-        raise AttributeError, "this method needs to be written"
+        raise AttributeError("this method needs to be written")
 
 ### The rest of these methods are just rearrangements of the above
 
@@ -604,7 +604,7 @@ class Robot(object):
     def getIR(self, *position):
         """ Returns the infrared readings. """
         return self.get("ir", *position)
-    
+
     def getDistance(self, *position):
         """ Returns the S2 Distance readings. """
         return self.getDistance(*position)
@@ -640,7 +640,7 @@ class Robot(object):
 
     def setLED(self, position, value):
         return self.set("led", position, value)
-        
+
     def setName(self, name):
         return self.set("name", name)
 
@@ -649,7 +649,7 @@ class Robot(object):
 
     def setForwardness(self, value):
         return self.set("forwardness", value)
-    
+
     def setVolume(self, value):
         return self.set("volume", value)
 
@@ -692,7 +692,7 @@ class Robot(object):
             time.sleep(interval)
             self.stop()
         return retval
-    
+
     def turnRight(self, speed=1, interval=None):
         retval = self.move(0, -speed)
         if interval != None:
@@ -736,46 +736,46 @@ class Computer(Robot):
         self.lock = threading.Lock()
     def move(self, translate, rotate):
         """ Moves the robot translate, rotate velocities. """
-        print "move(%f, %f)" % (translate, rotate)
+        print("move(%f, %f)" % (translate, rotate))
     def speak(self, message, async = 0):
         """ Speaks a text message. """
         if myro.globvars.tts != None:
             myro.globvars.tts.speak(message, async)
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def get(self, what):
         return {}
     def stopSpeaking(self):
         if myro.globvars.tts != None:
             myro.globvars.tts.stop()
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def setVoice(self, name):
         if myro.globvars.tts != None:
             myro.globvars.tts.setVoice(name)
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def getVoice(self):
         if myro.globvars.tts != None:
             return str(myro.globvars.tts.getVoice())
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def getVoices(self):
         if myro.globvars.tts != None:
-            return map(str, myro.globvars.tts.getVoices())
+            return list(map(str, myro.globvars.tts.getVoices()))
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def playSpeech(self, filename):
         if myro.globvars.tts != None:
             myro.globvars.tts.playSpeech(filename)
         else:
-            print "Text-to-speech is not loaded"
+            print("Text-to-speech is not loaded")
     def saveSpeech(self, message, filename):
         if myro.globvars.tts != None:
             myro.globvars.tts.saveSpeech(message, filename)
         else:
-            print "Text-to-speech is not loaded"
-            
+            print("Text-to-speech is not loaded")
+
 computer = Computer()
 
 # functions:
@@ -784,7 +784,7 @@ def _cleanup():
             if "robot" in myro.globvars.robot.robotinfo:
                 try:
                     myro.globvars.robot.stop() # hangs?
-                    time.sleep(0.5)                        
+                    time.sleep(0.5)
                 except: # catch serial.SerialException
                     # port already closed
                     pass
@@ -814,9 +814,9 @@ if not myro.globvars.setup:
     myro.globvars.setup = 1
     atexit.register(_cleanup)
     # Ok, now we're ready!
-    print >> sys.stderr, "(c) 2006-2007 Institute for Personal Robots in Education"
-    print >> sys.stderr, "[See http://www.roboteducation.org/ for more information]"
-    print >> sys.stderr, "Myro version %s is ready!" % (__VERSION__, )
+    print("(c) 2006-2007 Institute for Personal Robots in Education", file=sys.stderr)
+    print("[See http://www.roboteducation.org/ for more information]", file=sys.stderr)
+    print("Myro version %s is ready!" % (__VERSION__, ), file=sys.stderr)
 
 ## Functional interface:
 
@@ -830,7 +830,7 @@ def initialize(id = None):
         myro.globvars.robot = Scribbler(id)
     __builtins__["robot"] = myro.globvars.robot
 
-init = initialize        
+init = initialize
 
 def simulator(id = None):
     _startSimulator()
@@ -841,115 +841,115 @@ def translate(amount):
     if myro.globvars.robot:
         return myro.globvars.robot.translate(amount)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def rotate(amount):
     if myro.globvars.robot:
         return myro.globvars.robot.rotate(amount)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def move(translate, rotate):
     if myro.globvars.robot:
         return myro.globvars.robot.move(translate, rotate)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def forward(speed=1, seconds=None):
     if myro.globvars.robot:
         return myro.globvars.robot.forward(speed, seconds)
     else:
-        raise AttributeError, "need to initialize robot"
-    
+        raise AttributeError("need to initialize robot")
+
 def backward(speed=1, seconds=None):
     if myro.globvars.robot:
         return myro.globvars.robot.backward(speed, seconds)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def turn(direction, amount = .8, seconds=None):
     if myro.globvars.robot:
         return myro.globvars.robot.turn(direction, amount, seconds)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def turnLeft(speed=1, seconds=None):
     if myro.globvars.robot:
         return myro.globvars.robot.turnLeft(speed, seconds)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def turnRight(speed=1, seconds=None):
     if myro.globvars.robot:
         return myro.globvars.robot.turnRight(speed, seconds)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def stop():
     if myro.globvars.robot:
         return myro.globvars.robot.stop()
 def getPosition():
-    """This returns the x and y coordinates of the scribbler 2"""   
+    """This returns the x and y coordinates of the scribbler 2"""
     if myro.globvars.robot:
         return myro.globvars.robot.getPosition()
     else:
-        raise AttributeError, "need to initialize robot"    
+        raise AttributeError("need to initialize robot")
 def hereIs(x=0, y=0):
     if myro.globvars.robot:
         return myro.globvars.robot.setHereIs(x, y)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getAngle():
-    """This returns the current angle of the scribbler 2"""   
+    """This returns the current angle of the scribbler 2"""
     if myro.globvars.robot:
         return myro.globvars.robot.getAngle()
     else:
-        raise AttributeError, "need to initialize robot"        
+        raise AttributeError("need to initialize robot")
 def setAngle(angle):
     if myro.globvars.robot:
         return myro.globvars.robot.setAngle(angle)
     else:
-        raise AttributeError, "need to initialize robot"    
+        raise AttributeError("need to initialize robot")
 def beginPath():
-    """Speed can be a value from 1 to 15"""   
+    """Speed can be a value from 1 to 15"""
     if myro.globvars.robot:
         return myro.globvars.robot.setBeginPath()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def moveTo(x, y):
     if myro.globvars.robot:
         return myro.globvars.robot.setMove(x, y, "to")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def moveBy(x, y):
     if myro.globvars.robot:
         return myro.globvars.robot.setMove(x, y, "by")
     else:
-        raise AttributeError, "need to initialize robot"    
+        raise AttributeError("need to initialize robot")
 def turnTo(angle, radsOrDegrees):
     if myro.globvars.robot:
         return myro.globvars.robot.setTurn(angle, "to", radsOrDegrees)
     else:
-        raise AttributeError, "need to initialize robot" 
+        raise AttributeError("need to initialize robot")
 def turnBy(angle, radsOrDegrees):
     if myro.globvars.robot:
         return myro.globvars.robot.setTurn(angle, "by", radsOrDegrees)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def arcTo(x, y, radius):
     if myro.globvars.robot:
         return myro.globvars.robot.setArc(x, y, radius, "to")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def arcBy(x, y, radius):
     if myro.globvars.robot:
         return myro.globvars.robot.setArc(x, y, radius, "by")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def endPath():
     if myro.globvars.robot:
         return myro.globvars.robot.setEndPath()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getMicEnvelope():
-    """Returns a number representing the microphone envelope noise"""   
+    """Returns a number representing the microphone envelope noise"""
     if myro.globvars.robot:
         return myro.globvars.robot.getMicEnvelope()
     else:
-        raise AttributeError, "need to initialize robot" 
+        raise AttributeError("need to initialize robot")
 def getMotorStats():
     '''Return the current motion status as a packed long and single additional byte showing if motors are ready for commands (1=ready, 0=busy):
  Left wheel and right wheel are signed, twos complement eight bit velocity values,
@@ -957,66 +957,66 @@ def getMotorStats():
  Idler spd is an unsigned six-bit velocity value, and
  Mov is non-zero iff one or more motors are turning.
  Left and right wheel velocities are instanteous encoder counts over a 1/10-second interval.
- Idler wheel wheel velocity is updated every 1/10 second and represents the idler encoder count during the last 1.6 seconds.'''   
+ Idler wheel wheel velocity is updated every 1/10 second and represents the idler encoder count during the last 1.6 seconds.'''
     if myro.globvars.robot:
         return myro.globvars.robot.getMotorStats()
     else:
-        raise AttributeError, "need to initialize robot" 
+        raise AttributeError("need to initialize robot")
 def getEncoders(zeroEncoders=False):
     '''Gets the values for the left and right encoder wheels.  Negative value means they have moved
     backwards from the robots perspective.  Each turn of the encoder wheel is counted as and increment or
-    decrement of 2 depending on which direction the wheels moved.  
+    decrement of 2 depending on which direction the wheels moved.
     if zeroEncoders is set to True then the encoders will be set to zero after reading the values'''
     if myro.globvars.robot:
         return myro.globvars.robot.getEncoders(zeroEncoders)
     else:
-        raise AttributeError, "need to initialize robot"   
+        raise AttributeError("need to initialize robot")
 def openConnection():
     if myro.globvars.robot:
         return myro.globvars.robot.open()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def closeConnection():
     if myro.globvars.robot:
         return myro.globvars.robot.close()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def get(sensor = "all", *pos):
     if myro.globvars.robot:
         return myro.globvars.robot.get(sensor, *pos)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getVersion():
     if myro.globvars.robot:
         return myro.globvars.robot.get("version")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getLight(*pos):
     if myro.globvars.robot:
         return myro.globvars.robot.get("light", *pos)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getIR(*pos):
     if myro.globvars.robot:
         return myro.globvars.robot.get("ir", *pos)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def getDistance(*pos):
     if myro.globvars.robot:
         return myro.globvars.robot.getDistance(*pos)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getLine(*pos):
     if myro.globvars.robot:
         return myro.globvars.robot.get("line", *pos)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getStall():
     if myro.globvars.robot:
         return myro.globvars.robot.get("stall")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getInfo(*item):
     if myro.globvars.robot:
         retval = myro.globvars.robot.getInfo(*item)
@@ -1028,37 +1028,37 @@ def getAll():
     if myro.globvars.robot:
         return myro.globvars.robot.get("all")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getName():
     if myro.globvars.robot:
         return myro.globvars.robot.get("name")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getPassword():
     if myro.globvars.robot:
         return myro.globvars.robot.get("password")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getForwardness():
     if myro.globvars.robot:
         return myro.globvars.robot.get("forwardness")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getStartSong():
     if myro.globvars.robot:
         return myro.globvars.robot.get("startsong")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def getVolume():
     if myro.globvars.robot:
         return myro.globvars.robot.get("volume")
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def update():
     if myro.globvars.robot:
         return myro.globvars.robot.update()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def beep(duration=.5, frequency1=None, frequency2=None):
     if type(duration) in [tuple, list]:
         frequency2 = frequency1
@@ -1090,73 +1090,73 @@ def set(item, position, value = None):
     if myro.globvars.robot:
         return myro.globvars.robot.set(item, position, value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setLED(position, value):
     if myro.globvars.robot:
         return myro.globvars.robot.set("led", position, value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setName(name):
     if myro.globvars.robot:
         return myro.globvars.robot.set("name", name)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setPassword(password):
     if myro.globvars.robot:
         return myro.globvars.robot.set("password", password)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setForwardness(value):
     if myro.globvars.robot:
         return myro.globvars.robot.set("forwardness", value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setVolume(value):
     if myro.globvars.robot:
         return myro.globvars.robot.set("volume", value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def setS2Volume(value):
-    """Level can be between 0-100 and represents the percent volume level of the speaker"""   
+    """Level can be between 0-100 and represents the percent volume level of the speaker"""
     if myro.globvars.robot:
         return myro.globvars.robot.setS2Volume(value)
     else:
-        raise AttributeError, "need to initialize robot"    
+        raise AttributeError("need to initialize robot")
 def setStartSong(songName):
     if myro.globvars.robot:
         return myro.globvars.robot.set("startsong", songName)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def motors(left, right):
     if myro.globvars.robot:
         return myro.globvars.robot.motors(left, right)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def restart():
     if myro.globvars.robot:
         return myro.globvars.robot.restart()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def joyStick(showSensors = 0):
     if myro.globvars.robot:
         return Joystick(myro.globvars.robot, showSensors)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def calibrate():
     if myro.globvars.robot:
         return Calibrate(myro.globvars.robot)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def playSong(song, wholeNoteDuration = .545):
     if myro.globvars.robot:
         return myro.globvars.robot.playSong(song, wholeNoteDuration)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 def playNote(tup, wholeNoteDuration = .545):
     if myro.globvars.robot:
         return myro.globvars.robot.playNote(tup, wholeNoteDuration)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 ########################### New dongle commands
 
@@ -1164,73 +1164,73 @@ def getBright(position=None):
     if myro.globvars.robot:
         return myro.globvars.robot.getBright(position)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def getBlob():
     if myro.globvars.robot:
         return myro.globvars.robot.getBlob()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def getObstacle(position=None):
     if myro.globvars.robot:
         return myro.globvars.robot.getObstacle(position)
     else:
-        raise AttributeError, "need to initialize robot"
-    
+        raise AttributeError("need to initialize robot")
+
 def setIRPower(value):
     if myro.globvars.robot:
         return myro.globvars.robot.setIRPower(value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def getBattery():
     if myro.globvars.robot:
         return myro.globvars.robot.getBattery()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def identifyRobot():
     if myro.globvars.robot:
         return myro.globvars.robot.identifyRobot()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def getIRMessage():
     if myro.globvars.robot:
         return myro.globvars.robot.getIRMessage()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def sendIRMessage(msg):
     if myro.globvars.robot:
         return myro.globvars.robot.sendIRMessage(msg)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setCommunicateLeft(on=True):
     if myro.globvars.robot:
         return myro.globvars.robot.setCommunicateLeft(on)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setCommunicateRight(on=True):
     if myro.globvars.robot:
         return myro.globvars.robot.setCommunicateLeft(on)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setCommunicateCenter(on=True):
     if myro.globvars.robot:
         return myro.globvars.robot.setCommunicateCenter(on)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setCommunicateAll(on=True):
     if myro.globvars.robot:
         return myro.globvars.robot.setCommunicateAll(on)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def configureBlob(y_low=0, y_high=255,
                   u_low=0, u_high=255,
@@ -1239,45 +1239,45 @@ def configureBlob(y_low=0, y_high=255,
     if myro.globvars.robot:
         return myro.globvars.robot.configureBlob(y_low, y_high, u_low, u_high, v_low, v_high, smooth_thresh)
     else:
-        raise AttributeError, "need to initialize robot"
-    
+        raise AttributeError("need to initialize robot")
+
 def setWhiteBalance(value):
     if myro.globvars.robot:
         return myro.globvars.robot.setWhiteBalance(value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def darkenCamera(value=0):
     if myro.globvars.robot:
         return myro.globvars.robot.darkenCamera(value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def manualCamera(gain=0x00, brightness=0x80, exposure=0x41):
     if myro.globvars.robot:
         return myro.globvars.robot.manualCamera(gain, brightness, exposure)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def autoCamera(value=0):
     if myro.globvars.robot:
         return myro.globvars.robot.autoCamera()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setLEDFront(value):
     """ Set the Light Emitting Diode on the robot's front. """
     if myro.globvars.robot:
         return myro.globvars.robot.setLEDFront(value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def setLEDBack(value):
     """ Set the Light Emitting Diode on the robot's back. """
     if myro.globvars.robot:
         return myro.globvars.robot.setLEDBack(value)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 ########################### Pictures:
 
@@ -1324,7 +1324,7 @@ def takePicture(mode=None):
     if myro.globvars.robot:
         return myro.globvars.robot.takePicture(mode)
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")
 
 def loadPicture(filename):
     """ Loads a picture from a filename. """
@@ -1356,7 +1356,7 @@ def makePicture(*args):
         filename = args[0]
         retval = Picture()
         if filename.startswith("http://"):
-            filename, message = urllib.urlretrieve(filename)
+            filename, message = urllib.request.urlretrieve(filename)
         retval.load(filename)
     elif len(args) == 2:
         x = args[0]
@@ -1378,7 +1378,7 @@ def makePicture(*args):
             retval.set(x, y, value=args[2])
         else:
             raise AttributeError("unknown type: %s is '%s'; " +
-                                 "should be Color, Pixel, int grayscale", 
+                                 "should be Color, Pixel, int grayscale",
                                  args[2], type(args[2]))
     elif len(args) == 4:
         x = args[0]
@@ -1578,7 +1578,7 @@ def makeLighter(color):
 
 def odd(n): return (n % 2) == 1
 def even(n): return (n % 2) == 0
-def wall(threshold=4500): return getObstacle(1) > threshold 
+def wall(threshold=4500): return getObstacle(1) > threshold
 
 def loop(*functions):
     """
@@ -1593,15 +1593,15 @@ def loop(*functions):
     count = functions[-1]
     for i in range(count):
         for function in functions[:-1]:
-            print "   loop #%d: running %s()... " % (i + 1, function.__name__),
+            print("   loop #%d: running %s()... " % (i + 1, function.__name__), end=' ')
             try:
                 retval = function()
             except TypeError:
                 retval = function(i + 1)
             if retval:
-                print " => %s" % retval
+                print(" => %s" % retval)
             else:
-                print ""
+                print("")
     stop()
     return "ok"
 
@@ -1635,7 +1635,7 @@ def doTogether(*functions):
     for thread in thread_list:
         thread.join()
     if thread_results == [None] * len(functions):
-        print 'ok'
+        print('ok')
     else:
         return thread_results
 
@@ -1665,7 +1665,7 @@ def _startSimulator():
     path = myro.globvars.myropath
     if os.name in ['nt', 'dos', 'os2'] :
         if "PYTHONPATH" in os.environ:
-            os.environ["PYTHONPATH"] = path + ";" + os.getcwd() + ";" + os.environ["PYTHONPATH"] 
+            os.environ["PYTHONPATH"] = path + ";" + os.getcwd() + ";" + os.environ["PYTHONPATH"]
         else:
             os.environ["PYTHONPATH"] = path
         os.system("""start c:\Python24\python.exe "%s" """ % simulator_file)
@@ -1676,8 +1676,8 @@ def _startSimulator():
             os.environ["PYTHONPATH"] = path
         os.system("""/usr/bin/env python "%s" &""" % simulator_file)
     else:
-        raise AttributeError, "your operating system (%s) is not currently supported" % os.name
-    
+        raise AttributeError("your operating system (%s) is not currently supported" % os.name)
+
 # --------------------------------------------------------
 # Error handler:
 # --------------------------------------------------------
@@ -1685,9 +1685,9 @@ def _myroExceptionHandler(etype, value, tb):
     # make a window
     #win = HelpWindow()
     lines = traceback.format_exception(etype, value, tb)
-    print >> sys.stderr, "Myro is stopping: -------------------------------------------"
+    print("Myro is stopping: -------------------------------------------", file=sys.stderr)
     for line in lines:
-        print >> sys.stderr, line.rstrip()
+        print(line.rstrip(), file=sys.stderr)
 sys.excepthook = _myroExceptionHandler
 
 from myro.robots.scribbler import Scribbler
@@ -1703,7 +1703,7 @@ if not "darwin" in sys.platform:
     try:
         import pygame
         pygame.init()
-    
+
         for i in range(pygame.joystick.get_count()):
             js = pygame.joystick.Joystick(i)
             js.init()
@@ -1713,8 +1713,8 @@ if not "darwin" in sys.platform:
         pass
 
 
-_functions = ("timer", 
-              "time Remaining", 
+_functions = ("timer",
+              "time Remaining",
               "send Picture",
               "register",
               "set Password",

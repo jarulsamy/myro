@@ -12,7 +12,7 @@ import socket, threading, random, time
 from myro.robots import Robot
 from myro.robots.device import * # Device, GripperDevice, SensorValue
 try:
-	import cPickle as pickle
+	import pickle as pickle
 except:
 	import pickle
 
@@ -242,7 +242,7 @@ class GripperSimDevice(GripperDevice):
 		elif which == 'outer':
 			return self.data[1]
 		else:
-			raise AttributeError, "invalid breakBeam: '%s'" % which
+			raise AttributeError("invalid breakBeam: '%s'" % which)
 	def isClosed(self): return self.data[2]
 	def isOpened(self): return self.data[3]
 	def isMoving(self): return self.data[4]
@@ -370,14 +370,14 @@ class TCPRobot(Simbot):
 		try:
 			self.socket.settimeout(1)
 		except:
-			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
+			print("WARN: entering deadlock zone; upgrade to Python 2.3 to avoid")
 		done = 0
 		while not done:
 			try:
 				self.socket.connect( self.addr )
 				done = 1
 			except:
-				print "Waiting on PyrobotSimulator..."
+				print("Waiting on PyrobotSimulator...")
 				time.sleep(1)
 		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
 		self.init(startDevices)

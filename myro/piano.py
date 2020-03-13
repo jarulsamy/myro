@@ -1,21 +1,21 @@
-import Tkinter
+import tkinter
 
-class Piano(Tkinter.Toplevel):
+class Piano(tkinter.Toplevel):
 
    def __init__(self, parent = None, robot = None):
-      Tkinter.Toplevel.__init__(self, parent)
+      tkinter.Toplevel.__init__(self, parent)
       self._running = 0
       self.robot = robot
       self.parent = parent
       self.wm_title('Piano')
       self.protocol('WM_DELETE_WINDOW',self.destroy)
-      self.frame = Tkinter.Frame(self)
-      self.canvas = Tkinter.Canvas(self.frame,
+      self.frame = tkinter.Frame(self)
+      self.canvas = tkinter.Canvas(self.frame,
                                    width = 15 * 88,
                                    height = 220,
                                    bg = 'white')
       self.initHandlers()
-      self.canvas.pack(side=Tkinter.BOTTOM)
+      self.canvas.pack(side=tkinter.BOTTOM)
       self.frame.pack()
       for i in range(88):
           self.canvas.create_line(i * 15, 0, i * 15, 220, fill="black", tag="lines")
@@ -44,7 +44,7 @@ class Piano(Tkinter.Toplevel):
             self.parent.destroy()
 
 if __name__ == '__main__':
-   app = Tkinter.Tk()
+   app = tkinter.Tk()
    app.withdraw()
    piano = Piano(parent = app)
    app._running = 1

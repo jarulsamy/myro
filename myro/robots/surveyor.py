@@ -12,11 +12,11 @@ import time, string
 try:
     import serial
 except:
-    print "WARNING: pyserial not loaded: surveyor won't work!"
+    print("WARNING: pyserial not loaded: surveyor won't work!")
 from myro import Robot, ask
 import myro.globvars
-import StringIO
-import Tkinter
+import io
+import tkinter
 try:
     import ImageTk
     from PIL import Image
@@ -97,13 +97,13 @@ def isTrue(value):
     elif value: return True
     return False
 
-class CameraWindow(Tkinter.Toplevel):
+class CameraWindow(tkinter.Toplevel):
     def __init__(self, robot):
         self.robot = robot
         self.delay = .1
-        Tkinter.Toplevel.__init__(self, myro.globvars.gui)
+        tkinter.Toplevel.__init__(self, myro.globvars.gui)
         self.wm_title("SRV-1 View (%dx%d)" % self.robot.resolution)
-        self.canvas = Tkinter.Canvas(self, width = 160, height = 128)
+        self.canvas = tkinter.Canvas(self, width = 160, height = 128)
         self.canvas.pack(fill="both", expand="y")
         self.canvas.bind("<B1-Motion>", func=lambda event=self:self.dispatch_event(event, "motion", 0))
         self.canvas.bind("<Button-1>",  func=lambda event=self:self.dispatch_event(event, "down", 0))
@@ -138,7 +138,7 @@ class CameraWindow(Tkinter.Toplevel):
 
     def destroy(self):
         self.running = 0
-        Tkinter.Toplevel.destroy(self)
+        tkinter.Toplevel.destroy(self)
 
     def dispatch_event(self, event, action, bin):
         if action == "down":
@@ -171,11 +171,11 @@ class CameraWindow(Tkinter.Toplevel):
             # print message
             self.robot._send(message)
             # returns YUV as y1, y2, u1, u2, v1, v2
-            print "Stored tracking colors in location %d" % bin
+            print("Stored tracking colors in location %d" % bin)
             if bin not in self.blob:
                 self.blob.append( bin )
         else:
-            print "unknown mouse action:", action
+            print("unknown mouse action:", action)
 
     def minorloop(self, delay = None): # in milliseconds
         """
@@ -192,7 +192,7 @@ class CameraWindow(Tkinter.Toplevel):
     def update(self, image = None):
         if image == None:
             image = self.robot.getImage() # returns jpeg string
-        fileThing = StringIO.StringIO(image)
+        fileThing = io.StringIO(image)
         try:
             self.im = Image.open(fileThing)
         except IOError:
@@ -213,7 +213,7 @@ class CameraWindow(Tkinter.Toplevel):
             y2 = self.robot.resolution[1] - y2 * 2
             self.canvas.create_rectangle(x1, y1, x2, y2,
                                          outline=color, tag="box")
-        Tkinter.Toplevel.update(self)
+        tkinter.Toplevel.update(self)
 
 class Surveyor(Robot):
     def __init__(self, serialport = None, baudrate = 115200):
@@ -255,7 +255,7 @@ class Surveyor(Robot):
             except KeyboardInterrupt:
                 raise
             except:
-                print "Waiting on port..."
+                print("Waiting on port...")
                 try:
                     self.ser.close()
                 except KeyboardInterrupt:
@@ -282,7 +282,7 @@ class Surveyor(Robot):
         self.ser.close()
 
     def restart(self):
-        print "Hello, I'm %s!" % self.name
+        print("Hello, I'm %s!" % self.name)
 
     def get(self, sensor = "all", *position):
         sensor = sensor.lower()
@@ -310,7 +310,7 @@ class Surveyor(Robot):
                 elif sensor == "ir":
                     return self._send("B")
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             if sensor == "scan":
                 data = self._send("S")
                 for pos in position:
@@ -327,7 +327,7 @@ class Surveyor(Robot):
                     elif pos in [3, "right"]:
                         retvals.append(data[3])
             else:
-                raise ("invalid sensor name: '%s'" % sensor)
+                raise "invalid sensor name: '%s'"
             if len(retvals) == 1:
                 return retvals[0]
             else:
@@ -343,7 +343,7 @@ class Surveyor(Robot):
             self.setResolution(position)
             return "ok"
         else:
-            raise ("invalid set item name: '%s'" % item)
+            raise "invalid set item name: '%s'"
 
     def stop(self):
         self._lastTranslate = 0
@@ -375,7 +375,7 @@ class Surveyor(Robot):
         elif mode == (320,240):
             self._send("c") # no scans available in this mode
         else:
-            raise AttributeError, ("invalid camera resolution:" + str(mode))
+            raise AttributeError("invalid camera resolution:" + str(mode))
         self.resolution = mode
         return "ok"
 
@@ -452,11 +452,11 @@ class Surveyor(Robot):
                           ord(header[9]) * 256 ** 3)
                 data   = self.ser.read(length)
                 if len(data) != length:
-                    raise ValueError, "invalid image data"
+                    raise ValueError("invalid image data")
             except KeyboardInterrupt:
                 raise
             except:
-                print "camera image error"
+                print("camera image error")
                 data = None
             return data
         elif message[0] == 'V': # version
@@ -465,35 +465,35 @@ class Surveyor(Robot):
         elif message[0:2] == 'vg': # vision grab area
             readline = self.ser.readline()
             if not readline.startswith("##vg"):
-                print "error in vg command"
+                print("error in vg command")
                 return None
             readline = readline[4:] # data
             return readline
         elif message[0:2] == 'vr': # vision read area
             readline = self.ser.readline()
             if not readline.startswith("##vr"):
-                print "error in vr command"
+                print("error in vr command")
                 return None
             readline = readline[4:] # data
             return readline
         elif message[0:2] == 'vc': # vision set area
             readline = self.ser.readline()
             if not readline.startswith("##vc"):
-                print "error in vc command"
+                print("error in vc command")
                 return None
             readline = readline[4:] # data
             return readline
         elif message[0:2] == 'vs': # vision scan
             readline = self.ser.readline()
             if not readline.startswith("##vs"):
-                print "error in vs command"
+                print("error in vs command")
                 return None
             readline = readline[4:] # data
             return readline
         elif message[0:2] == 'vb': # vision blob
             readline = self.ser.readline()
             if not readline.startswith("##vb"):
-                print "error in vb command"
+                print("error in vb command")
                 return None
             readline = readline[5:] # data
             x1, x2, y1, y2, count = (readline[0:2], readline[2:4],
@@ -508,7 +508,7 @@ class Surveyor(Robot):
         else:
             ack = self.ser.read(2)
             if ack != "#" + message[0]:
-                print "error reading data:", message, ack
+                print("error reading data:", message, ack)
                 return 0
             return 1
 
@@ -521,4 +521,4 @@ def watch():
     if myro.globvars.robot:
         return myro.globvars.robot.watch()
     else:
-        raise AttributeError, "need to initialize robot"
+        raise AttributeError("need to initialize robot")

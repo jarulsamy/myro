@@ -103,7 +103,7 @@ def cap(c):
 
 def conf_window(ser, window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP):
 
-    print "Configuring window", window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP
+    print("Configuring window", window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP)
     ser.write(chr(SET_WINDOW))
     ser.write(chr(window)) 
     ser.write(chr(X_LOW)) 
@@ -124,7 +124,7 @@ def grab_window(ser, window, lx, ly, ux, uy, xstep, ystep):
     v3 = zeros(((height + 1), (width + 1), 3), dtype=uint8)
     
     #done = True
-    print "grabbing image = ", window, "width = ", width, "height = ", height
+    print("grabbing image = ", window, "width = ", width, "height = ", height)
     ser.write(chr(GET_WINDOW))
     ser.write(chr(window))
     
@@ -132,7 +132,7 @@ def grab_window(ser, window, lx, ly, ux, uy, xstep, ystep):
     line = ''
     while (len(line) < size):
 	line += ser.read(size-len(line))
-        print "length so far = ", len(line), " waiting for total = ", size
+        print("length so far = ", len(line), " waiting for total = ", size)
 
     if (len(line) == width * height):
 	i = height
@@ -173,7 +173,7 @@ def grab_window(ser, window, lx, ly, ux, uy, xstep, ystep):
         return toimage(v3, high=255, low=0)
 
 def conf_gray_window(ser, window, lx, ly, ux, uy, xstep, ystep):
-    print "Configuring gray image on window",  window
+    print("Configuring gray image on window",  window)
     # Y's are on odd pixels
     if (lx % 2)== 0:
         lx += 1
@@ -194,7 +194,7 @@ def grab_gray_window(ser, window, lx, ly, ux, uy, xstep, ystep):
     size = width * height
     
     #done = True
-    print "grabbing gray window = ", window, "width = ", width, "height = ", height
+    print("grabbing gray window = ", window, "width = ", width, "height = ", height)
     ser.write(chr(GET_WINDOW))
     ser.write(chr(window))
     
@@ -202,7 +202,7 @@ def grab_gray_window(ser, window, lx, ly, ux, uy, xstep, ystep):
     line = ''
     while (len(line) < size):
 	line += ser.read(size-len(line))
-        print "length so far = ", len(line), " waiting for total = ", size
+        print("length so far = ", len(line), " waiting for total = ", size)
 
     return Image.frombuffer("L", (width, height), line, 'raw', "L", 0, 1)
 
@@ -217,13 +217,13 @@ def grab_image(robotser):
     v3 = zeros(((height + 1), (width + 1), 3), dtype=uint8)
 
     #done = True
-    print "grabbing image"
+    print("grabbing image")
     ser.write(chr(GET_IMAGE))
     size= width*height
     line = ''
     while (len(line) < size):
 	line += ser.read(size-len(line))
-        print "length so far = ", len(line), " waiting for total = ", size
+        print("length so far = ", len(line), " waiting for total = ", size)
 
     if (len(line) == width * height):
 	i = height
@@ -266,7 +266,7 @@ def grab_image(robotser):
 
 def conf_gray_image(ser):
     # skip every other pixel
-    print "Configuring gray image on window 0"
+    print("Configuring gray image on window 0")
     conf_window(ser, 0, 1, 0, 255, 191, 2, 2)
     
 def grab_gray_image(ser):
@@ -275,14 +275,14 @@ def grab_gray_image(ser):
     height = 96
     size= width*height
 
-    print "grabbing image size = ", size
+    print("grabbing image size = ", size)
     ser.write(chr(GET_WINDOW))
     ser.write(chr(0))
     
     line = ''
     while (len(line) < size):
 	line += ser.read(size-len(line))
-        print "length so far = ", len(line), " waiting for total = ", size
+        print("length so far = ", len(line), " waiting for total = ", size)
 
     return Image.frombuffer("L", (width, height), line, 'raw', "L", 0, 1)
 
@@ -292,7 +292,7 @@ def conf_rle(ser,
              u_low=51, u_high=136,
              v_low=190, v_high=254):
 
-    print "Configuring blobs"
+    print("Configuring blobs")
     ser.write(chr(SET_RLE))
     ser.write(chr(delay))
     ser.write(chr(smooth_thresh))
@@ -314,7 +314,7 @@ def grab_rle(ser):
     ser.write(chr(GET_RLE))
     size=ord(ser.read(1))
     size = (size << 8) | ord(ser.read(1))
-    print "Grabbing RLE image size =", size
+    print("Grabbing RLE image size =", size)
     line =''
     while (len(line) < size):
         line+=ser.read(size-len(line))

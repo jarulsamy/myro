@@ -14,7 +14,7 @@ class TTSEngine:
 	self.echo = echo 
     def speak(self, message, async = 0):
 	if self.echo:
-            print message
+            print(message)
     def stop(self):
         pass
     def setVoice(self, name):
@@ -32,7 +32,7 @@ class TTSEngine:
 class LinuxTTSEngine(TTSEngine):
     def speak(self, message, async=0):
         if self.echo:
-            print message
+            print(message)
         self.filename = "/tmp/%06d.wav" % random.randint(1,999999)
         message = message.replace('"', '\\"')
         os.system("""echo "%s" | text2wave -scale 10 -o %s"""
@@ -49,14 +49,14 @@ class WindowsTTSEngine(TTSEngine):
 
     def speak(self, message, async = 0):
 	if self.echo:
-	    print message
+	    print(message)
         self.tts.Speak(message, async) # 0 is default, 1 is async
 
     def setVoice(self, name):
         self.tts.SetVoiceByName(name) # For example, 'MSMary'
 
     def getVoices(self):
-        return map(str, self.tts.GetVoiceNames())
+        return list(map(str, self.tts.GetVoiceNames()))
 
     def getVoice(self):
         return self.tts.GetVoice()
@@ -80,7 +80,7 @@ class MacTTSEngine(TTSEngine):
 
     def speak(self, message, async = 0):
         if self.echo:
-            print message
+            print(message)
 
         if async:
             background = "&"
@@ -103,32 +103,32 @@ def speak(message, async = 0):
     if myro.globvars.tts != None:
         myro.globvars.tts.speak(message, async)
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def stopSpeaking():
     if myro.globvars.tts != None:
         myro.globvars.tts.stop()
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def setVoice(name):
     if myro.globvars.tts != None:
         myro.globvars.tts.setVoice(name)
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def getVoice():
     if myro.globvars.tts != None:
         return myro.globvars.tts.getVoice()
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def getVoices():
     if myro.globvars.tts != None:
         return myro.globvars.tts.getVoices()
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def playSpeech(filename):
     if myro.globvars.tts != None:
         myro.globvars.tts.playSpeech(filename)
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 def playSound(filename):
     myro.globvars.tts.playSpeech(filename)
 
@@ -136,7 +136,7 @@ def saveSpeech(message, filename):
     if myro.globvars.tts != None:
         myro.globvars.tts.saveSpeech(message, filename)
     else:
-        print "Text-to-speech is not loaded"
+        print("Text-to-speech is not loaded")
 
 def makeStory(story):
     from myro import ask
@@ -144,7 +144,7 @@ def makeStory(story):
     variables = re.findall('"(.*?)"', story)
     variables = list(set(variables))
     variables.sort()
-    variables = map(lambda v: "%s =" % v, variables)
+    variables = ["%s =" % v for v in variables]
     values = ask(variables, useDict=1,
                  title = "For each variable below, fill in a value:")
     for variable in variables:

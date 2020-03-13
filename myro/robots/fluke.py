@@ -19,11 +19,11 @@ import time, string
 try:
     import serial
 except:
-    print "WARNING: pyserial not loaded: fluke won't work!"
+    print("WARNING: pyserial not loaded: fluke won't work!")
 from myro import ask
 from myro.graphics import _askQuestion, Picture
 import myro.globvars
-import cStringIO
+import io
 import threading
 import array
 
@@ -202,12 +202,12 @@ class Fluke:
         self.dongle = None
         self.robotinfo = {}
         info = self.getVersion()
-        if "fluke" in info.keys():
+        if "fluke" in list(info.keys()):
             self.dongle = info["fluke"]
-            print "You are using fluke firmware", info["fluke"]
-        elif "dongle" in info.keys():
+            print("You are using fluke firmware", info["fluke"])
+        elif "dongle" in list(info.keys()):
             self.dongle = info["dongle"]
-            print "You are using fluke firmware", info["dongle"]
+            print("You are using fluke firmware", info["dongle"])
         if self.dongle != None:
             # Turning on White Balance, Gain Control, and Exposure Control
             self.set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_ON)
@@ -228,7 +228,7 @@ class Fluke:
         try:
             if self.serialPort == myro.globvars.robot.ser.portstr:
                 myro.globvars.robot.ser.close()
-                print "Closing serial port..."
+                print("Closing serial port...")
                 time.sleep(1)
         except KeyboardInterrupt:
             raise
@@ -241,7 +241,7 @@ class Fluke:
             except KeyboardInterrupt:
                 raise
             except serial.SerialException:
-                print "   Serial element not found. If this continues, remove/replace serial device..."
+                print("   Serial element not found. If this continues, remove/replace serial device...")
                 try:
                     self.ser.close()
                 except KeyboardInterrupt:
@@ -256,7 +256,7 @@ class Fluke:
                     pass
                 time.sleep(1)
             except:
-                print "Waiting on port...", self.serialPort
+                print("Waiting on port...", self.serialPort)
                 try:
                     self.ser.close()
                 except KeyboardInterrupt:
@@ -295,7 +295,7 @@ class Fluke:
             time.sleep(1.2)       # give it time to see if another IPRE show up
             if self.ser.inWaiting() == 0: # if none, then we are out of here!
                 break
-            print "Waking fluke from sleep..."
+            print("Waking fluke from sleep...")
             time.sleep(.25)               # give it some time
         self.ser.flushInput()
         self.ser.flushOutput()
@@ -321,7 +321,7 @@ class Fluke:
                             "battery": self.getBattery(),
                             }
                 else:                
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             retvals = []
             for pos in position:
                 if sensor == "obstacle":
@@ -331,7 +331,7 @@ class Fluke:
                 elif sensor == "picture":
                     return self.takePicture(pos)
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             if len(retvals) == 0:
                 return None
             elif len(retvals) == 1:
@@ -417,7 +417,7 @@ class Fluke:
                  u_low=51, u_high=136,
                  v_low=190, v_high=254):
         if self.debug:
-            print "configuring RLE", delay, smooth_thresh, y_low, y_high, u_low, u_high, v_low, v_high
+            print("configuring RLE", delay, smooth_thresh, y_low, y_high, u_low, u_high, v_low, v_high)
         try:
             self.lock.acquire()
             self.ser.write(chr(Fluke.SET_RLE))
@@ -454,9 +454,9 @@ class Fluke:
         bm2 = self.read_uint32();   # Compress
 
         if self.debug:
-            print "got image"
+            print("got image")
             freq = 60e6
-            print '%.3f %.3f' % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq))
+            print('%.3f %.3f' % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq)))
         
         return bytes
     
@@ -507,7 +507,7 @@ class Fluke:
         height = 192
         p = Picture()
 
-        version = map(int, self.dongle.split("."))
+        version = list(map(int, self.dongle.split(".")))
     
         if version < [2, 7, 8]:
             mode = image_codes[mode]
@@ -517,19 +517,19 @@ class Fluke:
             p.set(width, height, a)
         elif mode == "jpeg":
             jpeg = self.grab_jpeg_color(1)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "jpeg-fast":
             jpeg = self.grab_jpeg_color(0)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg":
             jpeg = self.grab_jpeg_gray(1)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg-fast":
             jpeg = self.grab_jpeg_gray(0)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode in ["gray", "grey"]:
             conf_window(self.ser, 0, 1, 0, 255, 191, 2, 2)
@@ -552,7 +552,7 @@ class Fluke:
             size=ord(self.ser.read(1))
             size = (size << 8) | ord(self.ser.read(1))
             if self.debug:
-                print "Grabbing RLE image size =", size
+                print("Grabbing RLE image size =", size)
             line =''
             while (len(line) < size):
                 line+=self.ser.read(size-len(line))
@@ -920,7 +920,7 @@ class Fluke:
 
     def darkenCamera(self, level=0):
         if self.debug:
-            print "Turning off White Balance, Gain Control, and Exposure Control", level
+            print("Turning off White Balance, Gain Control, and Exposure Control", level)
 
             
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_OFF)
@@ -935,7 +935,7 @@ class Fluke:
     def autoCamera(self):
 
         if self.debug:
-            print "Turning on White Balance, Gain Control, and Exposure Control"
+            print("Turning on White Balance, Gain Control, and Exposure Control")
 
         self.set_cam_param(0, 0)
         self.set_cam_param(1, 0x80)
@@ -1007,7 +1007,7 @@ class Fluke:
         elif item == "echomode":
             return self.setEchoMode(position)
         else:
-            raise ("invalid set item name: '%s'" % item)
+            raise "invalid set item name: '%s'"
    
     def stop(self):
         pass
@@ -1017,24 +1017,24 @@ class Fluke:
     def _read(self, bytes = 1):
         
         if self.debug:
-            print "Trying to read", bytes, "bytes", "timeout =", self.ser.timeout
+            print("Trying to read", bytes, "bytes", "timeout =", self.ser.timeout)
 
         c = self.ser.read(bytes)
         
         if self.debug:
-            print "Initially read", len(c), "bytes:",
-            print map(lambda x:"0x%x" % ord(x), c)
+            print("Initially read", len(c), "bytes:", end=' ')
+            print(["0x%x" % ord(x) for x in c])
             
         # .nah. bug fix
         while (bytes > 1 and len(c) < bytes):      
             c = c + self.ser.read(bytes-len(c))
             if self.debug:
-                print map(lambda x:"0x%x" % ord(x), c)
+                print(["0x%x" % ord(x) for x in c])
 
         # .nah. end bug fix
         if self.debug:
-            print "_read (%d)" % len(c)
-            print map(lambda x:"0x%x" % ord(x), c)
+            print("_read (%d)" % len(c))
+            print(["0x%x" % ord(x) for x in c])
 
         if self.dongle == None:
             time.sleep(0.01) # HACK! THIS SEEMS TO NEED TO BE HERE!
@@ -1043,10 +1043,10 @@ class Fluke:
             if (c != ""):
                 x = ord(c)            
             elif self.debug:
-                print "timeout!"
+                print("timeout!")
                 return x
         else:
-            return map(ord, c)
+            return list(map(ord, c))
 
 def cap(c):
     if (c > 255): 
@@ -1082,7 +1082,7 @@ def grab_rle_on(ser):
     """
     Returns a list of pixels that match.
     """
-    print "RLE"
+    print("RLE")
     width = 256
     height = 192    
     blobs = zeros(((height + 1), (width + 1)), dtype=uint8)
@@ -1092,7 +1092,7 @@ def grab_rle_on(ser):
     size=ord(ser.read(1))
     size = (size << 8) | ord(ser.read(1))
     if self.debug:
-        print "Grabbing RLE image size =", size
+        print("Grabbing RLE image size =", size)
     line =''
     while (len(line) < size):
         line+=ser.read(size-len(line))

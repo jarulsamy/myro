@@ -10,6 +10,7 @@ senses and controllers.
 
 from myro.robots.device import *
 import math, string, time, os, sys, types
+import importlib
 
 __author__ = "Stephen McCaul, Douglas Blank"
 __version__ = "$Revision: 582 $"
@@ -22,7 +23,7 @@ def file_exists(file_name):
         else:
             return exists(file_name)
     else:
-        raise AttributeError, "filename nust be a string"
+        raise AttributeError("filename nust be a string")
 
 def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     path = filename.split("/")
@@ -31,15 +32,15 @@ def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     search = string.join(path, "/")
     oldpath = sys.path[:] # copy
     sys.path.insert(0, search)
-    print "Attempting to import '%s'..." % module 
+    print("Attempting to import '%s'..." % module) 
     exec("import " + module + " as userspace")
-    reload(userspace)
-    print "Loaded '%s'!" % userspace.__file__
+    importlib.reload(userspace)
+    print("Loaded '%s'!" % userspace.__file__)
     sys.path = oldpath
     try:
         userspace.INIT
     except AttributeError:
-        raise ImportError, "your program needs an INIT() function"
+        raise ImportError("your program needs an INIT() function")
     if brain is 0:
         if engine is 0:
             retval = userspace.INIT()
@@ -132,10 +133,10 @@ class Robot:
         except: pass
         if dictable:
             if toplevel == "robot":
-                print "%s%s:" % (" " * indent, toplevel)
+                print("%s%s:" % (" " * indent, toplevel))
             else:
-                print "%s%s:" % (" " * indent, "." + toplevel)
-            dictkeys = thing.__dict__.keys()
+                print("%s%s:" % (" " * indent, "." + toplevel))
+            dictkeys = list(thing.__dict__.keys())
             dictkeys.sort()
             for item in dictkeys:
                 if item[0] == "_":
@@ -149,16 +150,16 @@ class Robot:
                             self._displayDevice(i, indent + 3, count)
                             count += 1
                     elif type(thing.__dict__[item]) == type({}): # dict
-                        print "%s%-15s = {%s}" % (" " * (indent + 3), "." + item, commas(thing.__dict__[item].keys()))
+                        print("%s%-15s = {%s}" % (" " * (indent + 3), "." + item, commas(list(thing.__dict__[item].keys()))))
                     elif type(thing.__dict__[item]) == type(''): # string
-                        print "%s%-15s = '%s'" % (" " * (indent + 3), "." + item, thing.__dict__[item])
+                        print("%s%-15s = '%s'" % (" " * (indent + 3), "." + item, thing.__dict__[item]))
                     else:
-                        print "%s%-15s = %s" % (" " * (indent + 3), "." + item, thing.__dict__[item])
+                        print("%s%-15s = %s" % (" " * (indent + 3), "." + item, thing.__dict__[item]))
         else:
             if type(thing) == type(''):
-                print "%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing)
+                print("%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing))
             else:
-                print "%s%-15s = %s" % (" " * indent, "." + toplevel, thing)
+                print("%s%-15s = %s" % (" " * indent, "." + toplevel, thing))
         return "Ok"
     def _displayDevice(self, device, indent = 0, count = 0):
         """Used in print device."""
@@ -290,7 +291,7 @@ class Robot:
         """
         dev = self.startDevices(item, **args)
         if len(dev) < 1:
-            print "Error loading device: '%s'" % item
+            print("Error loading device: '%s'" % item)
         else:
             return dev[0]
         
@@ -300,9 +301,9 @@ class Robot:
         if type(item) == type({}):
             # this is the only one that does anything
             retval = []
-            for dev in item.keys():
+            for dev in list(item.keys()):
                 deviceNumber = self._getNextDeviceNumber(dev)
-                print "Loading device %s[%d]..." % (dev, deviceNumber)
+                print("Loading device %s[%d]..." % (dev, deviceNumber))
                 self.__dict__[dev][deviceNumber] = item[dev]
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
                 item[dev].index = deviceNumber
@@ -334,12 +335,12 @@ class Robot:
                                                    '/plugins/devices/'+ \
                                                    file, self), **args)
             else:
-                print 'Device file not found: ' + file
+                print('Device file not found: ' + file)
                 return []
 
     def startDeviceBuiltin(self, item):
         """Calls back to a subclass to start a device from there. """
-        raise AttributeError, "no such builtin device '%s'" % item
+        raise AttributeError("no such builtin device '%s'" % item)
 
     def stopDevice(self, item):
         """Stop a device from updating."""
@@ -350,7 +351,7 @@ class Robot:
         if item in self.__dict__:
             return self.__dict__[item][0]
         else:
-            raise AttributeError, "unknown device '%s'" % item
+            raise AttributeError("unknown device '%s'" % item)
 
     def getDevices(self):
         """Returns the list of device types that have ben loaded."""
@@ -387,7 +388,7 @@ class Robot:
         elif feature in self.devices:
             return 1
         else:
-            raise ImportError, "robot does not currently have '%s' loaded." % feature
+            raise ImportError("robot does not currently have '%s' loaded." % feature)
 
     def hasA(self, dtype):
         """
@@ -408,7 +409,7 @@ class Robot:
         Removes the first sonar device.
         """
         if number == None: # remove all
-            print "removing all", item, "devices..."
+            print("removing all", item, "devices...")
             if item in self.__dict__:
                 for device in self.__dict__[item]:
                     device.setVisible(0)
@@ -416,9 +417,9 @@ class Robot:
                     device.destroy()
                 del self.__dict__[item]
             else:
-                raise AttributeError,"no such device: '%s'" % item
+                raise AttributeError("no such device: '%s'" % item)
         else:
-            print "removing %s[%d] device..." % (item, number)
+            print("removing %s[%d] device..." % (item, number))
             if item in self.__dict__:
                 device = self.__dict__[item][number]
                 device.setVisible(0)
@@ -426,7 +427,7 @@ class Robot:
                 device.destroy()
                 del self.__dict__[item][number]
             else:
-                raise AttributeError,"no such device: %s[%d]" % (item, number)
+                raise AttributeError("no such device: %s[%d]" % (item, number))
         return "Ok"
         
     def destroy(self):

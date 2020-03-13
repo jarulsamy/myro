@@ -23,7 +23,7 @@ def portname(id):
         if id in rfcommPortNumber:
             return '/dev/rfcomm%d' % rfcommPortNumber[id]
         else:
-            print 'Warning: unknown epuck ID -- using /dev/rfcomm0'
+            print('Warning: unknown epuck ID -- using /dev/rfcomm0')
             return '/dev/rfcomm0'
     elif platform.system() == 'Windows':
         assert type(id) is str, 'Bad port name: %s' % (id,)  # example: "COM27"
@@ -85,22 +85,22 @@ class Epuck(myro.Robot):
         self.offLED('all')
 
     def reset(self):
-        cmd = raw_input("Press blue reset button on robot, then press RETURN...")
+        cmd = input("Press blue reset button on robot, then press RETURN...")
         if cmd != '':
-            print 'Aborted'
+            print('Aborted')
             return
         self._clearLines()
         self._lastTranslate = 0
         self._lastRotate = 0
         self.setCameraMode('color', 40, 40, 8)
-        print 'Robot ready'
+        print('Robot ready')
 
     def send(self, msg):
         assert msg[0] not in 'HKRVhkrv', "command '%s' not allowed with send" % msg[0]
         self.port.write('%s\n' % msg)
         response = self.port.readline()
         if response == '' or response[0].upper() != msg[0].upper():
-            print "Bad response: '%s' -- check battery" % response.strip()
+            print("Bad response: '%s' -- check battery" % response.strip())
             self.reset()
         else:
             return response
@@ -117,7 +117,7 @@ class Epuck(myro.Robot):
         time.sleep(0.05)
         response = self.port.readline()
         while response != '':
-            print response.strip()
+            print(response.strip())
             time.sleep(0.05)
             response = self.port.readline()
 
@@ -130,26 +130,26 @@ class Epuck(myro.Robot):
             response = self.port.readline()
 
     def calibrateSensors(self):
-        cmd = raw_input('Remove all objects in sensor range, then press RETURN...')
+        cmd = input('Remove all objects in sensor range, then press RETURN...')
         if cmd != '':
-            print 'Aborted'
+            print('Aborted')
             return
-        print 'Calibrating sensors...'
+        print('Calibrating sensors...')
         self.port.write('K\n')
         self.port.readline()
         time.sleep(2)
         while self.port.readline().strip() != 'k, Calibration finished':
             time.sleep(0.05)
-        print 'Calibration finished'
+        print('Calibration finished')
 
     # closes the port connection to the robot
     def close(self):
         if self.port.isOpen():
-            print 'Disconnecting from e-puck %d' % self.id
+            print('Disconnecting from e-puck %d' % self.id)
             self.port.close()
 
     def manual_flush(self):
-        print '\nInterrupted...please wait'
+        print('\nInterrupted...please wait')
         self._clearLines()
 
     def hardStop(self):
@@ -207,7 +207,7 @@ class Epuck(myro.Robot):
         else:
             self.send('J,%d,%d,%d,%d' % (modeNum, width, height, zoom))
         mode, width, height, zoom, bytes = self.getCameraMode()
-        print 'Camera %d set to %dx%d %s (zoom level %d)' % (self.id, width, height, mode, zoom)
+        print('Camera %d set to %dx%d %s (zoom level %d)' % (self.id, width, height, mode, zoom))
         self.cameraMode = mode
         self.cameraWidth = width
         self.cameraHeight = height
@@ -227,8 +227,8 @@ class Epuck(myro.Robot):
         time.sleep(0.2)
         imageData = self.port.read(dataLength)
         if len(imageData) != dataLength:
-            print "Expected %d bytes from camera, got %d -- check battery" % \
-                (dataLength, len(imageData))
+            print("Expected %d bytes from camera, got %d -- check battery" % \
+                (dataLength, len(imageData)))
             self.reset()
         #modeNum, w, h = [ord(c) for c in imageData[:3]]
         # ignore header
@@ -247,7 +247,7 @@ class Epuck(myro.Robot):
             # color
             buffer = array.array('B', [0] * (w * h * 3))
             j = 0
-            for i in xrange(0, len(data), 2):
+            for i in range(0, len(data), 2):
                 high = ord(data[i])   # big endian
                 low = ord(data[i+1])
                 red = high & 0xF8
@@ -594,7 +594,7 @@ class Epuck(myro.Robot):
             time.sleep(delay)
 
     def flashCycleLED(self, delay=0):
-        for num in range(8) + [0]:
+        for num in list(range(8)) + [0]:
             self._flashLED(num, delay)
 
 

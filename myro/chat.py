@@ -25,7 +25,7 @@ try:
     import xmpp              # import xmpp
 except:
     xmpp = None
-    print "WARNING: xmpp was not found: chat and webservices will not be available"
+    print("WARNING: xmpp was not found: chat and webservices will not be available")
 sys.stderr = temp        # replace stderr
 temp = None              # clean up
 del temp
@@ -45,7 +45,7 @@ class RemoteRobot:
             if commandArgs != "":
                 commandArgs += ", "
             commandArgs += str(a)
-        for a in kwargs.keys():
+        for a in list(kwargs.keys()):
             if commandArgs != "":
                 commandArgs += ", "
             commandArgs += a + "=" + str(kwargs[a])
@@ -77,11 +77,11 @@ class LocalRobot:
         for _from, m in messages:
             if message.startswith("robot."):
                 # For user IM messages
-                print "self." + command
+                print("self." + command)
                 retval = eval("self.robot." + command)
                 self.chat.send(_from.lower(), repr(retval))
             else:
-                print _from + ":", message
+                print(_from + ":", message)
 
     def run(self):
         while 1:
@@ -115,14 +115,14 @@ class Chat(object):
             self.name, self.server = name.split("@")
 	self.debug = debug
         self.client = xmpp.Client(self.server, debug=self.debug)
-        print "Making connection to server..."
+        print("Making connection to server...")
         self.client.connect()
-        print "Registering '%s'..." % self.name
+        print("Registering '%s'..." % self.name)
         self.register(self.name.lower(), self.password)
         try:
             self.open()
         except AttributeError:
-            print "Help! It appears that the Myro Chat Server is down."
+            print("Help! It appears that the Myro Chat Server is down.")
 
     def register(self, name, password):
 	""" Register a username/password. """
@@ -143,7 +143,7 @@ class Chat(object):
 	try:
             self.client.Process(1) # this should be in a thread
         except xmpp.NotAuthorized:
-            raise ValueError, "bad password?"
+            raise ValueError("bad password?")
         self.lock.acquire()
         retval = self.messages
         self.messages = []
@@ -166,29 +166,29 @@ class Chat(object):
 	"""
 	Open a connection to the server.
 	"""
-        print "Authenticating password for '%s'..." % self.name
+        print("Authenticating password for '%s'..." % self.name)
         try:
             self.client.auth(self.name.lower(), self.password)
         except IOError:
             self.client = xmpp.Client(self.server, debug=self.debug)
             self.client.connect()
             self.client.auth(self.name.lower(), self.password)
-        print "Registering message handler..."
+        print("Registering message handler...")
         self.client.RegisterHandler('message', self.messageCB) 
         self.client.sendInitPresence()
         self.send("", "2") # make this the only place I'm logged in        
         messages = self.receive()
         count = 0
         while len(messages) == 0 and count < 5:
-            print "   waiting for response..."
+            print("   waiting for response...")
             time.sleep(1)
             messages = self.receive()
             count += 1
         if count >= 5:
-            print "Giving up! Are you sure you have the right password?"
+            print("Giving up! Are you sure you have the right password?")
             self.ok = 0
         else:
-            print "Done!"
+            print("Done!")
             self.ok = 1
 
     def close(self):
@@ -196,7 +196,7 @@ class Chat(object):
 	Close the connection to the server.
 	"""
         self.client.disconnect()
-        print "Disconnected!"
+        print("Disconnected!")
 
     def __del__(self):
 	""" Close the connection on destruction. """

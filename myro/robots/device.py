@@ -1,4 +1,4 @@
-from __future__ import generators
+
 
 """
 The device module. All devices (sonar, laser, position, etc) derive
@@ -7,7 +7,7 @@ from these.
 (c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
-import types, random, exceptions, math, Tkinter, threading
+import types, random, exceptions, math, tkinter, threading
 
 # constants:
 TOLERANCE = .0001
@@ -21,7 +21,7 @@ __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision: 582 $"
 
 
-class DeviceWindow(Tkinter.Toplevel):
+class DeviceWindow(tkinter.Toplevel):
     """
     An object responsible for showing device data.
     """
@@ -29,9 +29,9 @@ class DeviceWindow(Tkinter.Toplevel):
         """Constructor for the DeviceWindow class."""
         import myro
         if not myro._gui:
-            myro._gui = Tkinter.Tk()
+            myro._gui = tkinter.Tk()
             myro._gui.withdraw()
-        Tkinter.Toplevel.__init__(self, myro._gui)
+        tkinter.Toplevel.__init__(self, myro._gui)
         self.visibleData = 0
         self._dev = device
         self.wm_title(title)
@@ -45,28 +45,28 @@ class DeviceWindow(Tkinter.Toplevel):
                                  command = self.updateVariables)
     def makeVariable(self, obj, name, val):
         """ Make a Tkvar and set the value """
-        v = Tkinter.BooleanVar()
+        v = tkinter.BooleanVar()
         v.set(val)
         self.variables[name] = v
         obj.__dict__[name] = val
         return v
     def updateVariables(self):
-        for v in self.variables.keys():
+        for v in list(self.variables.keys()):
             self._dev.__dict__[v] = self.variables[v].get()
     def update(self):
         """Method called to update a device."""
         pass
     def addButton(self, name, text, command):
         """Adds a button to the device view window."""
-        self.widgets[name] = Tkinter.Button(self, text=text, command=command)
+        self.widgets[name] = tkinter.Button(self, text=text, command=command)
         self.widgets[name].pack(fill="both", expand="y")
     def addCheckbox(self, name, text, variable, command):
         """Adds a checkbox to the device view window."""
-        self.widgets[name] = Tkinter.Checkbutton(self, text=text, variable=variable, command=command)
+        self.widgets[name] = tkinter.Checkbutton(self, text=text, variable=variable, command=command)
         self.widgets[name].pack(anchor="w")
     def addLabel(self, name, text):
         """Adds a label to the device view window."""
-        self.widgets[name] = Tkinter.Label(self, text=text)
+        self.widgets[name] = tkinter.Label(self, text=text)
         self.widgets[name].pack(fill="both", expand="y")
     def updateWidget(self, name, value):
         """Updates the device view window."""
@@ -77,29 +77,29 @@ class DeviceWindow(Tkinter.Toplevel):
     def addData(self, name, text, value):
         """Adds a data field to the device view window."""
         self.visibleData = 1
-        frame = Tkinter.Frame(self)
+        frame = tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
         try:
-            self.widgets[name + ".label"] = Tkinter.Label(frame, text=text)
+            self.widgets[name + ".label"] = tkinter.Label(frame, text=text)
             self.widgets[name + ".label"].pack(side="left")
-            self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
+            self.widgets[name + ".entry"] = tkinter.Entry(frame, bg="white")
             self.widgets[name + ".entry"].insert(0, value)
             self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
         except: pass
     def addCommand(self, name, text, value, procedure):
         """Adds a command field to the device view window."""
-        frame = Tkinter.Frame(self)
+        frame = tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
         try:
-            self.widgets[name + ".button"] = Tkinter.Button(frame, text=text, command=lambda name=name, proc=procedure: self.onButton(name, proc))
+            self.widgets[name + ".button"] = tkinter.Button(frame, text=text, command=lambda name=name, proc=procedure: self.onButton(name, proc))
             self.widgets[name + ".button"].pack(side="left")
-            self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
+            self.widgets[name + ".entry"] = tkinter.Entry(frame, bg="white")
             self.widgets[name + ".entry"].insert(0, value)
             self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
         except: pass
     def onButton(self, name, proc):
         command = self.widgets[name + ".entry"].get().strip()
-        print proc(command)
+        print(proc(command))
     def destroy(self):
         """Hides the device view window."""
         if self._dev:
@@ -158,7 +158,7 @@ class SensorValue:
         elif unit.lower() == "degrees":
             return self.geometry[3] / PIOVER180 # degrees
         else:
-            raise AttributeError, "invalid unit = '%s'" % unit
+            raise AttributeError("invalid unit = '%s'" % unit)
     def _hit(self):
         """Internal get for the .hit property."""
         if self.geometry == None: return (None, None, None)
@@ -221,20 +221,20 @@ class Device(object):
     def setAsync(self, value):
         if value:
             if self.async:
-                raise ValueError, "asynchronous device is already asynchronous"
+                raise ValueError("asynchronous device is already asynchronous")
             self.asyncThread  = DeviceThread(self, name="%s device" % self.type)
             self.async = 1
 
         else:
             if not self.async:
-                raise ValueError, "non-asynchronous device is already non-asynchronous"
+                raise ValueError("non-asynchronous device is already non-asynchronous")
             self.asyncThread.join()
             del self.asyncThread
             self.async = 0
 
     # Properties to make getting all values easy:
     def _setDisabled(self, ignore):
-        raise AttributeError, "This attribute is read-only"
+        raise AttributeError("This attribute is read-only")
 
     def _getValue(self):
         """Internal get for all of the .value properties."""
@@ -364,7 +364,7 @@ class Device(object):
 
     def __getitem__(self, item):
         """Get a SensorValue, a range, or a set."""
-        if type(item) == types.StringType:
+        if type(item) == bytes:
             if "groups" in self.__dict__ and item in self.__dict__["groups"]:
                 positions = self.__dict__["groups"][item]
                 retval = []
@@ -372,20 +372,20 @@ class Device(object):
                     retval.append( self.getSensorValue(p) )
                 return retval
             else: # got a string, but it isn't a group name
-                raise AttributeError, "invalid device groupname '%s'" % item
-        elif type(item) == types.TupleType:
+                raise AttributeError("invalid device groupname '%s'" % item)
+        elif type(item) == tuple:
             return [self.getSensorValue(p) for p in item]
-        elif type(item) == types.IntType:
+        elif type(item) == int:
             return self.getSensorValue(item)
-        elif type(item) == types.SliceType:
+        elif type(item) == slice:
             if item.stop >= len(self): stop = len(self) - 1
             else:                      stop = item.stop
             step = 1
             if item.step:
                 step = item.step
-            return [self.getSensorValue(p) for p in xrange(item.start, stop, step)]
+            return [self.getSensorValue(p) for p in range(item.start, stop, step)]
         else:
-            raise AttributeError, "invalid device[%s]" % item
+            raise AttributeError("invalid device[%s]" % item)
 
     def setTitle(self, title):
         """Sets the title of the device."""
@@ -435,7 +435,7 @@ class Device(object):
             elif self.units.upper() == "MM":
                 meters = raw / 1000.0
             else:
-                raise AttributeError, ("can't convert from units '%s'" % self.units)
+                raise AttributeError("can't convert from units '%s'" % self.units)
             # now, have it in meters, want to go to rawunits:
             if (self.rawunits.upper() == "METERS" or
                 self.rawunits.upper() == "M"):
@@ -445,7 +445,7 @@ class Device(object):
             elif self.rawunits.upper() == "MM":
                 return meters * 1000.0
             else:
-                raise AttributeError, ("can't convert to rawunits '%s'" % self.rawunits)
+                raise AttributeError("can't convert to rawunits '%s'" % self.rawunits)
         # next, add noise, if you want:
         if noise > 0:
             if random.random() > .5:
@@ -480,7 +480,7 @@ class Device(object):
                 return raw
             # else, no conversion necessary
         else:
-            raise AttributeError, ("device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.rawunits, units))
+            raise AttributeError("device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.rawunits, units))
         # now, it is in meters. convert it to output units:
         if units == "ROBOTS":
             return raw / (self.radius * 2) # in meters
@@ -491,7 +491,7 @@ class Device(object):
         elif units == "METERS" or units == "M":
             return raw 
         else:
-            raise TypeError, ("Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units)
+            raise TypeError("Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units)
 
     def getVisible(self):
         """Returns the .visible of the sensor."""

@@ -75,7 +75,7 @@ class SimScribbler(Robot):
                             "line": self.get("line"),
                             "stall": self.get("stall")}
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             for position in positions:
                 if sensor == "light":
                     if position in ["left", "center", "right"]:
@@ -96,7 +96,7 @@ class SimScribbler(Robot):
                         position = int(position)
                     retvals.append(self._clients[0].line[0].value[position])
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             if len(retvals) == 1:
                 return retvals[0]
             else:
@@ -127,5 +127,5 @@ class SimScribbler(Robot):
             self.startsong = position
             return None
         else:
-            raise ("invalid set item name: '%s'" % item)
+            raise "invalid set item name: '%s'"
 

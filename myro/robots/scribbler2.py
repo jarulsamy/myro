@@ -13,11 +13,11 @@ import os
 try:
     import serial
 except:
-    print "WARNING: pyserial not loaded: scribbler won't work!"
+    print("WARNING: pyserial not loaded: scribbler won't work!")
 from myro import Robot, ask
 from myro.graphics import _askQuestion, Picture, rgb2yuv
 import myro.globvars
-import cStringIO
+import io
 import array
 
 class BufferedRead:
@@ -197,7 +197,7 @@ class Scribbler(Robot):
         if serialport == None:
             if 'MYROROBOT'in os.environ:
                 serialport = os.environ['MYROROBOT']
-                print "Connecting to", serialport
+                print("Connecting to", serialport)
             else:
                 serialport = ask("Port", useCache = 1)
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
@@ -216,22 +216,22 @@ class Scribbler(Robot):
         self.open()
         
         myro.globvars.robot = self
-        self._fudge = range(4)
-        self._oldFudge = range(4)
+        self._fudge = list(range(4))
+        self._oldFudge = list(range(4))
         self.dongle = None
         self.dongle_version = 0
         self.imagewidth = 0
         self.imageheight = 0
         
         info = self.getInfo()
-        if "fluke" in info.keys():
+        if "fluke" in list(info.keys()):
             self.dongle = info["fluke"]
-            print "You are using fluke firmware", info["fluke"]
-        elif "dongle" in info.keys():
+            print("You are using fluke firmware", info["fluke"])
+        elif "dongle" in list(info.keys()):
             self.dongle = info["dongle"]
-            print "You are using fluke firmware", info["dongle"]
+            print("You are using fluke firmware", info["dongle"])
         if self.dongle != None:
-            self.dongle_version = map(int, self.dongle.split("."))
+            self.dongle_version = list(map(int, self.dongle.split(".")))
             if self.dongle_version >= [3, 0, 0]:
                 self.imagewidth = 1280
                 self.imageheight = 800
@@ -256,12 +256,12 @@ class Scribbler(Robot):
                           v_low=190, v_high=255)
 
         self.robotinfo = {}
-        if "robot" in info.keys():
+        if "robot" in list(info.keys()):
             self.robotinfo = info["robot"]
-            if "robot-version" in info.keys():
-                print "You are using scribbler firmware", info["robot-version"]
-            elif "api" in info.keys():
-                print "You are using scribbler firmware", info["api"]
+            if "robot-version" in list(info.keys()):
+                print("You are using scribbler firmware", info["robot-version"])
+            elif "api" in list(info.keys()):
+                print("You are using scribbler firmware", info["api"])
             self.restart()
             self.loadFudge()
 
@@ -278,13 +278,13 @@ class Scribbler(Robot):
             else:
                 port = "COM" + str(x)
             prettyPort = "COM" + str(x)
-            print "Searching on port %s for robot named '%s'..." % (prettyPort, self.serialPort)
+            print("Searching on port %s for robot named '%s'..." % (prettyPort, self.serialPort))
             try:
                 self.ser = serial.Serial(port, timeout=10)
             except KeyboardInterrupt:
                 raise
             except serial.SerialException:
-                print "   Serial element not found. If this continues, remove/replace serial device..."
+                print("   Serial element not found. If this continues, remove/replace serial device...")
                 continue
             self.ser.baudrate = self.baudRate
             # assume that it has been running for at least a second!
@@ -298,7 +298,7 @@ class Scribbler(Robot):
                 name = name.strip()
                 s = port.replace('\\', "")
                 s = s.replace('.', "")
-                print "   Found robot named", name, "on port", s, "!"
+                print("   Found robot named", name, "on port", s, "!")
                 if name == self.serialPort:
                     self.serialPort = port
                     self.ser.timeout = 10
@@ -315,7 +315,7 @@ class Scribbler(Robot):
         try:
             if self.serialPort == myro.globvars.robot.ser.portstr:
                 myro.globvars.robot.ser.close()
-                print "Closing serial port..."
+                print("Closing serial port...")
                 time.sleep(1)
         except KeyboardInterrupt:
             raise
@@ -334,7 +334,7 @@ class Scribbler(Robot):
                 except KeyboardInterrupt:
                     raise
                 except serial.SerialException:
-                    print "   Serial element not found. If this continues, remove/replace serial device..."
+                    print("   Serial element not found. If this continues, remove/replace serial device...")
                     try:
                         self.ser.close()
                     except KeyboardInterrupt:
@@ -349,7 +349,7 @@ class Scribbler(Robot):
                         pass
                     time.sleep(1)
                 except:
-                    print "Waiting on port...", self.serialPort
+                    print("Waiting on port...", self.serialPort)
                     try:
                         self.ser.close()
                     except KeyboardInterrupt:
@@ -390,7 +390,7 @@ class Scribbler(Robot):
             time.sleep(1.2)       # give it time to see if another IPRE show up
             if self.ser.inWaiting() == 0: # if none, then we are out of here!
                 break
-            print "Waking robot from sleep..."
+            print("Waking robot from sleep...")
             self.setEchoMode(0) # send command to get out of broadcast; turn off echo
             time.sleep(.25)               # give it some time
         self.ser.flushInput()
@@ -403,7 +403,7 @@ class Scribbler(Robot):
         self.beep(.03, 349)
         self.beep(.03, 523)
         name = self.get("name")
-        print "Hello, I'm %s!" % name
+        print("Hello, I'm %s!" % name)
 
     def beep(self, duration, frequency, frequency2 = None):
 
@@ -420,7 +420,7 @@ class Scribbler(Robot):
         v = self.ser.read(Scribbler.PACKET_LENGTH + 11)
 
         if self.debug:
-            print map(lambda x:"0x%x" % ord(x), v)
+            print(["0x%x" % ord(x) for x in v])
 
         self.ser.setTimeout(old)
         self.lock.release()
@@ -496,7 +496,7 @@ class Scribbler(Robot):
                                 "battery": self.getBattery(),
                                 }
                 else:                
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             retvals = []
             for pos in position:
                 if sensor == "light":
@@ -530,7 +530,7 @@ class Scribbler(Robot):
                 elif sensor == "picture":
                     return self.takePicture(pos)
                 else:
-                    raise ("invalid sensor name: '%s'" % sensor)
+                    raise "invalid sensor name: '%s'"
             if len(retvals) == 0:
                 return None
             elif len(retvals) == 1:
@@ -748,7 +748,7 @@ class Scribbler(Robot):
         smooth_thresh = int(smooth_thresh)
 
         if self.debug:
-            print "configuring RLE", delay, smooth_thresh, y_low, y_high, u_low, u_high, v_low, v_high
+            print("configuring RLE", delay, smooth_thresh, y_low, y_high, u_low, u_high, v_low, v_high)
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.SET_RLE))
@@ -785,9 +785,9 @@ class Scribbler(Robot):
         bm2 = self.read_uint32();   # Compress
 
         if self.debug:
-            print "got image"
+            print("got image")
             freq = 60e6
-            print '%.3f %.3f' % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq))
+            print('%.3f %.3f' % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq)))
         
         return bytes
     
@@ -841,7 +841,7 @@ class Scribbler(Robot):
         p = Picture()
 
         if self.dongle:
-            version = map(int, self.dongle.split("."))
+            version = list(map(int, self.dongle.split(".")))
         else:
             version = [1, 0, 0]
                 
@@ -854,23 +854,23 @@ class Scribbler(Robot):
             p.set(width, height, a)
         elif mode == "jpeg":
             jpeg = self.grab_jpeg_color(1)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "jpeg-fast":
             jpeg = self.grab_jpeg_color(0)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode in ["gray", "grey"]:
             jpeg = self.grab_jpeg_gray(1)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg":
             jpeg = self.grab_jpeg_gray(1)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg-fast":
             jpeg = self.grab_jpeg_gray(0)
-            stream = cStringIO.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)  
             p.set(width, height, stream, "jpeg")
         elif mode in ["grayraw", "greyraw"]:
             conf_window(self, 0, 1, 0, self.imagewidth-1, self.imageheight-1, 2, 2)
@@ -895,7 +895,7 @@ class Scribbler(Robot):
             size=ord(self.ser.read(1))
             size = (size << 8) | ord(self.ser.read(1))
             if self.debug:
-                print "Grabbing RLE image size =", size
+                print("Grabbing RLE image size =", size)
             line =''
             while (len(line) < size):
                 line+=self.ser.read(size-len(line))
@@ -1134,12 +1134,12 @@ class Scribbler(Robot):
         line = ''
         
         if self.dongle:
-            version = map(int, self.dongle.split("."))
+            version = list(map(int, self.dongle.split(".")))
         else:
             version = [1, 0, 0]
                 
         if version < [2, 8, 1]:
-            print "IR Messaging not support with your firmware"
+            print("IR Messaging not support with your firmware")
             return None
 
         try:
@@ -1154,12 +1154,12 @@ class Scribbler(Robot):
 
     def sendIRMessage(self, data):
         if self.dongle:
-            version = map(int, self.dongle.split("."))
+            version = list(map(int, self.dongle.split(".")))
         else:
             version = [1, 0, 0]
                 
         if version < [2, 8, 1]:
-            print "IR Messaging not support with your firmware"
+            print("IR Messaging not support with your firmware")
             return None
 
         try:
@@ -1363,7 +1363,7 @@ class Scribbler(Robot):
 
     def darkenCamera(self, level=0):
         if self.debug:
-            print "Turning off White Balance, Gain Control, and Exposure Control", level
+            print("Turning off White Balance, Gain Control, and Exposure Control", level)
 
         if self.dongle_version >= [3, 0, 0]:
             level += 128
@@ -1379,7 +1379,7 @@ class Scribbler(Robot):
 
     def manualCamera(self, gain=0x00, brightness=0x80, exposure=0x41):
         if self.debug:
-            print "Turning off White Balance, Gain Control, and Exposure Control", level            
+            print("Turning off White Balance, Gain Control, and Exposure Control", level)            
 
         if self.dongle_version >= [3, 0, 0]:
             gain += 128
@@ -1394,7 +1394,7 @@ class Scribbler(Robot):
     def autoCamera(self):
 
         if self.debug:
-            print "Turning on White Balance, Gain Control, and Exposure Control"
+            print("Turning on White Balance, Gain Control, and Exposure Control")
 
         self.set_cam_param(0, 0)
         self.set_cam_param(1, 0x80)
@@ -1467,17 +1467,17 @@ class Scribbler(Robot):
         elif item == "name":
             position = position + (" " * 16)
             name1 = position[:8].strip()
-            name1_raw = map(lambda x:  ord(x), name1)
+            name1_raw = [ord(x) for x in name1]
             name2 = position[8:16].strip()
-            name2_raw = map(lambda x:  ord(x), name2)
+            name2_raw = [ord(x) for x in name2]
             self._set(*([Scribbler.SET_NAME1] + name1_raw))
             self._set(*([Scribbler.SET_NAME2] + name2_raw))
         elif item == "password":
             position = position + (" " * 16)
             pass1 = position[:8].strip()
-            pass1_raw = map(lambda x:  ord(x), pass1)
+            pass1_raw = [ord(x) for x in pass1]
             pass2 = position[8:16].strip()
-            pass2_raw = map(lambda x:  ord(x), pass2)
+            pass2_raw = [ord(x) for x in pass2]
             self._set(*([Scribbler.SET_PASS1] + pass1_raw))
             self._set(*([Scribbler.SET_PASS2] + pass2_raw))
         elif item == "whitebalance":
@@ -1502,7 +1502,7 @@ class Scribbler(Robot):
         elif item == "forwardness":
             return self.setForwardness(position)
         else:
-            raise ("invalid set item name: '%s'" % item)
+            raise "invalid set item name: '%s'"
    
     # Sets the fudge values (in memory, and on the flash memory on the robot)
     def setFudge(self,f1,f2,f3,f4):
@@ -1658,24 +1658,24 @@ class Scribbler(Robot):
     def _read(self, bytes = 1):
         
         if self.debug:
-            print "Trying to read", bytes, "bytes", "timeout =", self.ser.timeout
+            print("Trying to read", bytes, "bytes", "timeout =", self.ser.timeout)
 
         c = self.ser.read(bytes)
         
         if self.debug:
-            print "Initially read", len(c), "bytes:",
-            print map(lambda x:"0x%x" % ord(x), c)
+            print("Initially read", len(c), "bytes:", end=' ')
+            print(["0x%x" % ord(x) for x in c])
             
         # .nah. bug fix
         while (bytes > 1 and len(c) < bytes):      
             c = c + self.ser.read(bytes-len(c))
             if self.debug:
-                print map(lambda x:"0x%x" % ord(x), c)
+                print(["0x%x" % ord(x) for x in c])
 
         # .nah. end bug fix
         if self.debug:
-            print "_read (%d)" % len(c)
-            print map(lambda x:"0x%x" % ord(x), c)
+            print("_read (%d)" % len(c))
+            print(["0x%x" % ord(x) for x in c])
 
         if self.dongle == None:
             time.sleep(0.01) # HACK! THIS SEEMS TO NEED TO BE HERE!
@@ -1684,18 +1684,18 @@ class Scribbler(Robot):
             if (c != ""):
                 x = ord(c)            
             elif self.debug:
-                print "timeout!"
+                print("timeout!")
                 return x
         else:
-            return map(ord, c)
+            return list(map(ord, c))
 
     def _write(self, rawdata):
-        t = map(lambda x: chr(int(x)), rawdata)
+        t = [chr(int(x)) for x in rawdata]
         data = string.join(t, '') + (chr(0) * (Scribbler.PACKET_LENGTH - len(t)))[:9]
         if self.debug:
-            print "_write:", data, len(data),
-            print "data:",
-            print map(lambda x:"0x%x" % ord(x), data)
+            print("_write:", data, len(data), end=' ')
+            print("data:", end=' ')
+            print(["0x%x" % ord(x) for x in data])
         if self.dongle == None:
             time.sleep(0.01) # HACK! THIS SEEMS TO NEED TO BE HERE!
         self.ser.write(data)      # write packets
@@ -1731,7 +1731,7 @@ class Scribbler(Robot):
             elif mode == "line": # until hit \n newline
                 retval = self.ser.readline()
                 if self.debug:
-                    print "_get(line)", retval
+                    print("_get(line)", retval)
             #self.ser.flushInput()            
         finally:
             self.lock.release()
@@ -1800,7 +1800,7 @@ def grab_rle_on(self):
     """
     Returns a list of pixels that match.
     """
-    print "RLE"
+    print("RLE")
     width = self.imagewidth
     height = self.imageheight
     blobs = zeros(((height + 1), (width + 1)), dtype=uint8)
@@ -1810,7 +1810,7 @@ def grab_rle_on(self):
     size=ord(self.ser.read(1))
     size = (size << 8) | ord(self.ser.read(1))
     if self.debug:
-        print "Grabbing RLE image size =", size
+        print("Grabbing RLE image size =", size)
     line =''
     while (len(line) < size):
         line+=self.ser.read(size-len(line))

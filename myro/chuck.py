@@ -19,7 +19,7 @@ def initChucK():
     elif os.name in ['posix']:
         os.system("chuck oscrecv &")
     else:
-        raise AttributeError, "your operating system (%s) is not currently supported" % os.name
+        raise AttributeError("your operating system (%s) is not currently supported" % os.name)
 
 def initChuck():
     initChucK()
@@ -141,7 +141,7 @@ class Voice(Instrument):
     # start singing [0.0-1.0]
     def sing(self, floatValue):
         if floatValue < 0 or floatValue > 1:
-            print "VoicForm sing: floatValue should be between 0.0 and 1.0"
+            print("VoicForm sing: floatValue should be between 0.0 and 1.0")
         else:
             osc.sendMsg("/inst/voicform/speak", [floatValue * 1.0])
 

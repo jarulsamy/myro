@@ -1,9 +1,9 @@
-import zipfile, tarfile, urllib
+import zipfile, tarfile, urllib.request, urllib.parse, urllib.error
 import os, string, sys, time, tempfile
 try:
     import serial
 except:
-    print "WARNING: pyserial not loaded: can't upgrade robot!"
+    print("WARNING: pyserial not loaded: can't upgrade robot!")
 from myro import __VERSION__ as myro_version
 import myro.globvars
 # copied below from scribbler.py:
@@ -40,7 +40,7 @@ def url_retrieve(url, tmp_dir = None):
     # get url into tmp_file
     path, file = url.rsplit("/", 1)
     tmp_file = tmp_dir + os.sep + file
-    infp = urllib.urlopen(url)
+    infp = urllib.request.urlopen(url)
     contents = infp.read()
     infp.close()
     outfp = open(tmp_file, "wb")
@@ -90,12 +90,12 @@ def import_file(filename):
         lines = manifest.split("\n")
         for line in lines:
             if ":" in line:
-                f, dest = map(string.strip, line.strip().split(":"))
+                f, dest = list(map(string.strip, line.strip().split(":")))
                 director[f] = dest % VALUES
         for name in name_list:
             if name == "MANIFEST": continue
             contents = infp.read(name)
-            print "   writing:", director[name], "..."
+            print("   writing:", director[name], "...")
             # first write to temp file:
             try:
                 outfp = open(director[name], "wb")
@@ -106,17 +106,17 @@ def import_file(filename):
             outfp.close()
             install_count += 1
     else:
-        print "   ERROR: no MANIFEST in Myro upgrade; skipping"
+        print("   ERROR: no MANIFEST in Myro upgrade; skipping")
     infp.close()
     return install_count
 
 def makePath(path):
     from os import makedirs
     from os.path import normpath,dirname,exists,abspath
-    print "      Checking directory", path
+    print("      Checking directory", path)
     dpath = normpath(dirname(path))
     if not exists(dpath):
-        print "         Making directory", dpath
+        print("         Making directory", dpath)
         makedirs(dpath)
     return normpath(abspath(path))
 
@@ -130,35 +130,35 @@ def upgrade_myro(url=None, version=None):
         version = version.split(".")
     install_count = 0
     if not url.startswith("http://"):
-        print "Looking for Myro upgrades in file", url, "..."
+        print("Looking for Myro upgrades in file", url, "...")
         install_count += import_file(url) # which is a filename
     else:        
-        print "Looking for Myro upgrades at", url, "..."
+        print("Looking for Myro upgrades at", url, "...")
         myro_ver = myro_version.split(".")
         # go to site, check for latest greater than our version
-        infp = urllib.urlopen(url)
+        infp = urllib.request.urlopen(url)
         contents = infp.read()
         lines = contents.split("\n")
         infp.close()
         for filename in lines:
             filename = filename.strip()
             if filename != "" and filename[0] != '#':
-                print "Considering", filename, "..."
+                print("Considering", filename, "...")
                 if filename.startswith("myro-upgrade-"):
                     end = filename.index(".zip")
                     patch_ver = filename[13:end].split(".")
                     if (version != None): # get specific version
-                        if map(int, patch_ver) == map(int, version):
-                            print "   Downloading..."
+                        if list(map(int, patch_ver)) == list(map(int, version)):
+                            print("   Downloading...")
                             install_count += import_url(url + filename)
-                    elif map(int, patch_ver) > map(int, myro_ver):
+                    elif list(map(int, patch_ver)) > list(map(int, myro_ver)):
                         # download it
-                        print "   Downloading..."
+                        print("   Downloading...")
                         install_count += import_url(url + filename)
     if install_count > 0:
-        print "Done upgrading! Please exit and restart Python and Myro"
+        print("Done upgrading! Please exit and restart Python and Myro")
     else:
-        print "Nothing to upgrade in Myro; it's up-to-date."
+        print("Nothing to upgrade in Myro; it's up-to-date.")
     return install_count
 
 class SerialRobot:
@@ -184,7 +184,7 @@ class SerialRobot:
         self.ser = serial.Serial(self.serialPort, timeout = 2) 
     def getInfo(self): return {"robot":"Serial", "mode": "serial"}
     def restart(self):
-        print "Please run initialize() to connect onto robot"
+        print("Please run initialize() to connect onto robot")
 
 def upgrade_scribbler(url=None, scrib_version=1):
     """
@@ -192,7 +192,7 @@ def upgrade_scribbler(url=None, scrib_version=1):
     """
     if myro.globvars.robot == None:
         # force upgrade
-        print "Connecting to Scribbler for initial firmware installation..."
+        print("Connecting to Scribbler for initial firmware installation...")
         myro.globvars.robot = SerialRobot()
 
     s = myro.globvars.robot.ser
@@ -200,18 +200,18 @@ def upgrade_scribbler(url=None, scrib_version=1):
     info = get_info_timeout(s)
     
     scribbler_ver = [0, 0, 0]
-    if "robot-version" in info.keys():            
+    if "robot-version" in list(info.keys()):            
         scribbler_ver = info["robot-version"].split(".")
-    elif "api" in info.keys():            
+    elif "api" in list(info.keys()):            
         scribbler_ver = info["api"].split(".")
 
-    if "robot" in info.keys():
+    if "robot" in list(info.keys()):
         robot_version = info["robot"]
         if robot_version == "Scribbler2":
             scrib_version = 2
     else:
         robot_type = get_robot_type(s) 
-        print "using robot: ", robot_type
+        print("using robot: ", robot_type)
         if robot_type == "SCRIBBLER-2\n":
             scrib_version = 2
 
@@ -229,7 +229,7 @@ def upgrade_scribbler(url=None, scrib_version=1):
 
     install_count = 0
     if not url.startswith("http://"):
-        print "Looking for Scribbler", scrib_version, "upgrades in file", url, "..."
+        print("Looking for Scribbler", scrib_version, "upgrades in file", url, "...")
         if scrib_version == 2:
             f = open(url, 'rb')
         else:
@@ -237,24 +237,24 @@ def upgrade_scribbler(url=None, scrib_version=1):
             
         install_count += load_scribbler(s, f, True, scrib_version) # which is a filename
     else:        
-        print "Looking for Scribbler upgrades at", url, "..."
+        print("Looking for Scribbler upgrades at", url, "...")
 
         info = get_info_timeout(s)
 
         scribbler_ver = [0, 0, 0]
-        if "robot-version" in info.keys():            
+        if "robot-version" in list(info.keys()):            
             scribbler_ver = info["robot-version"].split(".")
-        elif "api" in info.keys():            
+        elif "api" in list(info.keys()):            
             scribbler_ver = info["api"].split(".")
 
         # go to site, check for latest greater than our version
         try:
-            infp = urllib.urlopen(url)
+            infp = urllib.request.urlopen(url)
         except:
-            print "ERROR: There was an error connecting to the web to download updates. Please check your internet connection. For example, see if you can access", url, "using a web browser."
+            print("ERROR: There was an error connecting to the web to download updates. Please check your internet connection. For example, see if you can access", url, "using a web browser.")
             return
         
-        print "Opened url..."
+        print("Opened url...")
         contents = infp.read()
         lines = contents.split("\n")
         infp.close()
@@ -263,30 +263,30 @@ def upgrade_scribbler(url=None, scrib_version=1):
         for filename in lines:
             filename = filename.strip()
             if filename != "" and filename[0] != '#':
-                print "Considering", filename, "..."
+                print("Considering", filename, "...")
                 if filename.startswith(startswith):
                     end = filename.index(endswidth)
                     patch_ver = filename[startpos:end].split(".")
                     try:
-                        scribbler_ver = map(int, scribbler_ver)
+                        scribbler_ver = list(map(int, scribbler_ver))
                     except:
                         #scribbler_ver has letters in it (and so is really old)
                         scribbler_ver = [0, 0, 0]
-                    if map(int, patch_ver) > scribbler_ver:
+                    if list(map(int, patch_ver)) > scribbler_ver:
                         # consider it:
                         consider[tuple(map(int, patch_ver))] = url + filename
 
-        consider_keys = consider.keys()
+        consider_keys = list(consider.keys())
         consider_keys.sort()
         if len(consider_keys) > 0:
             full_url = consider[consider_keys[-1]]
-            print "Loading", full_url
-            f = urllib.urlopen(full_url)
+            print("Loading", full_url)
+            f = urllib.request.urlopen(full_url)
             install_count += load_scribbler(s, f, True, scrib_version)
     if install_count > 0:
-        print "Done upgrading!"
+        print("Done upgrading!")
     else:
-        print "Nothing to upgrade on the Scribbler; it's up-to-date."
+        print("Nothing to upgrade on the Scribbler; it's up-to-date.")
     return install_count
 
 def manual_flush(ser):
@@ -345,20 +345,20 @@ def load_scribbler(s, f, force=False, scrib_version = 1):
         else:
             info = "0.0.0"
 
-    print info
+    print(info)
 
     sendMagicKey = False
 
-    version = map(int, info.split("."))
-    print "Version of fluke", version
+    version = list(map(int, info.split(".")))
+    print("Version of fluke", version)
     
     if version > [2, 5, 0] or force:
         sendMagicKey = True
 
     if sendMagicKey:
-        print "Sending magic key"
+        print("Sending magic key")
     else:
-        print "Older firmware version, Not sending magic key"            
+        print("Older firmware version, Not sending magic key")            
 
     bytes=[]
     if scrib_version == 2:
@@ -369,29 +369,29 @@ def load_scribbler(s, f, force=False, scrib_version = 1):
             if (len(t) > 0):               
                 nv = int(t)
                 bytes.append(nv)
-    print "Program size (bytes) = %d; scribbler version = %d" % (len(bytes), scrib_version)
+    print("Program size (bytes) = %d; scribbler version = %d" % (len(bytes), scrib_version))
     f.close()
-    print "Storing program in memory..."
+    print("Storing program in memory...")
     if scrib_version == 2:        
         set_scribbler2_memory_batch(s, bytes)
     else:
         for i in range(0, len(bytes)):
             set_scribbler_memory(s, i, bytes[i])
             
-    print "Programming scribbler %d..." % scrib_version
+    print("Programming scribbler %d..." % scrib_version)
     if sendMagicKey:
-        print "sending magic key"
+        print("sending magic key")
         if scrib_version == 2:
             set_scribbler2_start_program(s, len(bytes))
         else:
             set_scribbler_start_program(s, len(bytes))
     else:
-        print "older version, not sending magic key"
+        print("older version, not sending magic key")
         set_scribbler_start_program_old(s, len(bytes))
 
     time.sleep(30)
 
-    print "Wait for the robot to reboot!"
+    print("Wait for the robot to reboot!")
     myro.globvars.robot.restart()
 
     return 1
@@ -501,17 +501,17 @@ def uf_recvPage(s,page,binarray):
 
 def uf_saveEEPROMdump(s,eepromdump):
     for i in range (0,512) :
-        print '\r' + "%d %%" % ((i*100)/512),
+        print('\r' + "%d %%" % ((i*100)/512), end=' ')
         sys.stdout.flush()
         uf_recvPage(s,i,eepromdump)
-    print ""
+    print("")
 
 def uf_restoreEEPROMdump(s,eepromdump):
     for i in range (0,512) :
-        print '\r' + "%d %%" % ((i*100)/512),
+        print('\r' + "%d %%" % ((i*100)/512), end=' ')
         sys.stdout.flush()
         uf_sendPage(s,i,eepromdump)
-    print ""
+    print("")
 
 def uf_storeinEEPROM(s, arlen, binarray):
     segs = arlen / 264
@@ -522,10 +522,10 @@ def uf_storeinEEPROM(s, arlen, binarray):
     #print "Writing %d segments" % segs
     write_2byte(s,segs)
     for i in range (0,segs) :
-        print '\r' + "%d %%" % ((i*100)/segs),
+        print('\r' + "%d %%" % ((i*100)/segs), end=' ')
         sys.stdout.flush()
         uf_sendPage(s,i,binarray)
-    print ""
+    print("")
 
 def check_sum(binarray, arlen):
     for i in range(20,24):
@@ -557,7 +557,7 @@ def upgrade_fluke(url=None):
     #define UF_SEGMENT_SIZE 132
 
     if myro.globvars.robot == None:
-        print "Connecting to Fluke for firmware installation..."
+        print("Connecting to Fluke for firmware installation...")
         myro.globvars.robot = SerialRobot()
         s = myro.globvars.robot.ser
         info = get_info_timeout(s)
@@ -569,15 +569,15 @@ def upgrade_fluke(url=None):
         info = myro.globvars.robot.dongle
         s = myro.globvars.robot.ser
 
-    print info
-    version = map(int, info.split("."))
-    print "Version of fluke", version
+    print(info)
+    version = list(map(int, info.split(".")))
+    print("Version of fluke", version)
     
     if version <= [2, 4, 0]:
-        print "(If you just upgraded Myro, please restart Python.)"
-        print "Sorry, I can't upgrade the Fluke over Bluetooth."
-        print "It must be upgraded manually over the serial port using lpc21isp."
-        print "Please see http://wiki.roboteducation.org/IPRE_Fluke_Setup"
+        print("(If you just upgraded Myro, please restart Python.)")
+        print("Sorry, I can't upgrade the Fluke over Bluetooth.")
+        print("It must be upgraded manually over the serial port using lpc21isp.")
+        print("Please see http://wiki.roboteducation.org/IPRE_Fluke_Setup")
         return
 
     if url == None:
@@ -587,14 +587,14 @@ def upgrade_fluke(url=None):
     filename = None
     if url.startswith("http://"):
         #fluke_ver = info["fluke"].split(".")
-        print "Looking for Fluke upgrade at", url, "..."
+        print("Looking for Fluke upgrade at", url, "...")
         myro_ver = myro_version.split(".")
         # go to site, check for latest greater than our version
         #infp = urllib.urlopen(url)
         try:
-            infp = urllib.urlopen(url)
+            infp = urllib.request.urlopen(url)
         except:
-            print "ERROR: There was an error connecting to the web to download updates. Please check your internet connection. For example, see if you can access", url, "using a web browser."
+            print("ERROR: There was an error connecting to the web to download updates. Please check your internet connection. For example, see if you can access", url, "using a web browser.")
             return
 
         if version >= [3, 0, 0]:
@@ -608,37 +608,37 @@ def upgrade_fluke(url=None):
         for file in lines:
             file = file.strip()
             if file != "" and file[0] != '#':
-                print "Considering", file, "..."
+                print("Considering", file, "...")
                 if file.startswith(upgrade_prefix):
                     end = file.index(".hex")
                     #patch_ver = file[15:end].split(".")
                     patch_ver = file[len(upgrade_prefix):end].split(".")
-                    print patch_ver, version
-                    if map(int, patch_ver) > map(int, version):
+                    print(patch_ver, version)
+                    if list(map(int, patch_ver)) > list(map(int, version)):
                         # download it
-                        print "   Downloading..."
+                        print("   Downloading...")
                         filename = url_retrieve(url + file)
                         break
     else:
         filename = url
 
     if filename == None:
-        print "Nothing found to upgrade!"
+        print("Nothing found to upgrade!")
         return
     #info = myro.globvars.robot.getInfo()
     sendMagicKey = True
 
     if version <= [2, 5, 0]:
         sendMagicKey = False
-        print "Older firmware version, Not sending magic key"
+        print("Older firmware version, Not sending magic key")
     else:
-        print "Sending magic key"
+        print("Sending magic key")
         
     if version >= [3, 0, 0]:
         import time
         s.flushOutput()
         s.flushInput()
-        print "Sending firmware"
+        print("Sending firmware")
 
         s.write(chr(UPDATE_FIRMWARE))
         # magic code to ensure we don't enter program by accident
@@ -658,19 +658,19 @@ def upgrade_fluke(url=None):
         for byte in bytes:
             s.write(byte)
 
-        print "Waiting for reboot..."
+        print("Waiting for reboot...")
         for i in range(0,10):
             time.sleep(3)
-            print "."
+            print(".")
 
     else:
-        from intelhex import IntelHex
+        from .intelhex import IntelHex
         import time
         ih = IntelHex(filename)
         binarray = ih.tobinarray()
         arlen = len(binarray)
-        print "%d bytes of firmware." % arlen
-        print "checksumming interrupt vectors"
+        print("%d bytes of firmware." % arlen)
+        print("checksumming interrupt vectors")
         sum = check_sum(binarray, arlen)
         #declare a finite sized array to hold eeprom dump.
         #Dynamic appending of lists always comes with a performance hit
@@ -681,7 +681,7 @@ def upgrade_fluke(url=None):
         #print "Getting old EEPROM"
         #s.write(chr(SAVE_EEPROM))
         #uf_saveEEPROMdump()
-        print "Sending firmware"
+        print("Sending firmware")
         s.write(chr(UPDATE_FIRMWARE))
         if sendMagicKey:
             # magic code to ensure we don't enter program by accident
@@ -689,8 +689,8 @@ def upgrade_fluke(url=None):
             s.write(chr(0x23))
 
         uf_storeinEEPROM(s, arlen, binarray)
-        print "Waiting for reboot..."
+        print("Waiting for reboot...")
         time.sleep(2)
 
-    print "Done upgrading! Please turn your robot off and then back on, and exit and restart Python and Myro."
+    print("Done upgrading! Please turn your robot off and then back on, and exit and restart Python and Myro.")
     s.close()
