@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Module that supports robot-to-robot communication via IM.
 
@@ -9,33 +10,42 @@ open registration of new users.
 See the Myro Technical Guide for more details at:
 http://wiki.roboteducation.org/
 """
+import pickle
+import random
+import sys
+import threading
+import time
 
-import threading, time, random, pickle, sys
+__author__ = "Joshua Arulsamy"
 
-__version__ = "$Revision: 365 $"
-__author__  = "Doug Blank <dblank@cs.brynmawr.edu>"
 
 class FakeFile:
     """ To trick stderr into not printing warnings from xmpp. """
+
     def write(self, *args, **keys):
         pass
-temp = sys.stderr        # save the stderr
+
+
+temp = sys.stderr  # save the stderr
 sys.stderr = FakeFile()  # replace with fake
+
 try:
-    import xmpp              # import xmpp
-except:
+    import xmpp  # import xmpp
+except Exception:
     xmpp = None
     print("WARNING: xmpp was not found: chat and webservices will not be available")
-sys.stderr = temp        # replace stderr
-temp = None              # clean up
+
+sys.stderr = temp  # replace stderr
+temp = None  # clean up
 del temp
 
+
 class RemoteRobot:
-    def __init__(self, name, debug = []):
+    def __init__(self, name, debug=[]):
         self.name = name
         self.returnValues = {}
-        self.chat = Chat("control-%05d" % random.randint(1,10000),
-                         "password", debug)
+        self.chat = Chat("control-%05d" % random.randint(1, 10000), "password", debug)
+
     def __repr__(self):
         return "<myro.robot.chat.RemoteRobot object>"
 
@@ -52,7 +62,7 @@ class RemoteRobot:
         self.chat.send(self.name.lower(), "robot." + item + "(" + commandArgs + ")")
         retval = self.chat.receive()
         while len(retval) == 0:
-            #print "waiting to receive from remote robot..."
+            # print "waiting to receive from remote robot..."
             retval = self.chat.receive()
         values = []
         for _from, s in retval:
@@ -65,10 +75,12 @@ class RemoteRobot:
     def __getattr__(self, item):
         def getArgs(*args, **kwargs):
             return self._eval(item, *args, **kwargs)
+
         return getArgs
 
+
 class LocalRobot:
-    def __init__(self, robot, name, password, debug = []):
+    def __init__(self, robot, name, password, debug=[]):
         self.chat = Chat(name, password, debug)
         self.robot = robot
 
@@ -87,11 +99,11 @@ class LocalRobot:
         while 1:
             self.process()
             time.sleep(1)
-        
+
 
 class Chat(object):
-    def __init__(self, name, password, debug = []):
-	"""
+    def __init__(self, name, password, debug=[]):
+        """
         Constructs a connection for communicating to an IM server.
 
         name: can be "laura" to login into the default IM server,
@@ -109,11 +121,11 @@ class Chat(object):
         self.messages = []
         # Start a thread up in here
         self.password = password
-	if "@" not in name:
-	    self.name, self.server = name, "myro.roboteducation.org"
-	else:
+        if "@" not in name:
+            self.name, self.server = name, "myro.roboteducation.org"
+        else:
             self.name, self.server = name.split("@")
-	self.debug = debug
+        self.debug = debug
         self.client = xmpp.Client(self.server, debug=self.debug)
         print("Making connection to server...")
         self.client.connect()
@@ -125,23 +137,23 @@ class Chat(object):
             print("Help! It appears that the Myro Chat Server is down.")
 
     def register(self, name, password):
-	""" Register a username/password. """
-        xmpp.features.register(self.client, self.server,
-                               {"username": name.lower(),
-                                "password": password})
+        """ Register a username/password. """
+        xmpp.features.register(
+            self.client, self.server, {"username": name.lower(), "password": password}
+        )
 
     def messageCB(self, conn, msg):
-	""" Message handling callback function. """
+        """ Message handling callback function. """
         self.lock.acquire()
         self.messages.append(msg)
         self.lock.release()
 
     def receive(self):
-	"""
-	Get all of the pending messages, and return them as a list.
-	"""
-	try:
-            self.client.Process(1) # this should be in a thread
+        """
+        Get all of the pending messages, and return them as a list.
+        """
+        try:
+            self.client.Process(1)  # this should be in a thread
         except xmpp.NotAuthorized:
             raise ValueError("bad password?")
         self.lock.acquire()
@@ -152,20 +164,19 @@ class Chat(object):
         for m in retval:
             fromName = str(m.getFrom().node + "@" + m.getFrom().getDomain())
             message = str(m.getBody())
-            retvalList.append( (fromName, message) )
+            retvalList.append((fromName, message))
         return retvalList
 
     def send(self, to, message):
-	""" 
-	Send a message to a named recipient. They must be logged in.
-	"""
-        self.client.send(
-           xmpp.protocol.Message(to.lower() + "@" + self.server, message))
+        """
+        Send a message to a named recipient. They must be logged in.
+        """
+        self.client.send(xmpp.protocol.Message(to.lower() + "@" + self.server, message))
 
     def open(self):
-	"""
-	Open a connection to the server.
-	"""
+        """
+        Open a connection to the server.
+        """
         print("Authenticating password for '%s'..." % self.name)
         try:
             self.client.auth(self.name.lower(), self.password)
@@ -174,9 +185,9 @@ class Chat(object):
             self.client.connect()
             self.client.auth(self.name.lower(), self.password)
         print("Registering message handler...")
-        self.client.RegisterHandler('message', self.messageCB) 
+        self.client.RegisterHandler("message", self.messageCB)
         self.client.sendInitPresence()
-        self.send("", "2") # make this the only place I'm logged in        
+        self.send("", "2")
         messages = self.receive()
         count = 0
         while len(messages) == 0 and count < 5:
@@ -192,12 +203,12 @@ class Chat(object):
             self.ok = 1
 
     def close(self):
-	"""
-	Close the connection to the server.
-	"""
+        """
+        Close the connection to the server.
+        """
         self.client.disconnect()
         print("Disconnected!")
 
     def __del__(self):
-	""" Close the connection on destruction. """
+        """ Close the connection on destruction. """
         self.close()

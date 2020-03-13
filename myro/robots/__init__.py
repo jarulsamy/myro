@@ -1,22 +1,20 @@
-"""
-The main Pyrobot robot class and associated functions.
-
-This file contains the class that represents a computer controlled
-physical agent (robot). A robot is a collection of interfaces to
-senses and controllers.
-
-(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
-"""
+# -*- coding: utf-8 -*-
+import importlib
+import math
+import os
+import string
+import sys
+import time
+import types
 
 from myro.robots.device import *
-import math, string, time, os, sys, types
-import importlib
 
-__author__ = "Stephen McCaul, Douglas Blank"
-__version__ = "$Revision: 582 $"
+__author__ = "Joshua Arulsamy"
+
 
 def file_exists(file_name):
     from posixpath import exists
+
     if type(file_name) == type(""):
         if len(file_name) == 0:
             return 0
@@ -25,17 +23,18 @@ def file_exists(file_name):
     else:
         raise AttributeError("filename nust be a string")
 
+
 def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     path = filename.split("/")
-    modulefile = path.pop() # module name
+    modulefile = path.pop()  # module name
     module = modulefile.split(".")[0]
     search = string.join(path, "/")
-    oldpath = sys.path[:] # copy
+    oldpath = sys.path[:]  # copy
     sys.path.insert(0, search)
-    print("Attempting to import '%s'..." % module) 
+    print(("Attempting to import '%s'..." % module))
     exec("import " + module + " as userspace")
     importlib.reload(userspace)
-    print("Loaded '%s'!" % userspace.__file__)
+    print(("Loaded '%s'!" % userspace.__file__))
     sys.path = oldpath
     try:
         userspace.INIT
@@ -56,6 +55,7 @@ def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
         retval = userspace.INIT(engine, brain)
         return retval
 
+
 def commas(lyst):
     """
     Used to turn an enumeration into a comma-separated string of 'items'.
@@ -71,10 +71,11 @@ def commas(lyst):
             retval = "'%s'" % i
     return retval
 
+
 class Robot:
     """
     The object with which to interact with motors and sensors.
-    
+
     The base robot class. This class is the basis of all robots.
 
     Primary attributes:
@@ -97,11 +98,12 @@ class Robot:
         'SCALED' - scaled [-1,1]
         'RAW'    - right from the sensor
     """
+
     def __init__(self, **kwargs):
 
         """
         Robot object holds the devices and moves the actual robot.
-        
+
         The main robot object. Access the devices here, plus all of
         the robot-specific fields (such as x, y, and th). Use
         robot.move(translate, rotate) to move the robot. If you need
@@ -110,8 +112,8 @@ class Robot:
         """
         self.brain = None
         self.timestamp = time.time()
-        self.builtinDevices = [] # list of built-in devices
-        self.supportedFeatures = [] # meta devices
+        self.builtinDevices = []  # list of built-in devices
+        self.supportedFeatures = []  # meta devices
         self.devices = []
         # some default values:
         self.stall = 0
@@ -123,66 +125,92 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
-    def printView(self, thing = None, toplevel = "robot", indent = 0):
+    def printView(self, thing=None, toplevel="robot", indent=0):
         """A printable representation of the robot's attribute tree. """
-        if thing == None: thing = self
+        if thing == None:
+            thing = self
         dictable = 0
         try:
             thing.__dict__
             dictable = 1
-        except: pass
+        except:
+            pass
         if dictable:
             if toplevel == "robot":
-                print("%s%s:" % (" " * indent, toplevel))
+                print(("%s%s:" % (" " * indent, toplevel)))
             else:
-                print("%s%s:" % (" " * indent, "." + toplevel))
+                print(("%s%s:" % (" " * indent, "." + toplevel)))
             dictkeys = list(thing.__dict__.keys())
             dictkeys.sort()
             for item in dictkeys:
                 if item[0] == "_":
-                    pass # skip it; private
-                elif type(thing.__dict__[item]) in [types.FunctionType, types.LambdaType, types.MethodType]:
-                    pass # skip it; function
+                    pass  # skip it; private
+                elif type(thing.__dict__[item]) in [
+                    types.FunctionType,
+                    types.LambdaType,
+                    types.MethodType,
+                ]:
+                    pass  # skip it; function
                 else:
                     if item in self.devices:
                         count = 0
                         for i in thing.__dict__[item]:
                             self._displayDevice(i, indent + 3, count)
                             count += 1
-                    elif type(thing.__dict__[item]) == type({}): # dict
-                        print("%s%-15s = {%s}" % (" " * (indent + 3), "." + item, commas(list(thing.__dict__[item].keys()))))
-                    elif type(thing.__dict__[item]) == type(''): # string
-                        print("%s%-15s = '%s'" % (" " * (indent + 3), "." + item, thing.__dict__[item]))
+                    elif type(thing.__dict__[item]) == type({}):  # dict
+                        print(
+                            (
+                                "%s%-15s = {%s}"
+                                % (
+                                    " " * (indent + 3),
+                                    "." + item,
+                                    commas(list(thing.__dict__[item].keys())),
+                                )
+                            )
+                        )
+                    elif type(thing.__dict__[item]) == type(""):  # string
+                        print(
+                            (
+                                "%s%-15s = '%s'"
+                                % (" " * (indent + 3), "." + item, thing.__dict__[item])
+                            )
+                        )
                     else:
-                        print("%s%-15s = %s" % (" " * (indent + 3), "." + item, thing.__dict__[item]))
+                        print(
+                            (
+                                "%s%-15s = %s"
+                                % (" " * (indent + 3), "." + item, thing.__dict__[item])
+                            )
+                        )
         else:
-            if type(thing) == type(''):
-                print("%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing))
+            if type(thing) == type(""):
+                print(("%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing)))
             else:
-                print("%s%-15s = %s" % (" " * indent, "." + toplevel, thing))
+                print(("%s%-15s = %s" % (" " * indent, "." + toplevel, thing)))
         return "Ok"
-    def _displayDevice(self, device, indent = 0, count = 0):
+
+    def _displayDevice(self, device, indent=0, count=0):
         """Used in print device."""
         toplevel = "%s[%d]" % (device.type, count)
         self.printView(device, toplevel, indent)
 
-    def localize(self, x = 0, y = 0, thr = 0):
+    def localize(self, x=0, y=0, thr=0):
         """Set the x,y,thr pose of where the robot thinks it is."""
         pass
 
     def _moveDir(self, dir):
         """Internal method to move the robot in directions."""
-        if dir == 'L':
-            self.rotate(.2)
-        elif dir == 'R':
-            self.rotate(-.2)
-        elif dir == 'B':
-            self.translate(-.2)
-        elif dir == 'F':
+        if dir == "L":
+            self.rotate(0.2)
+        elif dir == "R":
+            self.rotate(-0.2)
+        elif dir == "B":
+            self.translate(-0.2)
+        elif dir == "F":
             self.translate(0.2)
-        elif dir == 'ST':
+        elif dir == "ST":
             self.translate(0.0)
-        elif dir == 'SR':
+        elif dir == "SR":
             self.rotate(0.0)
 
     def motors(self, leftValue, rightValue):
@@ -193,7 +221,7 @@ class Robot:
         trans = (rightValue + leftValue) / 2.0
         rotate = (rightValue - leftValue) / 2.0
         self.move(trans, rotate)
-        
+
     def stop(self):
         """ Short for robot.move(0,0). Stop the robot's movement."""
         self.move(0, 0)
@@ -208,7 +236,7 @@ class Robot:
         for deviceType in self.devices:
             if deviceType in self.__dict__:
                 for device in self.__dict__[deviceType]:
-                    if device.active and not device.async:
+                    if device.active and not device.async_:
                         device.updateDevice()
             else:
                 self.devices.remove(deviceType)
@@ -230,10 +258,12 @@ class Robot:
     def connect(self):
         """Connects the robot object to the server or simulator. """
         pass
+
     def disconnect(self):
         """Disconnects the robot object from the server or simulator. """
         pass
-    def move(self, translate, rotate, z = 0):
+
+    def move(self, translate, rotate, z=0):
         """
         Moves the robot by sending an amount of power.
 
@@ -241,6 +271,7 @@ class Robot:
         rotate    - value between -1 and 1; -1 is to the right
         """
         pass
+
     def translate(self, val):
         """
         Moves the robot forward or backwards.
@@ -248,6 +279,7 @@ class Robot:
         val - value between -1 and 1; -1 is reverse
         """
         pass
+
     def rotate(self, val):
         """
         Moves the robot to the left or right.
@@ -268,11 +300,11 @@ class Robot:
         1
         """
         if devname not in self.__dict__:
-            self.devices.append( devname ) # keep track of all of the loaded types
+            self.devices.append(devname)  # keep track of all of the loaded types
             self.__dict__[devname] = [None]
             return 0
         else:
-            self.__dict__[devname].append( None )
+            self.__dict__[devname].append(None)
             return len(self.__dict__[devname]) - 1
 
     def startDevice(self, item, **args):
@@ -291,11 +323,11 @@ class Robot:
         """
         dev = self.startDevices(item, **args)
         if len(dev) < 1:
-            print("Error loading device: '%s'" % item)
+            print(("Error loading device: '%s'" % item))
         else:
             return dev[0]
-        
-    def startDevices(self, item, override = False, **args):
+
+    def startDevices(self, item, override=False, **args):
         """Load devices can take a dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
@@ -303,39 +335,39 @@ class Robot:
             retval = []
             for dev in list(item.keys()):
                 deviceNumber = self._getNextDeviceNumber(dev)
-                print("Loading device %s[%d]..." % (dev, deviceNumber))
+                print(("Loading device %s[%d]..." % (dev, deviceNumber)))
                 self.__dict__[dev][deviceNumber] = item[dev]
-                item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
+                item[dev].setTitle(dev + "[" + str(deviceNumber) + "]")
                 item[dev].index = deviceNumber
-                retval.append(item[dev]) # return object
+                retval.append(item[dev])  # return object
             return retval
-        elif item in self.builtinDevices: # built-in name
+        elif item in self.builtinDevices:  # built-in name
             # deviceBuiltin returns dictionary
             deviceList = self.startDeviceBuiltin(item)
-            if type(deviceList) == type("device"): # loaded it here, from the robot
-                return [ deviceList ]
+            if type(deviceList) == type("device"):  # loaded it here, from the robot
+                return [deviceList]
             else:
-                return self.startDevices( deviceList, **args ) # dict of objs
+                return self.startDevices(deviceList, **args)  # dict of objs
         elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
             for i in item:
-                retval.append( self.startDevice(i, **args) )
+                retval.append(self.startDevice(i, **args))
             return retval
-        else: # from a file
+        else:  # from a file
             file = item
             if file == None:
                 return []
-            if len(file) > 3 and file[-3:] != '.py':
-                file = file + '.py'
+            if len(file) > 3 and file[-3:] != ".py":
+                file = file + ".py"
             if file_exists(file):
-                return self.startDevices( loadINIT(file, self), **args )
-            elif file_exists(os.getenv('PYROBOT') + \
-                                    '/plugins/devices/' + file): 
-                return self.startDevices( loadINIT(os.getenv('PYROBOT') + \
-                                                   '/plugins/devices/'+ \
-                                                   file, self), **args)
+                return self.startDevices(loadINIT(file, self), **args)
+            elif file_exists(os.getenv("PYROBOT") + "/plugins/devices/" + file):
+                return self.startDevices(
+                    loadINIT(os.getenv("PYROBOT") + "/plugins/devices/" + file, self),
+                    **args
+                )
             else:
-                print('Device file not found: ' + file)
+                print(("Device file not found: " + file))
                 return []
 
     def startDeviceBuiltin(self, item):
@@ -368,7 +400,7 @@ class Robot:
         Some robot interfaces/simulators don't support continuous-movement,
         for example.
         """
-        return (feature in self.supportedFeatures)
+        return feature in self.supportedFeatures
 
     def requires(self, feature):
         """
@@ -399,7 +431,7 @@ class Robot:
         else:
             return 0
 
-    def removeDevice(self, item, number = None):
+    def removeDevice(self, item, number=None):
         """
         Removes a device (or all of them) of a particular type.
 
@@ -408,8 +440,8 @@ class Robot:
         >>> robot.removedDevice("sonar", 0)
         Removes the first sonar device.
         """
-        if number == None: # remove all
-            print("removing all", item, "devices...")
+        if number == None:  # remove all
+            print(("removing all", item, "devices..."))
             if item in self.__dict__:
                 for device in self.__dict__[item]:
                     device.setVisible(0)
@@ -419,7 +451,7 @@ class Robot:
             else:
                 raise AttributeError("no such device: '%s'" % item)
         else:
-            print("removing %s[%d] device..." % (item, number))
+            print(("removing %s[%d] device..." % (item, number)))
             if item in self.__dict__:
                 device = self.__dict__[item][number]
                 device.setVisible(0)
@@ -429,7 +461,7 @@ class Robot:
             else:
                 raise AttributeError("no such device: %s[%d]" % (item, number))
         return "Ok"
-        
+
     def destroy(self):
         """
         This method removes all of the devices. Called by the system.
@@ -444,7 +476,7 @@ class Robot:
         """
         pass
 
-    def setRangeSensor(self, name, index = 0):
+    def setRangeSensor(self, name, index=0):
         """
         Change the default range sensor. By default the range sensor
         is set to be sonar, if a robot has it, or laser, if it has it,
@@ -464,6 +496,7 @@ class Robot:
         """
         self.range = self.__dict__[name][index]
         return "Ok"
+
 
 if __name__ == "__main__":
     r = Robot()

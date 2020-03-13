@@ -1,11 +1,14 @@
-import myro.osc as osc
+# -*- coding: utf-8 -*-
 import os
 import time
+
+import myro.osc as osc
 
 # ChucK unit generator documentation at
 # http://chuck.cs.princeton.edu/doc/program/ugen_full.html
 
 # initialize osc once
+
 
 def initChucK():
     # init osc
@@ -14,15 +17,19 @@ def initChucK():
     os.chdir(codeDir)
     # "C:\\Python24\\Lib\\site-packages\\myro\\file.py"
     # start chuck
-    if os.name in ['nt', 'dos', 'os2']:
+    if os.name in ["nt", "dos", "os2"]:
         os.system("start chuck oscrecv")
-    elif os.name in ['posix']:
+    elif os.name in ["posix"]:
         os.system("chuck oscrecv &")
     else:
-        raise AttributeError("your operating system (%s) is not currently supported" % os.name)
+        raise AttributeError(
+            "your operating system (%s) is not currently supported" % os.name
+        )
+
 
 def initChuck():
     initChucK()
+
 
 # base instrument class (not to be instantiated)
 class Instrument:
@@ -30,15 +37,15 @@ class Instrument:
 
     # connect to output
     def connect(self):
-        osc.sendMsg("/inst/" + self.name + "/connect", ["dac",1])
+        osc.sendMsg("/inst/" + self.name + "/connect", ["dac", 1])
 
     # disconnect from output
     def disconnect(self):
-        osc.sendMsg("/inst/" + self.name + "/connect", ["dac",0])
-        
+        osc.sendMsg("/inst/" + self.name + "/connect", ["dac", 0])
+
     # change gain [0.0-1.0]
     def setGain(self, gain):
-        if gain >= 0: # and gain <= 1:
+        if gain >= 0:  # and gain <= 1:
             osc.sendMsg("/inst/" + self.name + "/gain", [gain * 1.0])
 
     # change frequency
@@ -65,7 +72,7 @@ class Instrument:
 # Sinusoidal oscillator (SinOsc)
 class SineWave(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "sinosc"
         osc.sendMsg("/init", [self.name])
@@ -75,12 +82,12 @@ class SineWave(Instrument):
 # Mandolin
 class Mandolin(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "mandolin"
         osc.sendMsg("/init", [self.name])
         time.sleep(0.5)
-    
+
     # pluck the mandolin [0.0-1.0]
     def pluck(self, strength):
         if strength >= 0 and strength <= 1:
@@ -90,7 +97,7 @@ class Mandolin(Instrument):
 # FM Voices
 class FMVoices(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "fmvoices"
         osc.sendMsg("/init", [self.name])
@@ -115,21 +122,21 @@ class FMVoices(Instrument):
 # More singing synthesis (VoicForm)
 class Voice(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "voicform"
         osc.sendMsg("/init", [self.name])
         time.sleep(0.5)
 
     # select phoneme via one of these strings
-    #"eee"  "ihh"  "ehh"  "aaa" 
-    #"ahh"  "aww"  "ohh"  "uhh" 
-    #"uuu"  "ooo"  "rrr"  "lll" 
-    #"mmm"  "nnn"  "nng"  "ngg" 
-    #"fff"  "sss"  "thh"  "shh" 
-    #"xxx"  "hee"  "hoo"  "hah" 
-    #"bbb"  "ddd"  "jjj"  "ggg" 
-    #"vvv"  "zzz"  "thz"  "zhh"
+    # "eee"  "ihh"  "ehh"  "aaa"
+    # "ahh"  "aww"  "ohh"  "uhh"
+    # "uuu"  "ooo"  "rrr"  "lll"
+    # "mmm"  "nnn"  "nng"  "ngg"
+    # "fff"  "sss"  "thh"  "shh"
+    # "xxx"  "hee"  "hoo"  "hah"
+    # "bbb"  "ddd"  "jjj"  "ggg"
+    # "vvv"  "zzz"  "thz"  "zhh"
     def setPhoneme(self, phoneme):
         osc.sendMsg("/inst/voicform/phoneme", [phoneme])
 
@@ -164,7 +171,7 @@ class Voice(Instrument):
     def setVoiceMix(self, mix):
         if mix >= 0 and mix <= 1:
             osc.sendMsg("/inst/voicform/voiceMix", [mix * 1.0])
-        
+
     # pitch sweep [0.0-1.0]
     def setPitchSweepRate(self, rate):
         if rate >= 0 and rate <= 1:
@@ -184,7 +191,7 @@ class Voice(Instrument):
 # Karplus Strong plucked string (StifKarp)
 class PluckedString(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "stifkarp"
         osc.sendMsg("/init", [self.name])
@@ -229,12 +236,12 @@ class Sitar(Instrument):
     def pluck(self, strength):
         if strength >= 0 and strength <= 1:
             osc.sendMsg("/inst/sitar/pluck", [strength * 1.0])
-    
+
 
 # Shakers (collisions of multiple independent sound-producing objects)
 class Shakers(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "shakers"
         osc.sendMsg("/init", [self.name])
@@ -287,7 +294,7 @@ class Shakers(Instrument):
 # Saxophone / wind instruments (Saxofony)
 class Saxophone(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "saxofony"
         osc.sendMsg("/init", [self.name])
@@ -312,9 +319,10 @@ class Saxophone(Instrument):
     # noise component gain [0.0-1.0]
     def setVibrato(self, vibratoFreq, vibratoGain, noiseGain):
         if vibratoGain >= 0 and vibratoGain <= 1 and noiseGain >= 0 and noiseGain <= 1:
-            osc.sendMsg("/inst/saxofony/vibrato", [vibratoFreq * 1.0,
-                                                   vibratoGain * 1.0,
-                                                   noiseGain * 1.0])
+            osc.sendMsg(
+                "/inst/saxofony/vibrato",
+                [vibratoFreq * 1.0, vibratoGain * 1.0, noiseGain * 1.0],
+            )
 
     # set blow position / lip stiffness [0.0-1.0]
     def setBlowPosition(self, position):
@@ -340,7 +348,7 @@ class Saxophone(Instrument):
 # Moog synthesizer (Moog)
 class MoogSynthesizer(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "moog"
         osc.sendMsg("/init", [self.name])
@@ -370,7 +378,7 @@ class MoogSynthesizer(Instrument):
 # Struck bar instruments (ModalBar)
 class StruckBar(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "modalbar"
         osc.sendMsg("/init", [self.name])
@@ -433,15 +441,24 @@ class StruckBar(Instrument):
     # set mode info: mode [0 or 1], mode ratio [float], mode radius [0.0-1.0],
     # mode gain [0.0-1.0]
     def setMode(self, mode, ratio, radius, gain):
-        if mode >= 0 and mode <= 1 and radius >= 0 and radius <= 1 and gain >= 0 and gain <= 1:
-            osc.sendMsg("/inst/modalbar/mode", [int(mode), ratio * 1.0,
-                                            radius * 1.0, gain * 1.0])
+        if (
+            mode >= 0
+            and mode <= 1
+            and radius >= 0
+            and radius <= 1
+            and gain >= 0
+            and gain <= 1
+        ):
+            osc.sendMsg(
+                "/inst/modalbar/mode",
+                [int(mode), ratio * 1.0, radius * 1.0, gain * 1.0],
+            )
 
 
 # Blown bottle (BlowBotl)
 class BlowBottle(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "blowbotl"
         osc.sendMsg("/init", [self.name])
@@ -450,9 +467,10 @@ class BlowBottle(Instrument):
     # set vibrato frequency [Hz], vibrato gain [0.0-1.0] and noise gain [0.0-1.0]
     def setVibrato(self, vibratoFreq, vibratoGain, noiseGain):
         if vibratoGain >= 0 and vibratoGain <= 1 and noiseGain >= 0 and noiseGain <= 1:
-            osc.sendMsg("/inst/blowbotl/vibrato", [vibratoFreq * 1.0,
-                                               vibratoGain * 1.0,
-                                               noiseGain * 1.0])
+            osc.sendMsg(
+                "/inst/blowbotl/vibrato",
+                [vibratoFreq * 1.0, vibratoGain * 1.0, noiseGain * 1.0],
+            )
 
     # set volume [0.0-1.0]
     def setVolume(self, volume):
@@ -478,7 +496,7 @@ class BlowBottle(Instrument):
 # Clarinet or other blowhole models
 class BlowHole(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "blowhole"
         osc.sendMsg("/init", [self.name])
@@ -528,7 +546,7 @@ class BlowHole(Instrument):
 # Bowed string model
 class Bowed(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "bowed"
         osc.sendMsg("/init", [self.name])
@@ -563,7 +581,7 @@ class Bowed(Instrument):
 # reading from file (SndBuf)
 class FileRead(Instrument):
     # initialize name, send message to ChucK to load the functions
-    # for this particular instrument, time.sleep a bit for it to do so. 
+    # for this particular instrument, time.sleep a bit for it to do so.
     def __init__(self):
         self.name = "sndbuf"
         osc.sendMsg("/init", [self.name])
@@ -592,6 +610,6 @@ class FileRead(Instrument):
     def setLoopRate(self, loopsPerSecond):
         if loopsPerSecond > 0:
             osc.sendMsg("/inst/sndbuf/loopRate", [loopsPerSecond * 1.0])
-            
-    
+
+
 # The end, for now

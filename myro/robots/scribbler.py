@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Myro code for the Scribbler robot from Parallax
 (c) 2007, Institute for Personal Robots in Education
@@ -6,10 +7,11 @@ Distributed under a Shared Source License
 """
 
 __REVISION__ = "$Revision: 1722 $"
-__AUTHOR__   = "Keith O'Hara and Doug Blank"
+__AUTHOR__ = "Keith O'Hara and Doug Blank"
 
 import time, string
 import os
+
 try:
     import serial
 except:
@@ -21,35 +23,41 @@ import io
 import array
 from struct import unpack
 
+
 class BufferedRead:
-    def __init__(self, serial, size, start = 1):
+    def __init__(self, serial, size, start=1):
         self.serial = serial
         self.size = size
         if start:
             self.data = self.serial.read(size)
         else:
             self.data = ""
+
     def __getitem__(self, position):
         """ Return an element of the string """
         while position >= len(self.data):
-            #self.data += self.serial.read(self.size - len(self.data))
+            # self.data += self.serial.read(self.size - len(self.data))
             self.data += self.serial.read(self.size - len(self.data))
-            #print "      length so far = ", len(self.data), " waiting for total = ", self.size
+            # print "      length so far = ", len(self.data), " waiting for total = ", self.size
         return self.data[position]
+
     def __len__(self):
         """ Lie. Tell them it is this long. """
         return self.size
 
+
 def _commport(s):
-    if type(s) == int: return 1
+    if type(s) == int:
+        return 1
     if type(s) == str:
-        s = s.replace('\\', "")
-        s = s.replace('.', "")
+        s = s.replace("\\", "")
+        s = s.replace(".", "")
         if s.lower().startswith("com") and s[3:].isdigit():
             return 1
         if s.startswith("/dev/"):
             return 1
     return 0
+
 
 def isTrue(value):
     """
@@ -57,189 +65,192 @@ def isTrue(value):
     Otherwise, return False.
     """
     if type(value) == str:
-        return (value.lower() == "on")
-    elif value: return True
+        return value.lower() == "on"
+    elif value:
+        return True
     return False
 
+
 class Scribbler(Robot):
-    SOFT_RESET=33
-    GET_ALL=65 
-    GET_ALL_BINARY=66  
-    GET_LIGHT_LEFT=67  
-    GET_LIGHT_CENTER=68  
-    GET_LIGHT_RIGHT=69  
-    GET_LIGHT_ALL=70  
-    GET_IR_LEFT=71  
-    GET_IR_RIGHT=72  
-    GET_IR_ALL=73  
-    GET_LINE_LEFT=74  
-    GET_LINE_RIGHT=75  
-    GET_LINE_ALL=76  
-    GET_STATE=77  
-    GET_NAME1=78
-    GET_NAME2=64
-    GET_STALL=79  
-    GET_INFO=80  
-    GET_DATA=81  
+    SOFT_RESET = 33
+    GET_ALL = 65
+    GET_ALL_BINARY = 66
+    GET_LIGHT_LEFT = 67
+    GET_LIGHT_CENTER = 68
+    GET_LIGHT_RIGHT = 69
+    GET_LIGHT_ALL = 70
+    GET_IR_LEFT = 71
+    GET_IR_RIGHT = 72
+    GET_IR_ALL = 73
+    GET_LINE_LEFT = 74
+    GET_LINE_RIGHT = 75
+    GET_LINE_ALL = 76
+    GET_STATE = 77
+    GET_NAME1 = 78
+    GET_NAME2 = 64
+    GET_STALL = 79
+    GET_INFO = 80
+    GET_DATA = 81
 
-    GET_PASS1=50
-    GET_PASS2=51
+    GET_PASS1 = 50
+    GET_PASS2 = 51
 
-    GET_RLE=82  # a segmented and run-length encoded image
-    GET_IMAGE=83  # the entire 256 x 192 image in YUYV format
-    GET_WINDOW=84  # the windowed image (followed by which window)
-    GET_DONGLE_L_IR=85  # number of returned pulses when left emitter is turned on
-    GET_DONGLE_C_IR=86  # number of returned pulses when center emitter is turned on
-    GET_DONGLE_R_IR=87  # number of returned pulses when right emitter is turned on
-    GET_WINDOW_LIGHT=88    # average intensity in the user defined region
-    GET_BATTERY=89  # battery voltage
-    GET_SERIAL_MEM=90  # with the address returns the value in serial memory
-    GET_SCRIB_PROGRAM=91  # with offset, returns the scribbler program buffer
-    GET_CAM_PARAM=92 # with address, returns the camera parameter at that address
+    GET_RLE = 82  # a segmented and run-length encoded image
+    GET_IMAGE = 83  # the entire 256 x 192 image in YUYV format
+    GET_WINDOW = 84  # the windowed image (followed by which window)
+    GET_DONGLE_L_IR = 85  # number of returned pulses when left emitter is turned on
+    GET_DONGLE_C_IR = 86  # number of returned pulses when center emitter is turned on
+    GET_DONGLE_R_IR = 87  # number of returned pulses when right emitter is turned on
+    GET_WINDOW_LIGHT = 88  # average intensity in the user defined region
+    GET_BATTERY = 89  # battery voltage
+    GET_SERIAL_MEM = 90  # with the address returns the value in serial memory
+    GET_SCRIB_PROGRAM = 91  # with offset, returns the scribbler program buffer
+    GET_CAM_PARAM = 92  # with address, returns the camera parameter at that address
 
-    GET_BLOB=95
+    GET_BLOB = 95
 
-    SET_PASS1=55
-    SET_PASS2=56
-    SET_SINGLE_DATA=96
-    SET_DATA=97
-    SET_ECHO_MODE=98
-    SET_LED_LEFT_ON=99 
-    SET_LED_LEFT_OFF=100
-    SET_LED_CENTER_ON=101
-    SET_LED_CENTER_OFF=102
-    SET_LED_RIGHT_ON=103
-    SET_LED_RIGHT_OFF=104
-    SET_LED_ALL_ON=105
-    SET_LED_ALL_OFF=106
-    SET_LED_ALL=107 
-    SET_MOTORS_OFF=108
-    SET_MOTORS=109 
-    SET_NAME1=110 
-    SET_NAME2=119           # set name2 byte
-    SET_LOUD=111
-    SET_QUIET=112
-    SET_SPEAKER=113
-    SET_SPEAKER_2=114
+    SET_PASS1 = 55
+    SET_PASS2 = 56
+    SET_SINGLE_DATA = 96
+    SET_DATA = 97
+    SET_ECHO_MODE = 98
+    SET_LED_LEFT_ON = 99
+    SET_LED_LEFT_OFF = 100
+    SET_LED_CENTER_ON = 101
+    SET_LED_CENTER_OFF = 102
+    SET_LED_RIGHT_ON = 103
+    SET_LED_RIGHT_OFF = 104
+    SET_LED_ALL_ON = 105
+    SET_LED_ALL_OFF = 106
+    SET_LED_ALL = 107
+    SET_MOTORS_OFF = 108
+    SET_MOTORS = 109
+    SET_NAME1 = 110
+    SET_NAME2 = 119  # set name2 byte
+    SET_LOUD = 111
+    SET_QUIET = 112
+    SET_SPEAKER = 113
+    SET_SPEAKER_2 = 114
 
-    SET_DONGLE_LED_ON=116   # turn binary dongle led on
-    SET_DONGLE_LED_OFF=117  # turn binary dongle led off
-    SET_RLE=118             # set rle parameters 
-    SET_DONGLE_IR=120       # set dongle IR power
-    SET_SERIAL_MEM=121      # set serial memory byte
-    SET_SCRIB_PROGRAM=122   # set scribbler program memory byte
-    SET_START_PROGRAM=123   # initiate scribbler programming process
-    SET_RESET_SCRIBBLER=124 # hard reset scribbler
-    SET_SERIAL_ERASE=125    # erase serial memory
-    SET_DIMMER_LED=126      # set dimmer led
-    SET_WINDOW=127          # set user defined window
-    SET_FORWARDNESS=128     # set direction of scribbler
-    SET_WHITE_BALANCE=129   # turn on white balance on camera 
-    SET_NO_WHITE_BALANCE=130 # diable white balance on camera (default)
-    SET_CAM_PARAM=131       # with address and value, sets the camera parameter at that address
+    SET_DONGLE_LED_ON = 116  # turn binary dongle led on
+    SET_DONGLE_LED_OFF = 117  # turn binary dongle led off
+    SET_RLE = 118  # set rle parameters
+    SET_DONGLE_IR = 120  # set dongle IR power
+    SET_SERIAL_MEM = 121  # set serial memory byte
+    SET_SCRIB_PROGRAM = 122  # set scribbler program memory byte
+    SET_START_PROGRAM = 123  # initiate scribbler programming process
+    SET_RESET_SCRIBBLER = 124  # hard reset scribbler
+    SET_SERIAL_ERASE = 125  # erase serial memory
+    SET_DIMMER_LED = 126  # set dimmer led
+    SET_WINDOW = 127  # set user defined window
+    SET_FORWARDNESS = 128  # set direction of scribbler
+    SET_WHITE_BALANCE = 129  # turn on white balance on camera
+    SET_NO_WHITE_BALANCE = 130  # diable white balance on camera (default)
+    SET_CAM_PARAM = (
+        131  # with address and value, sets the camera parameter at that address
+    )
 
-    GET_JPEG_GRAY_HEADER=135
-    GET_JPEG_GRAY_SCAN=136
-    GET_JPEG_COLOR_HEADER=137
-    GET_JPEG_COLOR_SCAN=138
+    GET_JPEG_GRAY_HEADER = 135
+    GET_JPEG_GRAY_SCAN = 136
+    GET_JPEG_COLOR_HEADER = 137
+    GET_JPEG_COLOR_SCAN = 138
 
-    SET_PASS_N_BYTES=139
-    GET_PASS_N_BYTES=140
-    GET_PASS_BYTES_UNTIL=141
+    SET_PASS_N_BYTES = 139
+    GET_PASS_N_BYTES = 140
+    GET_PASS_BYTES_UNTIL = 141
 
-    GET_VERSION=142
+    GET_VERSION = 142
 
     GET_IR_MESSAGE = 150
     SEND_IR_MESSAGE = 151
     SET_IR_EMITTERS = 152
 
-    SET_START_PROGRAM2=153   # initiate scribbler2 programming process
-    SET_RESET_SCRIBBLER2=154 # hard reset scribbler2
-    SET_SCRIB_BATCH=155      # upload scribbler2 firmware
-    GET_ROBOT_ID=156
-    SET_VOLUME          = 160 #Format 160 volume (0-100) Percent Volume Level
-    SET_PATH            = 161 #Format 161 begin_or_end speed         0            1           2
-                                #                                begin=0 end=1   hSpeedByte lSpeedByte
-    SET_MOVE            = 162 #Format 162 type hXByte lXByte hYByte lYByte
-    SET_ARC             = 163 #Format 163 type hXByte lXByte hYByte lYByte hRadByte lRadByte
-    SET_TURN            = 164 #Format 164 type hAngleByte lAngleByte
-    GET_POSN            = 165 #Format 165
-    SET_POSN            = 166 #Format 166 x0Byte x1Byte x2Byte x3Byte y0Byte y1Byte y2Byte y3Byte
-    GET_ANGLE           = 167 #Format 167
-    SET_ANGLE           = 168 #Format 168 angle0Byte angle1Byte angle2Byte angle3Byte
-    GET_MIC_ENV         = 169 #Format 169
-    GET_MOTOR_STATS     = 170 #Format 170
-    GET_ENCODERS        = 171 #Format 171 type    
+    SET_START_PROGRAM2 = 153  # initiate scribbler2 programming process
+    SET_RESET_SCRIBBLER2 = 154  # hard reset scribbler2
+    SET_SCRIB_BATCH = 155  # upload scribbler2 firmware
+    GET_ROBOT_ID = 156
+    SET_VOLUME = 160  # Format 160 volume (0-100) Percent Volume Level
+    SET_PATH = 161  # Format 161 begin_or_end speed         0            1           2
+    #                                begin=0 end=1   hSpeedByte lSpeedByte
+    SET_MOVE = 162  # Format 162 type hXByte lXByte hYByte lYByte
+    SET_ARC = 163  # Format 163 type hXByte lXByte hYByte lYByte hRadByte lRadByte
+    SET_TURN = 164  # Format 164 type hAngleByte lAngleByte
+    GET_POSN = 165  # Format 165
+    SET_POSN = 166  # Format 166 x0Byte x1Byte x2Byte x3Byte y0Byte y1Byte y2Byte y3Byte
+    GET_ANGLE = 167  # Format 167
+    SET_ANGLE = 168  # Format 168 angle0Byte angle1Byte angle2Byte angle3Byte
+    GET_MIC_ENV = 169  # Format 169
+    GET_MOTOR_STATS = 170  # Format 170
+    GET_ENCODERS = 171  # Format 171 type
 
-    GET_IR_EX          = 172 #Format 172 side type thres
-    GET_LINE_EX        = 173 #Format 173 side type thres
-    GET_DISTANCE        = 175 #Format 175 side
+    GET_IR_EX = 172  # Format 172 side type thres
+    GET_LINE_EX = 173  # Format 173 side type thres
+    GET_DISTANCE = 175  # Format 175 side
 
-    
-    PACKET_LENGTH     =  9
-    BEGIN_PATH          = 0  #Used with SET_PATH to say beginning of a path
-    END_PATH            = 1  #Used with SET_PATH to say end of a path
-    BY             = 4       #Used in movement commands, by means how much you wish to move by
-    TO             = 2       #Used in movement commands, to means the heading you want to turn to
-    DEG            = 1       #Used in movement commands, specifies using degress instead of S2 angle units
-    
+    PACKET_LENGTH = 9
+    BEGIN_PATH = 0  # Used with SET_PATH to say beginning of a path
+    END_PATH = 1  # Used with SET_PATH to say end of a path
+    BY = 4  # Used in movement commands, by means how much you wish to move by
+    TO = 2  # Used in movement commands, to means the heading you want to turn to
+    DEG = 1  # Used in movement commands, specifies using degress instead of S2 angle units
 
-    def __init__(self, serialport = None, baudrate = 38400):
+    def __init__(self, serialport=None, baudrate=38400):
         Robot.__init__(self)
 
         #### Camera Addresses ####
-        self.CAM_PID=0x0A
-        self.CAM_PID_DEFAULT=0x76
+        self.CAM_PID = 0x0A
+        self.CAM_PID_DEFAULT = 0x76
 
-        self.CAM_VER=0x0B
-        self.CAM_VER_DEFAULT=0x48
+        self.CAM_VER = 0x0B
+        self.CAM_VER_DEFAULT = 0x48
 
-        self.CAM_BRT=0x06
-        self.CAM_BRT_DEFAULT=0x80
+        self.CAM_BRT = 0x06
+        self.CAM_BRT_DEFAULT = 0x80
 
-        self.CAM_EXP=0x10
-        self.CAM_EXP_DEFAULT=0x41
+        self.CAM_EXP = 0x10
+        self.CAM_EXP_DEFAULT = 0x41
 
-        self.CAM_COMA=0x12
-        self.CAM_COMA_DEFAULT=0x14
-        self.CAM_COMA_WHITE_BALANCE_ON= (self.CAM_COMA_DEFAULT |  (1 << 2))
-        self.CAM_COMA_WHITE_BALANCE_OFF=(self.CAM_COMA_DEFAULT & ~(1 << 2))
+        self.CAM_COMA = 0x12
+        self.CAM_COMA_DEFAULT = 0x14
+        self.CAM_COMA_WHITE_BALANCE_ON = self.CAM_COMA_DEFAULT | (1 << 2)
+        self.CAM_COMA_WHITE_BALANCE_OFF = self.CAM_COMA_DEFAULT & ~(1 << 2)
 
-        self.CAM_COMB=0x13
-        self.CAM_COMB_DEFAULT=0xA3
-        self.CAM_COMB_GAIN_CONTROL_ON= (self.CAM_COMB_DEFAULT |  (1 << 1))
-        self.CAM_COMB_GAIN_CONTROL_OFF=(self.CAM_COMB_DEFAULT & ~(1 << 1))
-        self.CAM_COMB_EXPOSURE_CONTROL_ON= (self.CAM_COMB_DEFAULT |  (1 << 0))
-        self.CAM_COMB_EXPOSURE_CONTROL_OFF=(self.CAM_COMB_DEFAULT & ~(1 << 0))
+        self.CAM_COMB = 0x13
+        self.CAM_COMB_DEFAULT = 0xA3
+        self.CAM_COMB_GAIN_CONTROL_ON = self.CAM_COMB_DEFAULT | (1 << 1)
+        self.CAM_COMB_GAIN_CONTROL_OFF = self.CAM_COMB_DEFAULT & ~(1 << 1)
+        self.CAM_COMB_EXPOSURE_CONTROL_ON = self.CAM_COMB_DEFAULT | (1 << 0)
+        self.CAM_COMB_EXPOSURE_CONTROL_OFF = self.CAM_COMB_DEFAULT & ~(1 << 0)
 
         self.ser = None
         self.requestStop = 0
         self.debug = 0
         self._lastTranslate = 0
-        self._lastRotate    = 0
+        self._lastRotate = 0
         self._volume = 0
         self.emitters = 0x1 | 0x2 | 0x4
         if serialport == None:
-            if 'MYROROBOT'in os.environ:
-                serialport = os.environ['MYROROBOT']
+            if "MYROROBOT" in os.environ:
+                serialport = os.environ["MYROROBOT"]
                 print("Connecting to", serialport)
             else:
-                serialport = ask("Port", useCache = 1)
+                serialport = ask("Port", useCache=1)
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
         # be in the format "\\.\COM#"
         hasPort = True
         if type(serialport) == str and serialport.lower().startswith("com"):
             portnum = int(serialport[3:])
-        elif isinstance(serialport, int): #allow integer input
+        elif isinstance(serialport, int):  # allow integer input
             portnum = serialport
-        else: hasPort = False
+        else:
+            hasPort = False
         if hasPort:
             if portnum >= 10:
-                serialport = r'\\.\COM%d' % (portnum)
+                serialport = r"\\.\COM%d" % (portnum)
         self.serialPort = serialport
         self.baudRate = baudrate
         self.open()
-        
+
         myro.globvars.robot = self
         self._fudge = list(range(4))
         self._oldFudge = list(range(4))
@@ -247,7 +258,7 @@ class Scribbler(Robot):
         self.dongle_version = 0
         self.imagewidth = 0
         self.imageheight = 0
-        
+
         info = self.getInfo()
         if "fluke" in list(info.keys()):
             self.dongle = info["fluke"]
@@ -266,19 +277,48 @@ class Scribbler(Robot):
 
             # Turning on White Balance, Gain Control, and Exposure Control
             self.set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_ON)
-            self.set_cam_param(self.CAM_COMB, self.CAM_COMB_GAIN_CONTROL_ON | self.CAM_COMB_EXPOSURE_CONTROL_ON)
+            self.set_cam_param(
+                self.CAM_COMB,
+                self.CAM_COMB_GAIN_CONTROL_ON | self.CAM_COMB_EXPOSURE_CONTROL_ON,
+            )
             # Config grayscale on window 0, 1, 2
-            conf_gray_window(self, 0, 2,   0, self.imagewidth/2, self.imageheight-1, 1, 1)
-            conf_gray_window(self, 1, self.imagewidth/4,  0, self.imagewidth/4+self.imagewidth/2-2, self.imageheight-1, 1, 1)
-            conf_gray_window(self, 2, self.imagewidth/2, 0, self.imagewidth-2, self.imageheight-1, 1, 1)
+            conf_gray_window(
+                self, 0, 2, 0, self.imagewidth / 2, self.imageheight - 1, 1, 1
+            )
+            conf_gray_window(
+                self,
+                1,
+                self.imagewidth / 4,
+                0,
+                self.imagewidth / 4 + self.imagewidth / 2 - 2,
+                self.imageheight - 1,
+                1,
+                1,
+            )
+            conf_gray_window(
+                self,
+                2,
+                self.imagewidth / 2,
+                0,
+                self.imagewidth - 2,
+                self.imageheight - 1,
+                1,
+                1,
+            )
             # conf_gray_window(self.ser, 0, 2,   0, 128, 191, 1, 1)
             # conf_gray_window(self.ser, 1, 64,  0, 190, 191, 1, 1)
             # conf_gray_window(self.ser, 2, 128, 0, 254, 191, 1, 1)
             set_ir_power(self.ser, 135)
-            self.conf_rle(delay = 90, smooth_thresh = 4,
-                          y_low=0, y_high=255,
-                          u_low=51, u_high=136,
-                          v_low=190, v_high=255)
+            self.conf_rle(
+                delay=90,
+                smooth_thresh=4,
+                y_low=0,
+                y_high=255,
+                u_low=51,
+                u_high=136,
+                v_low=190,
+                v_high=255,
+            )
 
         self.robotinfo = {}
         if "robot" in list(info.keys()):
@@ -290,47 +330,56 @@ class Scribbler(Robot):
             self.restart()
             self.loadFudge()
 
-
     def search(self):
-        answer = _askQuestion(title="Search for " + self.serialPort,
-                              question="Press the red resest button on the robot\nPress OK when ready to search",
-                              answers = ["OK", "Cancel"])
+        answer = _askQuestion(
+            title="Search for " + self.serialPort,
+            question="Press the red resest button on the robot\nPress OK when ready to search",
+            answers=["OK", "Cancel"],
+        )
         if answer != "OK":
             raise KeyboardInterrupt
         for x in range(1, 21):
             if x >= 10:
-                port = r'\\.\COM%d' % x
+                port = r"\\.\COM%d" % x
             else:
                 port = "COM" + str(x)
             prettyPort = "COM" + str(x)
-            print("Searching on port %s for robot named '%s'..." % (prettyPort, self.serialPort))
+            print(
+                "Searching on port %s for robot named '%s'..."
+                % (prettyPort, self.serialPort)
+            )
             try:
                 self.ser = serial.Serial(port, timeout=10)
             except KeyboardInterrupt:
                 raise
             except serial.SerialException:
-                print("   Serial element not found. If this continues, remove/replace serial device...")
+                print(
+                    "   Serial element not found. If this continues, remove/replace serial device..."
+                )
                 continue
             self.ser.baudrate = self.baudRate
             # assume that it has been running for at least a second!
             time.sleep(1)
             lines = self.ser.readlines()
-            lines = ''.join(lines)
-            if ("IPRE" in lines):
+            lines = "".join(lines)
+            if "IPRE" in lines:
                 position = lines.index("IPRE")
-                name = lines[position+4:position + 9 + 4]
+                name = lines[position + 4 : position + 9 + 4]
                 name = name.replace("\x00", "")
                 name = name.strip()
-                s = port.replace('\\', "")
-                s = s.replace('.', "")
+                s = port.replace("\\", "")
+                s = s.replace(".", "")
                 print("   Found robot named", name, "on port", s, "!")
                 if name == self.serialPort:
                     self.serialPort = port
                     self.ser.timeout = 10
-                    s = self.serialPort.replace('\\', "")
-                    s = s.replace('.', "")
-                    _askQuestion("You can use \"%s\" from now on, like this:\n   initialize(\"%s\")" %
-                                 (s, s), answers=["Ok"])
+                    s = self.serialPort.replace("\\", "")
+                    s = s.replace(".", "")
+                    _askQuestion(
+                        'You can use "%s" from now on, like this:\n   initialize("%s")'
+                        % (s, s),
+                        answers=["Ok"],
+                    )
                     return
                 else:
                     self.ser.close()
@@ -351,7 +400,7 @@ class Scribbler(Robot):
         else:
             while 1:
                 try:
-                    self.ser = serial.Serial(self.serialPort, timeout = 10) 
+                    self.ser = serial.Serial(self.serialPort, timeout=10)
                     # for directly connected scribler-2's
                     self.ser.setDTR(0)
 
@@ -359,7 +408,9 @@ class Scribbler(Robot):
                 except KeyboardInterrupt:
                     raise
                 except serial.SerialException:
-                    print("   Serial element not found. If this continues, remove/replace serial device...")
+                    print(
+                        "   Serial element not found. If this continues, remove/replace serial device..."
+                    )
                     try:
                         self.ser.close()
                     except KeyboardInterrupt:
@@ -389,17 +440,17 @@ class Scribbler(Robot):
                         pass
                     time.sleep(1)
         self.ser.baudrate = self.baudRate
-        #self.restart()
+        # self.restart()
 
     def close(self):
         self.ser.close()
 
     def manual_flush(self):
         old = self.ser.timeout
-        self.ser.setTimeout(.5)
-        l = 'a'
-        count = 0;
-        while (len(l) != 0 and count < 50000):
+        self.ser.setTimeout(0.5)
+        l = "a"
+        count = 0
+        while len(l) != 0 and count < 50000:
             l = self.ser.read(1)
             count += len(l)
         self.ser.setTimeout(old)
@@ -407,35 +458,35 @@ class Scribbler(Robot):
     def restart(self):
 
         self.manual_flush()
-        self.setEchoMode(0) # send command to get out of broadcast; turn off echo
-        time.sleep(.25)               # give it some time
+        self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+        time.sleep(0.25)  # give it some time
         while 1:
-            self.ser.flushInput()         # flush "IPREScribby"...
+            self.ser.flushInput()  # flush "IPREScribby"...
             self.ser.flushOutput()
-            time.sleep(1.2)       # give it time to see if another IPRE show up
-            if self.ser.inWaiting() == 0: # if none, then we are out of here!
+            time.sleep(1.2)  # give it time to see if another IPRE show up
+            if self.ser.inWaiting() == 0:  # if none, then we are out of here!
                 break
             print("Waking robot from sleep...")
-            self.setEchoMode(0) # send command to get out of broadcast; turn off echo
-            time.sleep(.25)               # give it some time
+            self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+            time.sleep(0.25)  # give it some time
         self.ser.flushInput()
         self.ser.flushOutput()
         self.stop()
         self.set("led", "all", "off")
-        self.beep(.03, 784)
-        self.beep(.03, 880)
-        self.beep(.03, 698)
-        self.beep(.03, 349)
-        self.beep(.03, 523)
+        self.beep(0.03, 784)
+        self.beep(0.03, 880)
+        self.beep(0.03, 698)
+        self.beep(0.03, 349)
+        self.beep(0.03, 523)
         name = self.get("name")
         print("Hello, I'm %s!" % name)
 
-    def beep(self, duration, frequency, frequency2 = None):
+    def beep(self, duration, frequency, frequency2=None):
 
-        self.lock.acquire() #print "locked acquired"
+        self.lock.acquire()  # print "locked acquired"
 
         old = self.ser.timeout
-        self.ser.setTimeout(duration+2)
+        self.ser.setTimeout(duration + 2)
 
         if frequency2 == None:
             self._set_speaker(int(frequency), int(duration * 1000))
@@ -450,17 +501,24 @@ class Scribbler(Robot):
         self.ser.setTimeout(old)
         self.lock.release()
 
-    def get(self, sensor = "all", *position):
+    def get(self, sensor="all", *position):
         sensor = sensor.lower()
         if sensor == "config":
             if self.dongle == None:
                 return {"ir": 2, "line": 2, "stall": 1, "light": 3}
             else:
-                return {"ir": 2, "line": 2, "stall": 1, "light": 3,
-                        "battery": 1, "obstacle": 3, "bright": 3}
+                return {
+                    "ir": 2,
+                    "line": 2,
+                    "stall": 1,
+                    "light": 3,
+                    "battery": 1,
+                    "obstacle": 3,
+                    "bright": 3,
+                }
         elif sensor == "stall":
-            retval = self._get(Scribbler.GET_ALL, 11) # returned as bytes
-            self._lastSensors = retval # single bit sensors
+            retval = self._get(Scribbler.GET_ALL, 11)  # returned as bytes
+            self._lastSensors = retval  # single bit sensors
             return retval[10]
         elif sensor == "forwardness":
             if read_mem(self.ser, 0, 0) != 0xDF:
@@ -469,10 +527,10 @@ class Scribbler(Robot):
                 retval = "scribbler-forward"
             return retval
         elif sensor == "startsong":
-            #TODO: need to get this from flash memory
+            # TODO: need to get this from flash memory
             return "tada"
         elif sensor == "version":
-            #TODO: just return this version for now; get from flash
+            # TODO: just return this version for now; get from flash
             return __REVISION__.split()[1]
         elif sensor == "data":
             return self.getData(*position)
@@ -481,12 +539,12 @@ class Scribbler(Robot):
         elif sensor == "name":
             c = self._get(Scribbler.GET_NAME1, 8)
             c += self._get(Scribbler.GET_NAME2, 8)
-            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], '').strip()
+            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], "").strip()
             return c
         elif sensor == "password":
             c = self._get(Scribbler.GET_PASS1, 8)
             c += self._get(Scribbler.GET_PASS2, 8)
-            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], '').strip()
+            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], "").strip()
             return c
         elif sensor == "volume":
             return self._volume
@@ -503,26 +561,57 @@ class Scribbler(Robot):
                 elif sensor == "ir":
                     return self._get(Scribbler.GET_IR_ALL, 2)
                 elif sensor == "obstacle":
-                    return [self.getObstacle("left"), self.getObstacle("center"), self.getObstacle("right")]
+                    return [
+                        self.getObstacle("left"),
+                        self.getObstacle("center"),
+                        self.getObstacle("right"),
+                    ]
                 elif sensor == "distance":
                     return [self.getDistance("left"), self.getDistance("right")]
                 elif sensor == "bright":
-                    return [self.getBright("left"), self.getBright("middle"), self.getBright("right") ]
+                    return [
+                        self.getBright("left"),
+                        self.getBright("middle"),
+                        self.getBright("right"),
+                    ]
                 elif sensor == "all":
-                    retval = self._get(Scribbler.GET_ALL, 11) # returned as bytes
-                    self._lastSensors = retval # single bit sensors
+                    retval = self._get(Scribbler.GET_ALL, 11)  # returned as bytes
+                    self._lastSensors = retval  # single bit sensors
                     if self.dongle == None:
-                        return {"light": [retval[2] << 8 | retval[3], retval[4] << 8 | retval[5], retval[6] << 8 | retval[7]],
-                                "ir": [retval[0], retval[1]], "line": [retval[8], retval[9]], "stall": retval[10]}
+                        return {
+                            "light": [
+                                retval[2] << 8 | retval[3],
+                                retval[4] << 8 | retval[5],
+                                retval[6] << 8 | retval[7],
+                            ],
+                            "ir": [retval[0], retval[1]],
+                            "line": [retval[8], retval[9]],
+                            "stall": retval[10],
+                        }
                     else:
-                        return {"light": [retval[2] << 8 | retval[3], retval[4] << 8 | retval[5], retval[6] << 8 | retval[7]],
-                                "ir": [retval[0], retval[1]], "line": [retval[8], retval[9]], "stall": retval[10],
-                                "obstacle": [self.getObstacle("left"), self.getObstacle("center"), self.getObstacle("right")],
-                                "bright": [self.getBright("left"), self.getBright("middle"), self.getBright("right")],
-                                "blob": self.getBlob(),
-                                "battery": self.getBattery(),
-                                }
-                else:                
+                        return {
+                            "light": [
+                                retval[2] << 8 | retval[3],
+                                retval[4] << 8 | retval[5],
+                                retval[6] << 8 | retval[7],
+                            ],
+                            "ir": [retval[0], retval[1]],
+                            "line": [retval[8], retval[9]],
+                            "stall": retval[10],
+                            "obstacle": [
+                                self.getObstacle("left"),
+                                self.getObstacle("center"),
+                                self.getObstacle("right"),
+                            ],
+                            "bright": [
+                                self.getBright("left"),
+                                self.getBright("middle"),
+                                self.getBright("right"),
+                            ],
+                            "blob": self.getBlob(),
+                            "battery": self.getBattery(),
+                        }
+                else:
                     raise "invalid sensor name: '%s'"
             retvals = []
             for pos in position:
@@ -537,7 +626,7 @@ class Scribbler(Robot):
                     elif pos == None or pos == "all":
                         retvals.append(values)
                 elif sensor == "ir":
-                    values = self._get(Scribbler.GET_IR_ALL, 2)                    
+                    values = self._get(Scribbler.GET_IR_ALL, 2)
                     if pos in [0, "left"]:
                         retvals.append(values[0])
                     elif pos in [1, "right"]:
@@ -566,10 +655,10 @@ class Scribbler(Robot):
                 return retvals
 
     def getData(self, *position):
-        if len(position) == 0: 
+        if len(position) == 0:
             return self._get(Scribbler.GET_DATA, 8)
-        else:   
-            retval = []               
+        else:
+            retval = []
             for p in position:
                 retval.append(self._get(Scribbler.GET_DATA, 8)[p])
             if len(retval) == 1:
@@ -578,48 +667,48 @@ class Scribbler(Robot):
                 return retval
 
     def getInfo(self, *item):
-        #retval = self._get(Scribbler.GET_INFO, mode="line")
+        # retval = self._get(Scribbler.GET_INFO, mode="line")
 
-        oldtimeout = self.ser.timeout        
+        oldtimeout = self.ser.timeout
         self.ser.setTimeout(4)
 
-        #self.ser.flushInput()
-        #self.ser.flushOutput()
+        # self.ser.flushInput()
+        # self.ser.flushOutput()
 
         self.manual_flush()
         # have to do this twice since sometime the first echo isn't
         # echoed correctly (spaces) from the scribbler
 
-        self.ser.write(chr(Scribbler.GET_INFO) + (' ' * 8))
+        self.ser.write(chr(Scribbler.GET_INFO) + (" " * 8))
         retval = self.ser.readline()
-        #print "Got", retval
+        # print "Got", retval
 
-        time.sleep(.1)
+        time.sleep(0.1)
 
-        self.ser.write(chr(Scribbler.GET_INFO) + (' ' * 8))
+        self.ser.write(chr(Scribbler.GET_INFO) + (" " * 8))
         retval = self.ser.readline()
-        #print "Got", retval
+        # print "Got", retval
 
         # remove echoes
         if retval == None or len(retval) == 0:
             return {}
 
-        if retval[0] == 'P' or retval[0] == 'p':
+        if retval[0] == "P" or retval[0] == "p":
             retval = retval[1:]
 
-        if retval[0] == 'P' or retval[0] == 'p':
+        if retval[0] == "P" or retval[0] == "p":
             retval = retval[1:]
 
         self.ser.setTimeout(oldtimeout)
 
         retDict = {}
         for pair in retval.split(","):
-            if ":" in pair:            
+            if ":" in pair:
                 it, value = pair.split(":")
                 retDict[it.lower().strip()] = value.strip()
-        if len(item) == 0:  
+        if len(item) == 0:
             return retDict
-        else:               
+        else:
             retval = []
             for it in item:
                 retval.append(retDict[it.lower().strip()])
@@ -630,43 +719,43 @@ class Scribbler(Robot):
 
     ########################################################## Dongle Commands
 
-
-# the set_blob_yuv function will set the YUV colorspace for the blob
-# detection on the fluke based upon the average hue of a rectangle of
-# pixels in an image.
-# The GUI allows users to drag to select a rectangle in an image, and 
-# the average HUE of the pixels in that rectangle are used to set the
-# U and V parameters (hue/color parameters) of the blob detecting code
-# on the Lance Fluke (dongle).
-#
-# We set the Y value (Luminance) to 0-254 because we will accept pixels
-# of all intensities.
-#
-# The averaging code (used to find AVG/StdDev and calculate the average
-# range of hue values was based upon a donation from the C++ version of
-# the MYRO API, donated by redwar15@cs.utk.edu
+    # the set_blob_yuv function will set the YUV colorspace for the blob
+    # detection on the fluke based upon the average hue of a rectangle of
+    # pixels in an image.
+    # The GUI allows users to drag to select a rectangle in an image, and
+    # the average HUE of the pixels in that rectangle are used to set the
+    # U and V parameters (hue/color parameters) of the blob detecting code
+    # on the Lance Fluke (dongle).
+    #
+    # We set the Y value (Luminance) to 0-254 because we will accept pixels
+    # of all intensities.
+    #
+    # The averaging code (used to find AVG/StdDev and calculate the average
+    # range of hue values was based upon a donation from the C++ version of
+    # the MYRO API, donated by redwar15@cs.utk.edu
 
     def set_blob_yuv(self, picture, x1, y1, x2, y2):
         from math import sqrt
-        #Find min/max of rectangle.
-        xs = [x1,x2]
-        ys = [y1,y2]
+
+        # Find min/max of rectangle.
+        xs = [x1, x2]
+        ys = [y1, y2]
         xs.sort()
         ys.sort()
 
-        #set up variables to hold counts and accumulations:
+        # set up variables to hold counts and accumulations:
         totalY = 0.0
         totalU = 0.0
         totalV = 0.0
-       
+
         ySamples = []
         uSamples = []
-        vSamples = [] 
-        
+        vSamples = []
+
         for i in range(xs[0], xs[1], 1):
             for j in range(ys[0], ys[1], 1):
-                r,g,b = picture.getPixel(i,j).getRGB()
-                y,u,v = rgb2yuv(r,g,b)
+                r, g, b = picture.getPixel(i, j).getRGB()
+                y, u, v = rgb2yuv(r, g, b)
                 totalY = totalY + y
                 totalU = totalU + u
                 totalV = totalV + v
@@ -679,22 +768,21 @@ class Scribbler(Robot):
         uMean = totalU / count
         vMean = totalV / count
 
-
-        # The standard deviation of a random variable with a normal 
-        # distribution is the root-mean-square (RMS) deviation of its 
+        # The standard deviation of a random variable with a normal
+        # distribution is the root-mean-square (RMS) deviation of its
         # values from their mean.
         sY = 0.0
         sU = 0.0
         sV = 0.0
 
-        for i in range(0,len(ySamples)):
-            sY = sY + (ySamples[i] - yMean)**2
-            sU = sU + (uSamples[i] - uMean)**2
-            sV = sV + (vSamples[i] - vMean)**2
+        for i in range(0, len(ySamples)):
+            sY = sY + (ySamples[i] - yMean) ** 2
+            sU = sU + (uSamples[i] - uMean) ** 2
+            sV = sV + (vSamples[i] - vMean) ** 2
 
-        sY = sqrt( sY / count)
-        sU = sqrt( sU / count)
-        sV = sqrt( sV / count)
+        sY = sqrt(sY / count)
+        sU = sqrt(sU / count)
+        sV = sqrt(sV / count)
 
         # Select the U/V bounding box based upon stdMod stdDev
         # from the mean, with approripate
@@ -702,119 +790,141 @@ class Scribbler(Robot):
         #
         stdMod = 3.0
 
-        minU = max(0, (uMean - sU*stdMod)    )
-        maxU = min(255, (uMean + sU*stdMod)  )
-        minV = max(0, (vMean - sV*stdMod) )
-        maxV = min(255, (vMean + sV*stdMod) )
+        minU = max(0, (uMean - sU * stdMod))
+        maxU = min(255, (uMean + sU * stdMod))
+        minV = max(0, (vMean - sV * stdMod))
+        maxV = min(255, (vMean + sV * stdMod))
         minU = int(minU)
         maxU = int(maxU)
         minV = int(minV)
         maxV = int(maxV)
 
-
-        #Note that we use the default values for
-        #several parameters, most importantly the Y value
+        # Note that we use the default values for
+        # several parameters, most importantly the Y value
         # defaults to a range of 0-254
-        self.conf_rle( u_low=minU, u_high=maxU,
-                       v_low=minV, v_high=maxV)
+        self.conf_rle(u_low=minU, u_high=maxU, v_low=minV, v_high=maxV)
 
         # Return a tupal of parameters suitable for the configureBlob
         # function, to be shown to the user.
 
-        return ( 0, 254, minU, maxU, minV, maxV) 
+        return (0, 254, minU, maxU, minV, maxV)
 
+    def configureBlob(
+        self,
+        y_low=0,
+        y_high=255,
+        u_low=0,
+        u_high=255,
+        v_low=0,
+        v_high=255,
+        smooth_thresh=4,
+    ):
+        self.conf_rle(
+            y_low=y_low,
+            y_high=y_high,
+            u_low=u_low,
+            u_high=u_high,
+            v_low=v_low,
+            v_high=v_high,
+            smooth_thresh=smooth_thresh,
+        )
 
+    # conf_rle   - Sets parameters for the Run Length Encoded blob image
+    #        returned by takePicture("blob")
+    #
+    # Y,U,V high/low parameters configure a bounding box (in YUV color space)
+    # of pixels that are "on" or white. All other pixels are off or black.
+    #
+    # Note - The delay parameter should always be 90. it's an internal tuning
+    # parameter, and Keith says Bad Things(TM) happen if it's not 90.
+    #
+    # The smooth_thresh parameter tells how many pixels must be black/white
+    # before the Run Length Encoding (of blob images) recognizes the change
+    # and sends a run of the opposite bit. This makes the blob images look
+    # slightly streaky, but greatly increases the efficiency of the RLE compression
+    # by eliminating minor noise.
 
-
-
-
-
-
-
-
-
-
-    def configureBlob(self,
-                      y_low=0,  y_high=255,
-                      u_low=0,  u_high=255,
-                      v_low=0,  v_high=255,
-                      smooth_thresh=4):        
-        self.conf_rle(y_low=y_low, y_high=y_high,
-                      u_low=u_low, u_high=u_high,
-                      v_low=v_low, v_high=v_high,
-                      smooth_thresh=smooth_thresh)
-
-# conf_rle   - Sets parameters for the Run Length Encoded blob image
-#        returned by takePicture("blob")
-#
-# Y,U,V high/low parameters configure a bounding box (in YUV color space)
-# of pixels that are "on" or white. All other pixels are off or black.
-#
-# Note - The delay parameter should always be 90. it's an internal tuning 
-# parameter, and Keith says Bad Things(TM) happen if it's not 90.
-#
-# The smooth_thresh parameter tells how many pixels must be black/white
-# before the Run Length Encoding (of blob images) recognizes the change
-# and sends a run of the opposite bit. This makes the blob images look 
-# slightly streaky, but greatly increases the efficiency of the RLE compression
-# by eliminating minor noise.
-
-    def conf_rle(self, delay = 90, smooth_thresh = 4,
-                 y_low=0, y_high=254,
-                 u_low=51, u_high=136,
-                 v_low=190, v_high=254):
+    def conf_rle(
+        self,
+        delay=90,
+        smooth_thresh=4,
+        y_low=0,
+        y_high=254,
+        u_low=51,
+        u_high=136,
+        v_low=190,
+        v_high=254,
+    ):
 
         # Force all parameters to be INT's
         y_low = int(y_low)
         y_high = int(y_high)
-        u_low  = int(u_low)
+        u_low = int(u_low)
         u_high = int(u_high)
-        v_low  = int(v_low)
+        v_low = int(v_low)
         v_high = int(v_high)
         delay = int(delay)
         smooth_thresh = int(smooth_thresh)
 
         if self.debug:
-            print("configuring RLE", delay, smooth_thresh, y_low, y_high, u_low, u_high, v_low, v_high)
+            print(
+                "configuring RLE",
+                delay,
+                smooth_thresh,
+                y_low,
+                y_high,
+                u_low,
+                u_high,
+                v_low,
+                v_high,
+            )
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.SET_RLE))
             self.ser.write(chr(delay))
             self.ser.write(chr(smooth_thresh))
-            self.ser.write(chr(y_low)) 
+            self.ser.write(chr(y_low))
             self.ser.write(chr(y_high))
-            self.ser.write(chr(u_low)) 
+            self.ser.write(chr(u_low))
             self.ser.write(chr(u_high))
-            self.ser.write(chr(v_low)) 
+            self.ser.write(chr(v_low))
             self.ser.write(chr(v_high))
         finally:
             self.lock.release()
 
     def read_uint32(self):
         buf = self.ser.read(4)
-        return ord(buf[0]) + ord(buf[1]) * 256 + ord(buf[2]) * 65536 + ord(buf[3]) * 16777216
+        return (
+            ord(buf[0])
+            + ord(buf[1]) * 256
+            + ord(buf[2]) * 65536
+            + ord(buf[3]) * 16777216
+        )
 
     def read_jpeg_scan(self):
-        bytes = ''
+        bytes = ""
         last_byte = 0
         while True:
             byte = self.ser.read(1)
             bytes += byte
 
-            if last_byte == chr(0xff) and byte == chr(0xd9):
+            if last_byte == chr(0xFF) and byte == chr(0xD9):
                 # End-of-image marker
                 break
 
             last_byte = byte
 
-        bm0 = self.read_uint32();   # Start
-        bm1 = self.read_uint32();   # Read
-        bm2 = self.read_uint32();   # Compress
+        bm0 = self.read_uint32()
+        # Start
+        bm1 = self.read_uint32()
+        # Read
+        bm2 = self.read_uint32()
+        # Compress
 
         if self.debug:
             print("got image")
             freq = 60e6
-            print('%.3f %.3f' % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq)))
+            print("%.3f %.3f" % (((bm1 - bm0) / freq), ((bm2 - bm1) / freq)))
 
         return bytes
 
@@ -824,6 +934,7 @@ class Scribbler(Robot):
         return self.ser.read(len)
 
     color_header = None
+
     def grab_jpeg_color(self, reliable):
         try:
             self.lock.acquire()
@@ -839,6 +950,7 @@ class Scribbler(Robot):
         return jpeg
 
     gray_header = None
+
     def grab_jpeg_gray(self, reliable):
         try:
             self.lock.acquire()
@@ -855,11 +967,13 @@ class Scribbler(Robot):
 
     # for older versions of fluke without jpeg
     # use this lookup table to decide what picture to grab
-    image_codes = {"jpeg": "color",
-                   "jpeg-fast": "color",
-                   "grayjpeg": "rawgray",
-                   "grayjpeg-fast": "rawgray"}
-    
+    image_codes = {
+        "jpeg": "color",
+        "jpeg-fast": "color",
+        "grayjpeg": "rawgray",
+        "grayjpeg-fast": "rawgray",
+    }
+
     def takePicture(self, mode=None):
         if mode == None:
             mode = "jpeg"
@@ -871,39 +985,41 @@ class Scribbler(Robot):
             version = list(map(int, self.dongle.split(".")))
         else:
             version = [1, 0, 0]
-                
+
         if version < [2, 7, 8]:
             if mode in self.image_codes:
                 mode = self.image_codes[mode]
-            
+
         if mode == "color":
             a = self._grab_array()
             p.set(width, height, a)
         elif mode == "jpeg":
             jpeg = self.grab_jpeg_color(1)
-            stream = io.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)
             p.set(width, height, stream, "jpeg")
         elif mode == "jpeg-fast":
             jpeg = self.grab_jpeg_color(0)
-            stream = io.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)
             p.set(width, height, stream, "jpeg")
         elif mode in ["gray", "grey"]:
             jpeg = self.grab_jpeg_gray(1)
-            stream = io.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg":
             jpeg = self.grab_jpeg_gray(1)
-            stream = io.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)
             p.set(width, height, stream, "jpeg")
         elif mode == "grayjpeg-fast":
             jpeg = self.grab_jpeg_gray(0)
-            stream = io.StringIO(jpeg)  
+            stream = io.StringIO(jpeg)
             p.set(width, height, stream, "jpeg")
         elif mode in ["grayraw", "greyraw"]:
-            conf_window(self, 0, 1, 0, self.imagewidth-1, self.imageheight-1, 2, 2)
+            conf_window(self, 0, 1, 0, self.imagewidth - 1, self.imageheight - 1, 2, 2)
             # conf_window(self.ser, 0, 1, 0, 255, 191, 2, 2)
             a = self._grab_gray_array()
-            conf_gray_window(self, 0, 2, 0, self.imagewidth/2, self.imageheight-1, 1, 1)
+            conf_gray_window(
+                self, 0, 2, 0, self.imagewidth / 2, self.imageheight - 1, 1, 1
+            )
             # conf_gray_window(self.ser, 0, 2, 0,    128, 191, 1, 1)
             p.set(width, height, a, "gray")
         elif mode == "blob":
@@ -914,18 +1030,20 @@ class Scribbler(Robot):
     def _grab_blob_array(self):
         width = self.imagewidth
         height = self.imageheight
-        blobs = array.array('B', [0] * (height * width)) # zeros(((height + 1), (width + 1)), dtype=uint8)
-        line = ''
+        blobs = array.array(
+            "B", [0] * (height * width)
+        )  # zeros(((height + 1), (width + 1)), dtype=uint8)
+        line = ""
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.GET_RLE))
-            size=ord(self.ser.read(1))
+            size = ord(self.ser.read(1))
             size = (size << 8) | ord(self.ser.read(1))
             if self.debug:
                 print("Grabbing RLE image size =", size)
-            line =''
-            while (len(line) < size):
-                line+=self.ser.read(size-len(line))
+            line = ""
+            while len(line) < size:
+                line += self.ser.read(size - len(line))
         finally:
             self.lock.release()
 
@@ -935,146 +1053,211 @@ class Scribbler(Robot):
         inside = True
         for i in range(height):
             for j in range(0, width, 4):
-                if (counter < 1 and px < len(line)):
-                    counter = ord(line[px])        
+                if counter < 1 and px < len(line):
+                    counter = ord(line[px])
                     px += 1
-                    counter = (counter << 8) | ord(line[px])        
+                    counter = (counter << 8) | ord(line[px])
                     px += 1
                     # Fluke 2 large image requires a 3 byte counter
                     if self.dongle_version >= [3, 0, 0]:
                         counter = (counter << 8) | ord(line[px])
                         px += 1
-                    if (inside):
+                    if inside:
                         val = 0
                         inside = False
                     else:
                         val = 255
                         inside = True
-                for z in range(0,4):
-                    blobs[i * width + j+z] = val
+                for z in range(0, 4):
+                    blobs[i * width + j + z] = val
                 counter -= 1
         return blobs
 
     def _grab_gray_array(self):
-        width = self.imagewidth/2
-        height = self.imageheight/2
+        width = self.imagewidth / 2
+        height = self.imageheight / 2
         # width = 128
         # height = 96
-        size= width*height
-        #print "grabbing image size = ", size
+        size = width * height
+        # print "grabbing image size = ", size
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.GET_WINDOW))
             self.ser.write(chr(0))
-            line = ''
-            while (len(line) < size):
-                line += self.ser.read(size-len(line))
-                #print "length so far = ", len(line), " waiting for total = ", size
+            line = ""
+            while len(line) < size:
+                line += self.ser.read(size - len(line))
+                # print "length so far = ", len(line), " waiting for total = ", size
         finally:
             self.lock.release()
-            
+
         line = quadrupleSize(line, width)
         return line
 
     def _grab_array(self):
         width = self.imagewidth
         height = self.imageheight
-        buffer = array.array('B', [0] * (height * width * 3))
+        buffer = array.array("B", [0] * (height * width * 3))
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(.01)
+            self.ser.setTimeout(0.01)
             self.ser.write(chr(Scribbler.GET_IMAGE))
-            size= width*height
-            line = BufferedRead(self.ser, size, start = 0)
-            #create the image from the YUV layer
+            size = width * height
+            line = BufferedRead(self.ser, size, start=0)
+            # create the image from the YUV layer
             for i in range(height):
-                for j in range(width):   
+                for j in range(width):
                     if j >= 3:
                         # go to the left for other values
-                        #vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
-                        vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
+                        # vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
+                        vy = -1
+                        vu = -2
+                        y1v = -1
+                        y1u = -3
+                        uy = -1
+                        uv = -2
+                        y2u = -1
+                        y2v = -3
                     else:
                         # go to the right for other values
-                        vy = 1; vu = 2; y1v = 3; y1u = 1; uy = 1; uv = 2; y2u = 3; y2v = 1
+                        vy = 1
+                        vu = 2
+                        y1v = 3
+                        y1u = 1
+                        uy = 1
+                        uv = 2
+                        y2u = 3
+                        y2v = 1
 
-                                        #   0123 0123 0123
-                    if ((j % 4) == 0): #3 #2   VYUY VYUY VYUY
+                        #   0123 0123 0123
+                    if (j % 4) == 0:  # 3 #2   VYUY VYUY VYUY
                         V = ord(line[i * width + j])
                         Y = ord(line[i * width + j + vy])
                         U = ord(line[i * width + j + vu])
-                    elif ((j % 4) == 1): #0 #3
+                    elif (j % 4) == 1:  # 0 #3
                         Y = ord(line[i * width + j])
                         V = ord(line[i * width + j + y1v])
                         U = ord(line[i * width + j + y1u])
-                    elif ((j % 4) == 2): #1 #0
+                    elif (j % 4) == 2:  # 1 #0
                         U = ord(line[i * width + j])
                         Y = ord(line[i * width + j + uy])
                         V = ord(line[i * width + j + uv])
-                    elif ((j % 4) == 3): #2 #1
+                    elif (j % 4) == 3:  # 2 #1
                         Y = ord(line[i * width + j])
                         U = ord(line[i * width + j + y2u])
                         V = ord(line[i * width + j + y2v])
                     U = U - 128
                     V = V - 128
                     Y = Y
-                    buffer[(i * width + j) * 3 + 0] = int(max(min(Y + 1.13983 * V, 255), 0))
-                    buffer[(i * width + j) * 3 + 1] = int(max(min(Y - 0.39466*U-0.58060*V, 255), 0))
-                    buffer[(i * width + j) * 3 + 2] = int(max(min(Y + 2.03211*U, 255), 0))
+                    buffer[(i * width + j) * 3 + 0] = int(
+                        max(min(Y + 1.13983 * V, 255), 0)
+                    )
+                    buffer[(i * width + j) * 3 + 1] = int(
+                        max(min(Y - 0.39466 * U - 0.58060 * V, 255), 0)
+                    )
+                    buffer[(i * width + j) * 3 + 2] = int(
+                        max(min(Y + 2.03211 * U, 255), 0)
+                    )
             self.ser.setTimeout(oldtimeout)
         finally:
             self.lock.release()
-            
+
         return buffer
 
     def _grab_array_bilinear_horizontal(self):
         width = self.imagewidth
         height = self.imageheight
-        buffer = array.array('B', [0] * (height * width * 3))
+        buffer = array.array("B", [0] * (height * width * 3))
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(.01)
+            self.ser.setTimeout(0.01)
             self.ser.write(chr(Scribbler.GET_IMAGE))
-            size= width*height
-            line = BufferedRead(self.ser, size, start = 0)
-            #create the image from the YUV layer
+            size = width * height
+            line = BufferedRead(self.ser, size, start=0)
+            # create the image from the YUV layer
             for i in range(height):
                 for j in range(width):
-                    vy = 1; vu = 2; y1v = 3; y1u = 1; uy = 1; uv = 2; y2u = 3; y2v = 1
-                    vy2 = -1; vu2 = -2; y1v2 = -1; y1u2 = -3; uy2 = -1; uv2 = -2; y2u2 = -1; y2v2 = -3
+                    vy = 1
+                    vu = 2
+                    y1v = 3
+                    y1u = 1
+                    uy = 1
+                    uv = 2
+                    y2u = 3
+                    y2v = 1
+                    vy2 = -1
+                    vu2 = -2
+                    y1v2 = -1
+                    y1u2 = -3
+                    uy2 = -1
+                    uv2 = -2
+                    y2u2 = -1
+                    y2v2 = -3
 
                     if j >= 3:
                         # go to the left for other values
-                        #vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
-                        vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
+                        # vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
+                        vy = -1
+                        vu = -2
+                        y1v = -1
+                        y1u = -3
+                        uy = -1
+                        uv = -2
+                        y2u = -1
+                        y2v = -3
                         if j < (width - 4):
-                            vy2 = +3; vu2 = +2; y1v2 = +3; y1u2 = +1; uy2 = +3; uv2 = +2; y2u2 = +3; y2v2 = +1
+                            vy2 = +3
+                            vu2 = +2
+                            y1v2 = +3
+                            y1u2 = +1
+                            uy2 = +3
+                            uv2 = +2
+                            y2u2 = +3
+                            y2v2 = +1
 
-
-                                #   0123 0123 0123
-                    if ((j % 4) == 0): #3 #2   VYUY VYUY VYUY
+                            #   0123 0123 0123
+                    if (j % 4) == 0:  # 3 #2   VYUY VYUY VYUY
                         V = ord(line[i * width + j])
-                        Y = 0.5*ord(line[i * width + j + vy]) + 0.5*ord(line[(i) * width + j + vy2])
-                        U = 0.5*ord(line[i * width + j + vu]) + 0.5*ord(line[(i) * width + j + vu2])
-                    elif ((j % 4) == 1): #0 #3
+                        Y = 0.5 * ord(line[i * width + j + vy]) + 0.5 * ord(
+                            line[(i) * width + j + vy2]
+                        )
+                        U = 0.5 * ord(line[i * width + j + vu]) + 0.5 * ord(
+                            line[(i) * width + j + vu2]
+                        )
+                    elif (j % 4) == 1:  # 0 #3
                         Y = ord(line[i * width + j])
-                        V = 0.5*ord(line[i * width + j + y1v]) + 0.5*ord(line[(i) * width + j + y1v2])
-                        U = 0.5*ord(line[i * width + j + y1u]) + 0.5*ord(line[(i) * width + j + y1u2]) 
-                    elif ((j % 4) == 2): #1 #0
+                        V = 0.5 * ord(line[i * width + j + y1v]) + 0.5 * ord(
+                            line[(i) * width + j + y1v2]
+                        )
+                        U = 0.5 * ord(line[i * width + j + y1u]) + 0.5 * ord(
+                            line[(i) * width + j + y1u2]
+                        )
+                    elif (j % 4) == 2:  # 1 #0
                         U = ord(line[i * width + j])
-                        Y = 0.5*ord(line[i * width + j + uy]) + 0.5*ord(line[(i) * width + j + uy2])
-                        V = 0.5*ord(line[i * width + j + uv]) + 0.5*ord(line[(i) * width + j + uv2])
-                    elif ((j % 4) == 3): #2 #1
+                        Y = 0.5 * ord(line[i * width + j + uy]) + 0.5 * ord(
+                            line[(i) * width + j + uy2]
+                        )
+                        V = 0.5 * ord(line[i * width + j + uv]) + 0.5 * ord(
+                            line[(i) * width + j + uv2]
+                        )
+                    elif (j % 4) == 3:  # 2 #1
                         Y = ord(line[i * width + j])
-                        U = 0.5*ord(line[i * width + j + y2u]) + 0.5*ord(line[(i) * width + j + y2u2])
-                        V = 0.5*ord(line[i * width + j + y2v]) + 0.5*ord(line[(i) * width + j + y2v2])
+                        U = 0.5 * ord(line[i * width + j + y2u]) + 0.5 * ord(
+                            line[(i) * width + j + y2u2]
+                        )
+                        V = 0.5 * ord(line[i * width + j + y2v]) + 0.5 * ord(
+                            line[(i) * width + j + y2v2]
+                        )
                     U = U - 128
                     V = V - 128
                     Y = Y
                     buffer[(i * width + j) * 3 + 0] = max(min(Y + 1.13983 * V, 255), 0)
-                    buffer[(i * width + j) * 3 + 1] = max(min(Y - 0.39466*U-0.58060*V, 255), 0)
-                    buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211*U, 255), 0)
+                    buffer[(i * width + j) * 3 + 1] = max(
+                        min(Y - 0.39466 * U - 0.58060 * V, 255), 0
+                    )
+                    buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211 * U, 255), 0)
             self.ser.setTimeout(oldtimeout)
         finally:
             self.lock.release()
@@ -1083,57 +1266,88 @@ class Scribbler(Robot):
     def _grab_array_bilinear_vert(self):
         width = self.imagewidth
         height = self.imageheight
-        buffer = array.array('B', [0] * (height * width * 3))
+        buffer = array.array("B", [0] * (height * width * 3))
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(.01)
+            self.ser.setTimeout(0.01)
             self.ser.write(chr(Scribbler.GET_IMAGE))
-            size= width*height
-            line = BufferedRead(self.ser, size, start = 0)
-            #create the image from the YUV layer
+            size = width * height
+            line = BufferedRead(self.ser, size, start=0)
+            # create the image from the YUV layer
             for i in range(height):
                 if i < 1:
                     n = 0
                 else:
                     n = 1
 
-                for j in range(width):   
+                for j in range(width):
                     if j >= 3:
                         # go to the left for other values
-                        #vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
-                        vy = -1; vu = -2; y1v = -1; y1u = +1; uy = -1; uv = -2; y2u = -1;
+                        # vy = -1; vu = -2; y1v = -1; y1u = -3; uy = -1; uv = -2; y2u = -1; y2v = -3
+                        vy = -1
+                        vu = -2
+                        y1v = -1
+                        y1u = +1
+                        uy = -1
+                        uv = -2
+                        y2u = -1
                         if j < (width - 2):
                             y2v = +1
                         else:
                             y2v = -3
                     else:
                         # go to the right for other values
-                        vy = 1; vu = 2; y1v = 3; y1u = 1; uy = 1; uv = 2; y2u = 3; y2v = 1
+                        vy = 1
+                        vu = 2
+                        y1v = 3
+                        y1u = 1
+                        uy = 1
+                        uv = 2
+                        y2u = 3
+                        y2v = 1
 
-                            #   0123 0123 0123
-                    if ((j % 4) == 0): #3 #2   VYUY VYUY VYUY
+                        #   0123 0123 0123
+                    if (j % 4) == 0:  # 3 #2   VYUY VYUY VYUY
                         V = ord(line[i * width + j])
-                        Y = 0.5*ord(line[i * width + j + vy]) + 0.5*ord(line[(i-n) * width + j + vy])
-                        U = 0.5*ord(line[i * width + j + vu]) + 0.5*ord(line[(i-n) * width + j + vu])
-                    elif ((j % 4) == 1): #0 #3
+                        Y = 0.5 * ord(line[i * width + j + vy]) + 0.5 * ord(
+                            line[(i - n) * width + j + vy]
+                        )
+                        U = 0.5 * ord(line[i * width + j + vu]) + 0.5 * ord(
+                            line[(i - n) * width + j + vu]
+                        )
+                    elif (j % 4) == 1:  # 0 #3
                         Y = ord(line[i * width + j])
-                        V = 0.5*ord(line[i * width + j + y1v]) + 0.5*ord(line[(i-n) * width + j + y1v])
-                        U = 0.5*ord(line[i * width + j + y1u]) + 0.5*ord(line[(i-n) * width + j + y1u]) 
-                    elif ((j % 4) == 2): #1 #0
+                        V = 0.5 * ord(line[i * width + j + y1v]) + 0.5 * ord(
+                            line[(i - n) * width + j + y1v]
+                        )
+                        U = 0.5 * ord(line[i * width + j + y1u]) + 0.5 * ord(
+                            line[(i - n) * width + j + y1u]
+                        )
+                    elif (j % 4) == 2:  # 1 #0
                         U = ord(line[i * width + j])
-                        Y = 0.5*ord(line[i * width + j + uy]) + 0.5*ord(line[(i-n) * width + j + uy])
-                        V = 0.5*ord(line[i * width + j + uv]) + 0.5*ord(line[(i-n) * width + j + uv])
-                    elif ((j % 4) == 3): #2 #1
+                        Y = 0.5 * ord(line[i * width + j + uy]) + 0.5 * ord(
+                            line[(i - n) * width + j + uy]
+                        )
+                        V = 0.5 * ord(line[i * width + j + uv]) + 0.5 * ord(
+                            line[(i - n) * width + j + uv]
+                        )
+                    elif (j % 4) == 3:  # 2 #1
                         Y = ord(line[i * width + j])
-                        U = 0.5*ord(line[i * width + j + y2u]) + 0.5*ord(line[(i-n) * width + j + y2u])
-                        V = 0.5*ord(line[i * width + j + y2v]) + 0.5*ord(line[(i-n) * width + j + y2v])
+                        U = 0.5 * ord(line[i * width + j + y2u]) + 0.5 * ord(
+                            line[(i - n) * width + j + y2u]
+                        )
+                        V = 0.5 * ord(line[i * width + j + y2v]) + 0.5 * ord(
+                            line[(i - n) * width + j + y2v]
+                        )
                     U = U - 128
                     V = V - 128
                     Y = Y
                     buffer[(i * width + j) * 3 + 0] = max(min(Y + 1.13983 * V, 255), 0)
-                    buffer[(i * width + j) * 3 + 1] = max(min(Y - 0.39466*U-0.58060*V, 255), 0)
-                    buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211*U, 255), 0)
+                    buffer[(i * width + j) * 3 + 1] = max(
+                        min(Y - 0.39466 * U - 0.58060 * V, 255), 0
+                    )
+                    buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211 * U, 255), 0)
             self.ser.setTimeout(oldtimeout)
         finally:
             self.lock.release()
@@ -1158,7 +1372,7 @@ class Scribbler(Robot):
         return retval
 
     def getIRMessage(self):
-        line = ''
+        line = ""
 
         if self.dongle:
             version = list(map(int, self.dongle.split(".")))
@@ -1173,8 +1387,8 @@ class Scribbler(Robot):
             self.lock.acquire()
             self.ser.write(chr(Scribbler.GET_IR_MESSAGE))
             size = read_2byte(self.ser)
-            while (len(line) < size):
-                line += self.ser.read(size-len(line))                   
+            while len(line) < size:
+                line += self.ser.read(size - len(line))
         finally:
             self.lock.release()
         return line
@@ -1191,13 +1405,13 @@ class Scribbler(Robot):
 
         try:
             self.lock.acquire()
-            self.ser.write(chr(Scribbler.SEND_IR_MESSAGE))            
-            self.ser.write(chr(len(data)))            
+            self.ser.write(chr(Scribbler.SEND_IR_MESSAGE))
+            self.ser.write(chr(len(data)))
             for i in data:
                 self.ser.write(i)
         finally:
             self.lock.release()
-        return 
+        return
 
     def setCommunicateLeft(self, on=True):
         if on:
@@ -1230,11 +1444,11 @@ class Scribbler(Robot):
     def setCommunicate(self):
         try:
             self.lock.acquire()
-            self.ser.write(chr(Scribbler.SET_IR_EMITTERS))            
-            self.ser.write(chr(self.emitters))            
+            self.ser.write(chr(Scribbler.SET_IR_EMITTERS))
+            self.ser.write(chr(self.emitters))
         finally:
             self.lock.release()
-        return 
+        return
 
     def setBrightPower(self, power):
         try:
@@ -1261,7 +1475,7 @@ class Scribbler(Robot):
         elif value <= 0:
             value = 0
         else:
-            value = int(float(value) * (255 - 170) + 170) # scale
+            value = int(float(value) * (255 - 170) + 170)  # scale
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.SET_DIMMER_LED))
@@ -1272,7 +1486,7 @@ class Scribbler(Robot):
     def getObstacle(self, value=None):
         if value == None:
             return self.get("obstacle")
-        try:            
+        try:
             self.lock.acquire()
             if value in ["left", 0]:
                 self.ser.write(chr(Scribbler.GET_DONGLE_L_IR))
@@ -1283,23 +1497,23 @@ class Scribbler(Robot):
             retval = read_2byte(self.ser)
         finally:
             self.lock.release()
-        return retval       
+        return retval
 
     def getDistance(self, value=None):
         if self._IsScribbler2():
             if value == None:
                 return self.get("distance")
-            try:            
+            try:
                 self.lock.acquire()
                 if value in ["left", 0]:
                     self._write([Scribbler.GET_DISTANCE, 0])
                 elif value in ["right", 1]:
                     self._write([Scribbler.GET_DISTANCE, 1])
-                self._read(Scribbler.PACKET_LENGTH) # read echo
+                self._read(Scribbler.PACKET_LENGTH)  # read echo
                 retval = ord(self.ser.read(1))
             finally:
                 self.lock.release()
-            return retval       
+            return retval
 
     def getBright(self, window=None):
         # left, middle, right
@@ -1314,7 +1528,7 @@ class Scribbler(Robot):
         if type(window) == str:
             if window in ["left"]:
                 window = 0
-            elif window in ["middle", "center"]:                
+            elif window in ["middle", "center"]:
                 window = 1
             elif window in ["right"]:
                 window = 2
@@ -1322,24 +1536,24 @@ class Scribbler(Robot):
             self.lock.acquire()
             self.ser.write(chr(Scribbler.GET_WINDOW_LIGHT))
             self.ser.write(chr(window))
-            retval = read_3byte(self.ser) #/ (63.0 * 192.0 * 255.0)
+            retval = read_3byte(self.ser)  # / (63.0 * 192.0 * 255.0)
         finally:
             self.lock.release()
-        return retval 
+        return retval
 
     def getBlob(self):
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.GET_BLOB))
-            #self.ser.write(chr(window))
+            # self.ser.write(chr(window))
             numpixs = read_2byte(self.ser)
             xloc = ord(self.ser.read(1))
             yloc = ord(self.ser.read(1))
 
             # fluke2 image coordinates don't fit in 1 byte without shifting
             if self.dongle_version >= [3, 0, 0]:
-                xloc <<= 3;
-                yloc <<= 2;
+                xloc <<= 3
+                yloc <<= 2
 
         finally:
             self.lock.release()
@@ -1351,7 +1565,10 @@ class Scribbler(Robot):
         elif direction in ["scribbler-forward", 0]:
             direction = 0
         else:
-            raise AttributeError("unknown direction: '%s': should be 'fluke-forward' or 'scribbler-forward'" % direction)
+            raise AttributeError(
+                "unknown direction: '%s': should be 'fluke-forward' or 'scribbler-forward'"
+                % direction
+            )
         try:
             self.lock.acquire()
             self.ser.write(chr(Scribbler.SET_FORWARDNESS))
@@ -1390,7 +1607,7 @@ class Scribbler(Robot):
             self.ser.write(chr(self.SET_CAM_PARAM))
             self.ser.write(chr(addr))
             self.ser.write(chr(byte))
-            time.sleep(.15) # camera needs time to reconfigure
+            time.sleep(0.15)  # camera needs time to reconfigure
         finally:
             self.lock.release()
 
@@ -1399,37 +1616,45 @@ class Scribbler(Robot):
             self.lock.acquire()
             self.ser.write(chr(self.GET_CAM_PARAM))
             self.ser.write(chr(addr))
-            v = ord(self.ser.read(1)) 
+            v = ord(self.ser.read(1))
         finally:
             self.lock.release()
         return v
 
     def darkenCamera(self, level=0):
         if self.debug:
-            print("Turning off White Balance, Gain Control, and Exposure Control", level)
+            print(
+                "Turning off White Balance, Gain Control, and Exposure Control", level
+            )
 
         if self.dongle_version >= [3, 0, 0]:
             level += 128
-            
+
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_OFF)
-        self.set_cam_param(self.CAM_COMB,
-                           (self.CAM_COMB_GAIN_CONTROL_OFF & self.CAM_COMB_EXPOSURE_CONTROL_OFF))
+        self.set_cam_param(
+            self.CAM_COMB,
+            (self.CAM_COMB_GAIN_CONTROL_OFF & self.CAM_COMB_EXPOSURE_CONTROL_OFF),
+        )
         self.set_cam_param(0, level)
         self.set_cam_param(1, 0)
         self.set_cam_param(2, 0)
-        self.set_cam_param(6, 0)    
+        self.set_cam_param(6, 0)
         self.set_cam_param(0x10, 0)
 
     def manualCamera(self, gain=0x00, brightness=0x80, exposure=0x41):
         if self.debug:
-            print("Turning off White Balance, Gain Control, and Exposure Control", level)            
+            print(
+                "Turning off White Balance, Gain Control, and Exposure Control", level
+            )
 
         if self.dongle_version >= [3, 0, 0]:
             gain += 128
 
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_OFF)
-        self.set_cam_param(self.CAM_COMB,
-                           (self.CAM_COMB_GAIN_CONTROL_OFF & self.CAM_COMB_EXPOSURE_CONTROL_OFF))
+        self.set_cam_param(
+            self.CAM_COMB,
+            (self.CAM_COMB_GAIN_CONTROL_OFF & self.CAM_COMB_EXPOSURE_CONTROL_OFF),
+        )
         self.set_cam_param(0x00, gain)
         self.set_cam_param(0x06, brightness)
         self.set_cam_param(0x10, exposure)
@@ -1447,7 +1672,6 @@ class Scribbler(Robot):
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_DEFAULT)
         self.set_cam_param(self.CAM_COMB, self.CAM_COMB_DEFAULT)
 
-
     ########################################################## End Dongle Commands
 
     def reset(self):
@@ -1460,51 +1684,67 @@ class Scribbler(Robot):
         data[position] = value
         return self._set(*([Scribbler.SET_DATA] + data))
 
-    def setSingleData(self,position,value):
-        data = [position,value]
-        return self._set(  *([Scribbler.SET_SINGLE_DATA] + data)  )
+    def setSingleData(self, position, value):
+        data = [position, value]
+        return self._set(*([Scribbler.SET_SINGLE_DATA] + data))
 
     def setEchoMode(self, value):
-        if isTrue(value): self._set(Scribbler.SET_ECHO_MODE, 1)
-        else:             self._set(Scribbler.SET_ECHO_MODE, 0)
-        time.sleep(.25)
+        if isTrue(value):
+            self._set(Scribbler.SET_ECHO_MODE, 1)
+        else:
+            self._set(Scribbler.SET_ECHO_MODE, 0)
+        time.sleep(0.25)
         self.ser.flushInput()
         self.ser.flushOutput()
         return
 
-    def set(self, item, position, value = None):
+    def set(self, item, position, value=None):
         item = item.lower()
         if item == "led":
             if type(position) in [int, float]:
                 if position == 0:
-                    if isTrue(value): return self._set(Scribbler.SET_LED_LEFT_ON)
-                    else:             return self._set(Scribbler.SET_LED_LEFT_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_LEFT_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_LEFT_OFF)
                 elif position == 1:
-                    if isTrue(value): return self._set(Scribbler.SET_LED_CENTER_ON)
-                    else:             return self._set(Scribbler.SET_LED_CENTER_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_CENTER_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_CENTER_OFF)
                 elif position == 2:
-                    if isTrue(value): return self._set(Scribbler.SET_LED_RIGHT_ON)
-                    else:             return self._set(Scribbler.SET_LED_RIGHT_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_RIGHT_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_RIGHT_OFF)
                 else:
                     raise AttributeError("no such LED: '%s'" % position)
             else:
                 position = position.lower()
                 if position == "center":
-                    if isTrue(value): return self._set(Scribbler.SET_LED_CENTER_ON)
-                    else:             return self._set(Scribbler.SET_LED_CENTER_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_CENTER_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_CENTER_OFF)
                 elif position == "left":
-                    if isTrue(value): return self._set(Scribbler.SET_LED_LEFT_ON)
-                    else:             return self._set(Scribbler.SET_LED_LEFT_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_LEFT_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_LEFT_OFF)
                 elif position == "right":
-                    if isTrue(value): return self._set(Scribbler.SET_LED_RIGHT_ON)
-                    else:             return self._set(Scribbler.SET_LED_RIGHT_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_RIGHT_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_RIGHT_OFF)
                 elif position == "front":
                     return self.setLEDFront(value)
                 elif position == "back":
                     return self.setLEDBack(value)
                 elif position == "all":
-                    if isTrue(value): return self._set(Scribbler.SET_LED_ALL_ON)
-                    else:             return self._set(Scribbler.SET_LED_ALL_OFF)
+                    if isTrue(value):
+                        return self._set(Scribbler.SET_LED_ALL_ON)
+                    else:
+                        return self._set(Scribbler.SET_LED_ALL_OFF)
                 else:
                     raise AttributeError("no such LED: '%s'" % position)
         elif item == "name":
@@ -1548,7 +1788,7 @@ class Scribbler(Robot):
             raise "invalid set item name: '%s'"
 
     # Sets the fudge values (in memory, and on the flash memory on the robot)
-    def setFudge(self,f1,f2,f3,f4):
+    def setFudge(self, f1, f2, f3, f4):
 
         self._fudge[0] = f1
         self._fudge[1] = f2
@@ -1556,42 +1796,40 @@ class Scribbler(Robot):
         self._fudge[3] = f4
 
         # Save the fudge data (in integer 0..255 form) to the flash memory
-        #f1-f4 are float values 0..2, convert to byte values
+        # f1-f4 are float values 0..2, convert to byte values
         # But to make things quick, only save the ones that have changed!
         # 0..255 and save.
 
-        if self._oldFudge[0] != self._fudge[0] :
-            if (self.dongle == None):
-                self.setSingleData(0,  int(self._fudge[0] * 127.0) )
+        if self._oldFudge[0] != self._fudge[0]:
+            if self.dongle == None:
+                self.setSingleData(0, int(self._fudge[0] * 127.0))
             else:
-                self.setSingleData(3,  int(self._fudge[0] * 127.0) )
+                self.setSingleData(3, int(self._fudge[0] * 127.0))
 
-            self._oldFudge[0] = self._fudge[0] 
+            self._oldFudge[0] = self._fudge[0]
 
-        if self._oldFudge[1] != self._fudge[1] :
-            if (self.dongle == None):
-                self.setSingleData(1,  int(self._fudge[1] * 127.0) )
+        if self._oldFudge[1] != self._fudge[1]:
+            if self.dongle == None:
+                self.setSingleData(1, int(self._fudge[1] * 127.0))
             else:
-                self.setSingleData(2,  int(self._fudge[1] * 127.0) )
+                self.setSingleData(2, int(self._fudge[1] * 127.0))
             self._oldFudge[1] = self._fudge[1]
 
-
         if self._oldFudge[2] != self._fudge[2]:
-            if (self.dongle == None):
-                self.setSingleData(2,  int(self._fudge[2] * 127.0) )
+            if self.dongle == None:
+                self.setSingleData(2, int(self._fudge[2] * 127.0))
             else:
-                self.setSingleData(1,  int(self._fudge[2] * 127.0) )
+                self.setSingleData(1, int(self._fudge[2] * 127.0))
             self._oldFudge[2] = self._fudge[2]
 
-        if self._oldFudge[3] != self._fudge[3] :
-            if (self.dongle == None):
-                self.setSingleData(3,  int(self._fudge[3] * 127.0) )
+        if self._oldFudge[3] != self._fudge[3]:
+            if self.dongle == None:
+                self.setSingleData(3, int(self._fudge[3] * 127.0))
             else:
-                self.setSingleData(0,  int(self._fudge[3] * 127.0) )
+                self.setSingleData(0, int(self._fudge[3] * 127.0))
             self._oldFudge[3] = self._fudge[3]
 
-
-    #Called when robot is initialized, after serial connection is established.
+    # Called when robot is initialized, after serial connection is established.
     # Checks to see if the robot has fudge factors saved in it's data area
     # 0,1,2,3, and uses them. If the robot has zeros, it replaces them with 127
     # which is the equivalent of no fudge. Each factor goes from 0..255, where
@@ -1599,18 +1837,23 @@ class Scribbler(Robot):
     def loadFudge(self):
 
         for i in range(4):
-            self._fudge[i] = self.get("data",i)
+            self._fudge[i] = self.get("data", i)
             if self._fudge[i] == 0:
                 self._fudge[i] = 127
-            self._fudge[i] = self._fudge[i] / 127.0 # convert back to floating point!
+            self._fudge[i] = self._fudge[i] / 127.0  # convert back to floating point!
 
-        if (self.dongle != None):
-            self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3] = self._fudge[3], self._fudge[2], self._fudge[1], self._fudge[0] 
+        if self.dongle != None:
+            self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3] = (
+                self._fudge[3],
+                self._fudge[2],
+                self._fudge[1],
+                self._fudge[0],
+            )
 
-    #Gets the fudge values (from memory, so we don't get penalized by a slow
+    # Gets the fudge values (from memory, so we don't get penalized by a slow
     # serial link)
     def getFudge(self):
-        return(self._fudge[0],self._fudge[1],self._fudge[2],self._fudge[3])
+        return (self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3])
 
     def stop(self):
         self._lastTranslate = 0
@@ -1622,9 +1865,8 @@ class Scribbler(Robot):
         self._lastTranslate = 0
         self._lastRotate = 0
         self._write(values)
-        self._read(Scribbler.PACKET_LENGTH) # read echo
-        self._lastSensors = self._read(11) # single bit sensors
-
+        self._read(Scribbler.PACKET_LENGTH)  # read echo
+        self._lastSensors = self._read(11)  # single bit sensors
 
     def translate(self, amount):
         self._lastTranslate = amount
@@ -1641,133 +1883,215 @@ class Scribbler(Robot):
 
     def getPosition(self):
         """This returns the x and y coordinates of the scribbler 2"""
-        if(self._IsScribbler2()):
-            return self._get(Scribbler.GET_POSN, 8, "long")                               
-        
+        if self._IsScribbler2():
+            return self._get(Scribbler.GET_POSN, 8, "long")
+
     def setHereIs(self, x, y):
-        if(self._IsScribbler2()):
-            self._set(Scribbler.SET_POSN, (x >> 24) & 0xff, (x >> 16) & 0xff, (x >> 8) & 0xff, x & 0xff,\
-                          (y >> 24) & 0xff, (y >> 16) & 0xff, (y >> 8) & 0xff, y & 0xff)
+        if self._IsScribbler2():
+            self._set(
+                Scribbler.SET_POSN,
+                (x >> 24) & 0xFF,
+                (x >> 16) & 0xFF,
+                (x >> 8) & 0xFF,
+                x & 0xFF,
+                (y >> 24) & 0xFF,
+                (y >> 16) & 0xFF,
+                (y >> 8) & 0xFF,
+                y & 0xFF,
+            )
 
     def getAngle(self):
         """This returns the current angle of the scribbler 2"""
-        if(self._IsScribbler2()):
-            return self._get(Scribbler.GET_ANGLE, 4, "long")[0]                               
-        
+        if self._IsScribbler2():
+            return self._get(Scribbler.GET_ANGLE, 4, "long")[0]
+
     def setAngle(self, angle):
-        if(self._IsScribbler2()):
-            self._set(Scribbler.SET_ANGLE, (angle >> 24) & 0xff,(angle >> 16) & 0xff,(angle >> 8) & 0xff, angle & 0xff)
+        if self._IsScribbler2():
+            self._set(
+                Scribbler.SET_ANGLE,
+                (angle >> 24) & 0xFF,
+                (angle >> 16) & 0xFF,
+                (angle >> 8) & 0xFF,
+                angle & 0xFF,
+            )
 
     def setBeginPath(self, speed=7):
         """Speed can be a value from 1 to 15"""
-        if(self._IsScribbler2()):
+        if self._IsScribbler2():
             self._set(Scribbler.SET_PATH, Scribbler.BEGIN_PATH, 0, speed)
 
     def setTurn(self, angle, turnType="to", radOrDeg="rad"):
-        if(self._IsScribbler2()):
-            #checkin for valid arguments
-            if(turnType.lower() != "to" and turnType.lower() != "by"):
-                print("Invalid turnType specified must be 'to' or 'by', value:", turnType)
+        if self._IsScribbler2():
+            # checkin for valid arguments
+            if turnType.lower() != "to" and turnType.lower() != "by":
+                print(
+                    "Invalid turnType specified must be 'to' or 'by', value:", turnType
+                )
                 return
-            if(radOrDeg.lower() != "rad" and radOrDeg.lower() != "deg"):
-                print("Invalid radOrDeg specified must be 'rad' or 'deg', value:", radOrDeg)
+            if radOrDeg.lower() != "rad" and radOrDeg.lower() != "deg":
+                print(
+                    "Invalid radOrDeg specified must be 'rad' or 'deg', value:",
+                    radOrDeg,
+                )
                 return
-                
-            if(turnType.lower() == "to" and radOrDeg.lower() == "rad"):
-                self._set(Scribbler.SET_TURN, Scribbler.TO, (angle >> 8) & 0xff, angle & 0xff)
-            elif(turnType.lower() == "by" and radOrDeg.lower() == "rad"):
-                self._set(Scribbler.SET_TURN, Scribbler.BY, (angle >> 8) & 0xff, angle & 0xff)
-            elif(turnType.lower() == "to" and radOrDeg.lower() == "deg"):
-                self._set(Scribbler.SET_TURN, Scribbler.TO + Scribbler.DEG, (angle >> 8) & 0xff, angle & 0xff)
-            elif(turnType.lower() == "by" and radOrDeg.lower() == "deg"):
-                self._set(Scribbler.SET_TURN, Scribbler.BY + Scribbler.DEG, (angle >> 8) & 0xff, angle & 0xff)
-            #loop until motor command finishes
-            scribblerBusy = True
-            while(scribblerBusy):
-                scribblerBusy = self._IsInTransit()
-                if(scribblerBusy):
-                    time.sleep(1)          
 
-    def setMove(self, x, y, moveType = "to"):
-        if(self._IsScribbler2()):
-            if(moveType.lower() == "to"):
-                self._set(Scribbler.SET_MOVE, Scribbler.TO, (x >> 8) & 0xff, x & 0xff, (y >> 8) & 0xff, y & 0xff)
-            elif(moveType.lower() == "by"):
-                self._set(Scribbler.SET_MOVE, Scribbler.BY, (x >> 8) & 0xff, x & 0xff, (y >> 8) & 0xff, y & 0xff)                
+            if turnType.lower() == "to" and radOrDeg.lower() == "rad":
+                self._set(
+                    Scribbler.SET_TURN, Scribbler.TO, (angle >> 8) & 0xFF, angle & 0xFF
+                )
+            elif turnType.lower() == "by" and radOrDeg.lower() == "rad":
+                self._set(
+                    Scribbler.SET_TURN, Scribbler.BY, (angle >> 8) & 0xFF, angle & 0xFF
+                )
+            elif turnType.lower() == "to" and radOrDeg.lower() == "deg":
+                self._set(
+                    Scribbler.SET_TURN,
+                    Scribbler.TO + Scribbler.DEG,
+                    (angle >> 8) & 0xFF,
+                    angle & 0xFF,
+                )
+            elif turnType.lower() == "by" and radOrDeg.lower() == "deg":
+                self._set(
+                    Scribbler.SET_TURN,
+                    Scribbler.BY + Scribbler.DEG,
+                    (angle >> 8) & 0xFF,
+                    angle & 0xFF,
+                )
+            # loop until motor command finishes
+            scribblerBusy = True
+            while scribblerBusy:
+                scribblerBusy = self._IsInTransit()
+                if scribblerBusy:
+                    time.sleep(1)
+
+    def setMove(self, x, y, moveType="to"):
+        if self._IsScribbler2():
+            if moveType.lower() == "to":
+                self._set(
+                    Scribbler.SET_MOVE,
+                    Scribbler.TO,
+                    (x >> 8) & 0xFF,
+                    x & 0xFF,
+                    (y >> 8) & 0xFF,
+                    y & 0xFF,
+                )
+            elif moveType.lower() == "by":
+                self._set(
+                    Scribbler.SET_MOVE,
+                    Scribbler.BY,
+                    (x >> 8) & 0xFF,
+                    x & 0xFF,
+                    (y >> 8) & 0xFF,
+                    y & 0xFF,
+                )
             else:
-                print("Invalid moveType specified must be 'to' or 'by', value:", moveType)
+                print(
+                    "Invalid moveType specified must be 'to' or 'by', value:", moveType
+                )
                 return
             scribblerBusy = True
-            while(scribblerBusy):
+            while scribblerBusy:
                 scribblerBusy = self._IsInTransit()
-                if(scribblerBusy):
+                if scribblerBusy:
                     time.sleep(1)
 
     def setArc(self, x, y, radius, arcType="to"):
-        if(self._IsScribbler2()):
-            if(arcType.lower() == "to"):
-                self._set(Scribbler.SET_ARC, Scribbler.TO, (x >> 8) & 0xff, x & 0xff, (y >> 8) & 0xff, y & 0xff, (radius >> 8) & 0xff, radius & 0xff)
-            elif(arcType.lower() == "by"):
-                self._set(Scribbler.SET_ARC, Scribbler.BY, (x >> 8) & 0xff, x & 0xff, (y >> 8) & 0xff, y & 0xff, (radius >> 8) & 0xff, radius & 0xff)
+        if self._IsScribbler2():
+            if arcType.lower() == "to":
+                self._set(
+                    Scribbler.SET_ARC,
+                    Scribbler.TO,
+                    (x >> 8) & 0xFF,
+                    x & 0xFF,
+                    (y >> 8) & 0xFF,
+                    y & 0xFF,
+                    (radius >> 8) & 0xFF,
+                    radius & 0xFF,
+                )
+            elif arcType.lower() == "by":
+                self._set(
+                    Scribbler.SET_ARC,
+                    Scribbler.BY,
+                    (x >> 8) & 0xFF,
+                    x & 0xFF,
+                    (y >> 8) & 0xFF,
+                    y & 0xFF,
+                    (radius >> 8) & 0xFF,
+                    radius & 0xFF,
+                )
             else:
                 print("Invalid arcType specified must be 'to' or 'by', value:", arcType)
                 return
             scribblerBusy = True
-            while(scribblerBusy):
+            while scribblerBusy:
                 scribblerBusy = self._IsInTransit()
-                if(scribblerBusy):
-                    time.sleep(1)        
+                if scribblerBusy:
+                    time.sleep(1)
 
     def setEndPath(self):
-        if(self._IsScribbler2()):
+        if self._IsScribbler2():
             self._set(Scribbler.SET_PATH, Scribbler.END_PATH, 0, 7)
 
     def setS2Volume(self, level):
         """Level can be between 0-100 and represents the percent volume level of the speaker"""
-        if(self._IsScribbler2()):
+        if self._IsScribbler2():
             self._set(Scribbler.SET_VOLUME, level)
 
     def getMicEnvelope(self):
         """Returns a number representing the microphone envelope noise"""
-        if(self._IsScribbler2()):
+        if self._IsScribbler2():
             return self._get(Scribbler.GET_MIC_ENV, 4, "long")[0]
 
     def getMotorStats(self):
-        '''Return the current motion status as a packed long and single additional byte showing if motors are ready for commands (1=ready, 0=busy):
+        """Return the current motion status as a packed long and single additional byte showing if motors are ready for commands (1=ready, 0=busy):
      Left wheel and right wheel are signed, twos complement eight bit velocity values,
      Idler timer is the time in 1/10 second since the last idler edge,
      Idler spd is an unsigned six-bit velocity value, and
      Mov is non-zero iff one or more motors are turning.
      Left and right wheel velocities are instanteous encoder counts over a 1/10-second interval.
-     Idler wheel wheel velocity is updated every 1/10 second and represents the idler encoder count during the last 1.6 seconds.'''
-    
-        if(self._IsScribbler2()):
+     Idler wheel wheel velocity is updated every 1/10 second and represents the idler encoder count during the last 1.6 seconds."""
+
+        if self._IsScribbler2():
             rawMotorStats = self._get(Scribbler.GET_MOTOR_STATS, 5, "byte")
-            return {"wheel":[rawMotorStats[3], rawMotorStats[2]], "IdlerTimer":[rawMotorStats[1]],"IdlerSpeed":[rawMotorStats[0]>>2], "Mov":[bool(rawMotorStats[0] & 0x03)], "Ready":[bool(rawMotorStats[4])]}
-        
+            return {
+                "wheel": [rawMotorStats[3], rawMotorStats[2]],
+                "IdlerTimer": [rawMotorStats[1]],
+                "IdlerSpeed": [rawMotorStats[0] >> 2],
+                "Mov": [bool(rawMotorStats[0] & 0x03)],
+                "Ready": [bool(rawMotorStats[4])],
+            }
+
     def getEncoders(self, zeroEncoders=False):
-        '''Gets the values for the left and right encoder wheels.  Negative value means they have moved
+        """Gets the values for the left and right encoder wheels.  Negative value means they have moved
         backwards from the robots perspective.  Each turn of the encoder wheel is counted as and increment or
-        decrement of 2 depending on which direction the wheels moved.  
-        if zeroEncoders is set to True then the encoders will be set to zero after reading the values'''        
-        if(self._IsScribbler2()):
-            if(zeroEncoders):
+        decrement of 2 depending on which direction the wheels moved.
+        if zeroEncoders is set to True then the encoders will be set to zero after reading the values"""
+        if self._IsScribbler2():
+            if zeroEncoders:
                 return self._getWithSetByte(Scribbler.GET_ENCODERS, 8, "long", 0x00)
             else:
                 return self._getWithSetByte(Scribbler.GET_ENCODERS, 8, "long", 0x01)
-        
+
     def getLastSensors(self):
         retval = self._lastSensors
-        return {"light": [retval[2] << 8 | retval[3], retval[4] << 8 | retval[5], retval[6] << 8 | retval[7]],
-                "ir": [retval[0], retval[1]], "line": [retval[8], retval[9]], "stall": retval[10]}
+        return {
+            "light": [
+                retval[2] << 8 | retval[3],
+                retval[4] << 8 | retval[5],
+                retval[6] << 8 | retval[7],
+            ],
+            "ir": [retval[0], retval[1]],
+            "line": [retval[8], retval[9]],
+            "stall": retval[10],
+        }
 
     def update(self):
         pass
 
-####################### Private
+    ####################### Private
 
     def _IsScribbler2(self):
-        if(self.robotinfo == "Scribbler2"):
+        if self.robotinfo == "Scribbler2":
             return True
         else:
             print("Not a Scribbler 2 robot")
@@ -1777,55 +2101,51 @@ class Scribbler(Robot):
         return not bool(self._get(Scribbler.GET_MOTOR_STATS, 5, "byte")[4])
 
     def _adjustSpeed(self):
-        left  = min(max(self._lastTranslate - self._lastRotate, -1), 1)
-        right  = min(max(self._lastTranslate + self._lastRotate, -1), 1)
-
-
+        left = min(max(self._lastTranslate - self._lastRotate, -1), 1)
+        right = min(max(self._lastTranslate + self._lastRotate, -1), 1)
 
         # JWS additions for "calibration" of motors.
         # Use fudge values 1-4 to change the actual power given to each
         # motor based upon the forward speed.
         #
         # This code is here for documentation purposes only.
-        # 
+        #
         # The algorithm shown here is now implemented on the basic stamp
         # on the scribbler directly.
 
-        #fudge the left motor when going forward!
-        #if (self._fudge[0] > 1.0 and left > 0.5 ):
-            #left = left - (self._fudge[0] - 1.0)
-        #if (self._fudge[1] > 1.0 and 0.5 >= left > 0.0):
-            #left = left - (self._fudge[1] - 1.0)
-        #fudge the right motor when going forward!
-        #if (self._fudge[0] < 1.0 and right > 0.5):
-            # right = right - (1.0 - self._fudge[0])
-        #if (self._fudge[1] < 1.0 and 0.5 >= right > 0.0):
-            #right = right - (1.0 - self._fudge[1])
+        # fudge the left motor when going forward!
+        # if (self._fudge[0] > 1.0 and left > 0.5 ):
+        # left = left - (self._fudge[0] - 1.0)
+        # if (self._fudge[1] > 1.0 and 0.5 >= left > 0.0):
+        # left = left - (self._fudge[1] - 1.0)
+        # fudge the right motor when going forward!
+        # if (self._fudge[0] < 1.0 and right > 0.5):
+        # right = right - (1.0 - self._fudge[0])
+        # if (self._fudge[1] < 1.0 and 0.5 >= right > 0.0):
+        # right = right - (1.0 - self._fudge[1])
 
-        #Backwards travel is just like forwards travel, but reversed!
-        #fudge the right motor when going backwards.
-        #if (self._fudge[2] > 1.0 and 0.0 > right >= -0.5):
+        # Backwards travel is just like forwards travel, but reversed!
+        # fudge the right motor when going backwards.
+        # if (self._fudge[2] > 1.0 and 0.0 > right >= -0.5):
         #        right = right + (self._fudge[2] - 1.0)
-        #if (self._fudge[3] > 1.0 and -0.5 > right ):
+        # if (self._fudge[3] > 1.0 and -0.5 > right ):
         #        right = right + (self._fudge[3] - 1.0)
 
-        #fudge the left motor when going backwards.
-        #if (self._fudge[2] < 1.0 and 0.0 > left >= -0.5):
-        #        left = left + (1.0 - self._fudge[2]) 
-        #if (self._fudge[3] < 1.0 and -0.5 > left):
+        # fudge the left motor when going backwards.
+        # if (self._fudge[2] < 1.0 and 0.0 > left >= -0.5):
+        #        left = left + (1.0 - self._fudge[2])
+        # if (self._fudge[3] < 1.0 and -0.5 > left):
         #        left = left + (1.0 - self._fudge[3])
 
+        # print "actual power: (",left,",",right,")"
 
-
-        #print "actual power: (",left,",",right,")"
-
-        #end JWS additions for "calibration of motors.
+        # end JWS additions for "calibration of motors.
         leftPower = (left + 1.0) * 100.0
         rightPower = (right + 1.0) * 100.0
 
         self._set(Scribbler.SET_MOTORS, rightPower, leftPower)
 
-    def _read(self, bytes = 1):
+    def _read(self, bytes=1):
 
         if self.debug:
             print("Trying to read", bytes, "bytes", "timeout =", self.ser.timeout)
@@ -1833,12 +2153,12 @@ class Scribbler(Robot):
         c = self.ser.read(bytes)
 
         if self.debug:
-            print("Initially read", len(c), "bytes:", end=' ')
+            print("Initially read", len(c), "bytes:", end=" ")
             print(["0x%x" % ord(x) for x in c])
 
         # .nah. bug fix
-        while (bytes > 1 and len(c) < bytes):      
-            c = c + self.ser.read(bytes-len(c))
+        while bytes > 1 and len(c) < bytes:
+            c = c + self.ser.read(bytes - len(c))
             if self.debug:
                 print(["0x%x" % ord(x) for x in c])
 
@@ -1848,11 +2168,11 @@ class Scribbler(Robot):
             print(["0x%x" % ord(x) for x in c])
 
         if self.dongle == None:
-            time.sleep(0.01) # HACK! THIS SEEMS TO NEED TO BE HERE!
+            time.sleep(0.01)  # HACK! THIS SEEMS TO NEED TO BE HERE!
         if bytes == 1:
             x = -1
-            if (c != ""):
-                x = ord(c)            
+            if c != "":
+                x = ord(c)
             elif self.debug:
                 print("timeout!")
                 return x
@@ -1861,22 +2181,22 @@ class Scribbler(Robot):
 
     def _write(self, rawdata):
         t = [chr(int(x)) for x in rawdata]
-        data = string.join(t, '') + (chr(0) * (Scribbler.PACKET_LENGTH - len(t)))[:9]
+        data = string.join(t, "") + (chr(0) * (Scribbler.PACKET_LENGTH - len(t)))[:9]
         if self.debug:
-            print("_write:", data, len(data), end=' ')
-            print("data:", end=' ')
+            print("_write:", data, len(data), end=" ")
+            print("data:", end=" ")
             print(["0x%x" % ord(x) for x in data])
         if self.dongle == None:
-            time.sleep(0.01) # HACK! THIS SEEMS TO NEED TO BE HERE!
-        self.ser.write(data)      # write packets
+            time.sleep(0.01)  # HACK! THIS SEEMS TO NEED TO BE HERE!
+        self.ser.write(data)  # write packets
 
     def _set(self, *values):
         try:
-            self.lock.acquire() #print "locked acquired"
+            self.lock.acquire()  # print "locked acquired"
             self._write(values)
-            test = self._read(Scribbler.PACKET_LENGTH) # read echo
-            self._lastSensors = self._read(11) # single bit sensors
-            #self.ser.flushInput()
+            test = self._read(Scribbler.PACKET_LENGTH)  # read echo
+            self._lastSensors = self._read(11)  # single bit sensors
+            # self.ser.flushInput()
             if self.requestStop:
                 self.requestStop = 0
                 self.stop()
@@ -1887,75 +2207,85 @@ class Scribbler(Robot):
 
     def _setWithTime(self, waitTime, *values):
         try:
-            self.lock.acquire() #print "locked acquired"
+            self.lock.acquire()  # print "locked acquired"
             self._write(values)
             time.sleep(waitTime)
-            test = self._read(Scribbler.PACKET_LENGTH) # read echo
-            self._lastSensors = self._read(11) # single bit sensors
-            #self.ser.flushInput()
+            test = self._read(Scribbler.PACKET_LENGTH)  # read echo
+            self._lastSensors = self._read(11)  # single bit sensors
+            # self.ser.flushInput()
             if self.requestStop:
                 self.requestStop = 0
                 self.stop()
                 self.lock.release()
                 raise KeyboardInterrupt
         finally:
-            self.lock.release()    
+            self.lock.release()
 
-    def _getWithSetByte(self, packetValue, bytes = 1, mode = "byte", setByte=0xff):
-        '''Allows user to pass in a byte when calling a method that get data.   Can be used to zero out values like encoders'''
+    def _getWithSetByte(self, packetValue, bytes=1, mode="byte", setByte=0xFF):
+        """Allows user to pass in a byte when calling a method that get data.   Can be used to zero out values like encoders"""
         return self._get(packetValue, bytes, mode, setByte)
-        
-    def _get(self, value, bytes = 1, mode = "byte", setByte=0xff):
+
+    def _get(self, value, bytes=1, mode="byte", setByte=0xFF):
         try:
             self.lock.acquire()
-            if(setByte != 0xff):
+            if setByte != 0xFF:
                 self._write([value, setByte])
             else:
                 self._write([value])
-            self._read(Scribbler.PACKET_LENGTH) # read the echo
+            self._read(Scribbler.PACKET_LENGTH)  # read the echo
             if mode == "byte":
                 retval = self._read(bytes)
             elif mode == "word":
                 retvalBytes = self._read(bytes)
                 retval = []
-                for p in range(0,len(retvalBytes),2):
+                for p in range(0, len(retvalBytes), 2):
                     retval.append(retvalBytes[p] << 8 | retvalBytes[p + 1])
             elif mode == "long":
                 retvalBytes = self.ser.read(bytes)
-                retval = list(unpack(">"+"i"*(bytes/4), retvalBytes))
-            elif mode == "line": # until hit \n newline
+                retval = list(unpack(">" + "i" * (bytes / 4), retvalBytes))
+            elif mode == "line":  # until hit \n newline
                 retval = self.ser.readline()
                 if self.debug:
                     print("_get(line)", retval)
-            #self.ser.flushInput()            
+            # self.ser.flushInput()
         finally:
             self.lock.release()
 
         return retval
 
-    def _set_speaker(self, frequency, duration):            
-        self._write([Scribbler.SET_SPEAKER, 
-                     duration >> 8,
-                     duration % 256,
-                     frequency >> 8,
-                     frequency % 256])
+    def _set_speaker(self, frequency, duration):
+        self._write(
+            [
+                Scribbler.SET_SPEAKER,
+                duration >> 8,
+                duration % 256,
+                frequency >> 8,
+                frequency % 256,
+            ]
+        )
 
     def _set_speaker_2(self, freq1, freq2, duration):
-        self._write([Scribbler.SET_SPEAKER_2, 
-                     duration >> 8,
-                     duration % 256,
-                     freq1 >> 8,
-                     freq1 % 256,
-                     freq2 >> 8,
-                     freq2 % 256])
+        self._write(
+            [
+                Scribbler.SET_SPEAKER_2,
+                duration >> 8,
+                duration % 256,
+                freq1 >> 8,
+                freq1 % 256,
+                freq2 >> 8,
+                freq2 % 256,
+            ]
+        )
+
 
 def cap(c):
-    if (c > 255): 
+    if c > 255:
         return 255
-    if (c < 0):
+    if c < 0:
         return 0
 
     return c
+
 
 def conf_window(self, window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP):
     # fluke2 needs 16-bit numbers to specify image coordinates
@@ -1978,19 +2308,22 @@ def conf_window(self, window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP):
         self.ser.write(chr(X_STEP))
         self.ser.write(chr(Y_STEP))
 
+
 def conf_gray_window(self, window, lx, ly, ux, uy, xstep, ystep):
     # Y's are on odd pixels
-    if (lx % 2)== 0:
+    if (lx % 2) == 0:
         lx += 1
     if (xstep % 2) == 1:
         xstep += 1
     conf_window(self, window, lx, ly, ux, uy, xstep, ystep)
 
+
 def conf_gray_image(self):
     # skip every other pixel
-    conf_window(self, 0, 1, 0, self.imagewidth-1, self.imageheight-1, 2, 2)
+    conf_window(self, 0, 1, 0, self.imagewidth - 1, self.imageheight - 1, 2, 2)
     # conf_window(ser, 0, 1, 0, 255, 191, 2, 2)
-    
+
+
 def grab_rle_on(self):
     """
     Returns a list of pixels that match.
@@ -2000,40 +2333,41 @@ def grab_rle_on(self):
     height = self.imageheight
     blobs = zeros(((height + 1), (width + 1)), dtype=uint8)
     on_pxs = []
-    line = ''
+    line = ""
     self.ser.write(chr(Scribbler.GET_RLE))
-    size=ord(self.ser.read(1))
+    size = ord(self.ser.read(1))
     size = (size << 8) | ord(self.ser.read(1))
     if self.debug:
         print("Grabbing RLE image size =", size)
-    line =''
-    while (len(line) < size):
-        line+=self.ser.read(size-len(line))
+    line = ""
+    while len(line) < size:
+        line += self.ser.read(size - len(line))
     px = 0
     counter = 0
     val = 128
     inside = True
     for i in range(0, height, 1):
-        for j in range(0, width, 4):            
-            if (counter < 1 and px < len(line)):
-                counter = ord(line[px])            
+        for j in range(0, width, 4):
+            if counter < 1 and px < len(line):
+                counter = ord(line[px])
                 px += 1
-                counter = (counter << 8) | ord(line[px])            
+                counter = (counter << 8) | ord(line[px])
                 px += 1
 
-                if (inside):
+                if inside:
                     val = 0
                     inside = False
                 else:
                     val = 255
                     inside = True
 
-            for z in range(0,4):
-                blobs[i][j+z] = val
-                if (inside):
-                    on_pxs += [[j+z, i]]
+            for z in range(0, 4):
+                blobs[i][j + z] = val
+                if inside:
+                    on_pxs += [[j + z, i]]
             counter -= 1
     return on_pxs
+
 
 def read_2byte(ser):
     hbyte = ord(ser.read(1))
@@ -2041,16 +2375,19 @@ def read_2byte(ser):
     lbyte = (hbyte << 8) | lbyte
     return lbyte
 
+
 def read_3byte(ser):
     hbyte = ord(ser.read(1))
     mbyte = ord(ser.read(1))
     lbyte = ord(ser.read(1))
-    lbyte = (hbyte << 16)| (mbyte << 8) | lbyte
+    lbyte = (hbyte << 16) | (mbyte << 8) | lbyte
     return lbyte
+
 
 def write_2byte(ser, value):
     ser.write(chr((value >> 8) & 0xFF))
     ser.write(chr(value & 0xFF))
+
 
 def read_mem(ser, page, offset):
     ser.write(chr(Scribbler.GET_SERIAL_MEM))
@@ -2058,21 +2395,25 @@ def read_mem(ser, page, offset):
     write_2byte(ser, offset)
     return ord(ser.read(1))
 
+
 def write_mem(ser, page, offset, byte):
     ser.write(chr(Scribbler.SET_SERIAL_MEM))
     write_2byte(ser, page)
     write_2byte(ser, offset)
     ser.write(chr(byte))
 
+
 def erase_mem(ser, page):
     ser.write(chr(Scribbler.SET_SERIAL_ERASE))
     write_2byte(ser, page)
+
 
 # Also copied into system.py:
 def set_scribbler_memory(ser, offset, byte):
     ser.write(chr(Scribbler.SET_SCRIB_PROGRAM))
     write_2byte(ser, offset)
     ser.write(chr(byte))
+
 
 def get_scribbler_memory(ser, offset):
     ser.write(chr(Scribbler.GET_SCRIB_PROGRAM))
@@ -2085,29 +2426,33 @@ def set_scribbler_start_program(ser, size):
     ser.write(chr(Scribbler.SET_START_PROGRAM))
     write_2byte(ser, size)
 
+
 def set_scribbler2_start_program(ser, size):
     ser.write(chr(Scribbler.SET_START_PROGRAM2))
     write_2byte(ser, size)
+
 
 def get_window_avg(ser, window):
     ser.write(chr(Scribbler.GET_WINDOW_LIGHT))
     ser.write(chr(window))
     return read_2byte(ser)
 
+
 def quadrupleSize(line, width):
     retval = [" "] * len(line) * 4
     col = 0
     row = 0
     for c in line:
-        retval[row       * 2 * width + col]   = c
-        retval[row       * 2 * width + col+1] = c
-        retval[(row + 1) * 2 * width + col]   = c
-        retval[(row + 1) * 2 * width + col+1] = c
+        retval[row * 2 * width + col] = c
+        retval[row * 2 * width + col + 1] = c
+        retval[(row + 1) * 2 * width + col] = c
+        retval[(row + 1) * 2 * width + col + 1] = c
         col += 2
         if col == width * 2:
             col = 0
             row += 2
     return "".join(retval)
+
 
 def set_ir_power(ser, power):
     ser.write(chr(Scribbler.SET_DONGLE_IR))

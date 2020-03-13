@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Myro Simulator Classes.
 (c) 2006, Institute for Personal Robots in Education
@@ -6,7 +7,7 @@ Distributed under a Shared Source License
 """
 
 __REVISION__ = "$Revision: 271 $"
-__AUTHOR__   = "Doug Blank"
+__AUTHOR__ = "Doug Blank"
 
 # fix    current should
 # light  0-800   0-3500? dark/light?
@@ -19,8 +20,9 @@ from myro import Robot
 from myro.robots.symbolic import TCPRobot
 import myro.globvars
 
+
 class SimScribbler(Robot):
-    def __init__(self, id = None):
+    def __init__(self, id=None):
         Robot.__init__(self)
         # start the client(s):
         self._clients = []
@@ -33,25 +35,27 @@ class SimScribbler(Robot):
         self.delay = 0.1
         self._clients[0].ir[0].units = "M"
         self._clients[0].light[0]._noise = [0.05, 0.05, 0.05]
+
     def translate(self, amount):
         return self._clients[0].translate(amount)
+
     def rotate(self, amount):
         return self._clients[0].rotate(amount)
+
     def move(self, translate, rotate):
         self.lock.acquire()
         retval = self._clients[0].move(translate, rotate)
         self.lock.release()
         return retval
+
     def update(self):
         return self._clients[0].update()
-    def get(self, sensor = "all", *positions):
+
+    def get(self, sensor="all", *positions):
         self._clients[0].update()
         sensor = sensor.lower()
         if sensor == "config":
-            return {"ir": 2,
-                    "line": 2,
-                    "stall": 1,
-                    "light": 3}
+            return {"ir": 2, "line": 2, "stall": 1, "light": 3}
         elif sensor == "stall":
             return self._clients[0].stall
         elif sensor == "startsong":
@@ -70,10 +74,12 @@ class SimScribbler(Robot):
                 elif sensor == "line":
                     return self.get("line", 0, 1)
                 elif sensor == "all":
-                    return {"light": self.get("light"),
-                            "ir": self.get("ir"),
-                            "line": self.get("line"),
-                            "stall": self.get("stall")}
+                    return {
+                        "light": self.get("light"),
+                        "ir": self.get("ir"),
+                        "line": self.get("line"),
+                        "stall": self.get("stall"),
+                    }
                 else:
                     raise "invalid sensor name: '%s'"
             for position in positions:
@@ -104,7 +110,7 @@ class SimScribbler(Robot):
 
     def _getIR(self, position):
         retval = self._clients[0].ir[0].value[position]
-        if retval < .31:
+        if retval < 0.31:
             return 0
         else:
             return 1
@@ -112,8 +118,8 @@ class SimScribbler(Robot):
     def _getLight(self, position):
         retval = self._clients[0].light[0].value[position]
         return 1000 - int(retval * 1000)
-    
-    def set(self, item, position, value = None):
+
+    def set(self, item, position, value=None):
         item = item.lower()
         if item == "led":
             return None
@@ -128,4 +134,3 @@ class SimScribbler(Robot):
             return None
         else:
             raise "invalid set item name: '%s'"
-
