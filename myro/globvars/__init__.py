@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 # Myro globals and constants
 # globals:
+import math
 import sys
+
+# import types
+# from types import FileType
 
 simulator = None
 myropath = None
@@ -12,10 +16,16 @@ setup = 0
 mediaFolder = ""
 askData = {}
 sound = 0
-if type(sys.stdout) == file:
-    runtkthread = 0
-else:
-    runtkthread = 1
+
+# if type(sys.stdout) == types.FileType:
+# if isinstance(sys.stdout, FileType):
+#     runtkthread = 0
+# else:
+#     runtkthread = 1
+
+# TODO: Fix proper type checking for stdout
+runtkthread = 1
+
 joysticks = []
 formats = ("itemName", "ItemName", "itemName")  # function, class, variables
 windows = {}
@@ -25,7 +35,6 @@ images = {}
 del sys
 
 # constants:
-import math
 
 TOLERANCE = 0.0001
 PIOVER180 = math.pi / 180.0

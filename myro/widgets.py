@@ -754,8 +754,7 @@ class SaveFileDialog(FileDialog):
     def __init__(self, master, title, filter_, defaultFilename=""):
         FileDialog.__init__(self, master, title, filter_)
         self.defaultFilename = defaultFilename
-
-    self.top.title(title)
+        self.top.title(title)
 
     def OkPressed(self):
         fileName = self.GetFileName()

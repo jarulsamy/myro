@@ -9,9 +9,7 @@ import math
 import random
 import threading
 import tkinter
-import types
 
-import exceptions
 
 # constants:
 TOLERANCE = 0.0001
@@ -235,7 +233,7 @@ class DeviceThread(threading.Thread):
 class Device(object):
     """ A basic device class. All devices derive from this."""
 
-    ### Note: Pyro5 will standardize this interface.
+    # Note: Pyro5 will standardize this interface.
     ###
 
     def __init__(self, deviceType="unspecified", visible=0, async_=0, sleep=0.01):

@@ -6,16 +6,13 @@ http://roboteducation.org/
 Distributed under a Shared Source License
 """
 
-__REVISION__ = "$Revision: 1722 $"
-__AUTHOR__ = "Keith O'Hara and Doug Blank"
+__AUTHOR__ = "Joshua Arulsamy"
 
-import time, string
+import time
+import string
 import os
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: scribbler won't work!")
+import serial
 from myro import Robot, ask
 from myro.graphics import _askQuestion, Picture, rgb2yuv
 import myro.globvars
@@ -229,7 +226,7 @@ class Scribbler(Robot):
         self._lastRotate = 0
         self._volume = 0
         self.emitters = 0x1 | 0x2 | 0x4
-        if serialport == None:
+        if serialport is None:
             if "MYROROBOT" in os.environ:
                 serialport = os.environ["MYROROBOT"]
                 print("Connecting to", serialport)
@@ -266,7 +263,7 @@ class Scribbler(Robot):
         elif "dongle" in list(info.keys()):
             self.dongle = info["dongle"]
             print("You are using fluke firmware", info["dongle"])
-        if self.dongle != None:
+        if self.dongle is not None:
             self.dongle_version = list(map(int, self.dongle.split(".")))
             if self.dongle_version >= [3, 0, 0]:
                 self.imagewidth = 1280
@@ -447,13 +444,15 @@ class Scribbler(Robot):
 
     def manual_flush(self):
         old = self.ser.timeout
-        self.ser.setTimeout(0.5)
+        # self.ser.setTimeout(0.5)
+        self.ser.timeout = 0.5
         l = "a"
         count = 0
         while len(l) != 0 and count < 50000:
             l = self.ser.read(1)
             count += len(l)
-        self.ser.setTimeout(old)
+        # self.ser.setTimeout(old)
+        self.ser.timeout = old
 
     def restart(self):
 
@@ -486,25 +485,27 @@ class Scribbler(Robot):
         self.lock.acquire()  # print "locked acquired"
 
         old = self.ser.timeout
-        self.ser.setTimeout(duration + 2)
+        # self.ser.setTimeout(duration + 2)
+        self.ser.timeout = duration + 2
 
-        if frequency2 == None:
+        if frequency2 is None:
             self._set_speaker(int(frequency), int(duration * 1000))
         else:
             self._set_speaker_2(int(frequency), int(frequency2), int(duration * 1000))
 
-        v = self.ser.read(Scribbler.PACKET_LENGTH + 11)
+        v = self.ser.read(Scribbler.PACKET_LENGTH + 11).decode("ISO-8859-1")
 
         if self.debug:
             print(["0x%x" % ord(x) for x in v])
 
-        self.ser.setTimeout(old)
+        # self.ser.setTimeout(old)
+        self.ser.timeout = old
         self.lock.release()
 
     def get(self, sensor="all", *position):
         sensor = sensor.lower()
         if sensor == "config":
-            if self.dongle == None:
+            if self.dongle is None:
                 return {"ir": 2, "line": 2, "stall": 1, "light": 3}
             else:
                 return {
@@ -539,12 +540,12 @@ class Scribbler(Robot):
         elif sensor == "name":
             c = self._get(Scribbler.GET_NAME1, 8)
             c += self._get(Scribbler.GET_NAME2, 8)
-            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], "").strip()
+            c = "".join([chr(x) for x in c if "0" <= chr(x) <= "z"]).strip()
             return c
         elif sensor == "password":
             c = self._get(Scribbler.GET_PASS1, 8)
             c += self._get(Scribbler.GET_PASS2, 8)
-            c = string.join([chr(x) for x in c if "0" <= chr(x) <= "z"], "").strip()
+            c = "".join([chr(x) for x in c if "0" <= chr(x) <= "z"]).strip()
             return c
         elif sensor == "volume":
             return self._volume
@@ -577,7 +578,7 @@ class Scribbler(Robot):
                 elif sensor == "all":
                     retval = self._get(Scribbler.GET_ALL, 11)  # returned as bytes
                     self._lastSensors = retval  # single bit sensors
-                    if self.dongle == None:
+                    if self.dongle is None:
                         return {
                             "light": [
                                 retval[2] << 8 | retval[3],
@@ -623,7 +624,7 @@ class Scribbler(Robot):
                         retvals.append(values[1])
                     elif pos in [2, "right"]:
                         retvals.append(values[2])
-                    elif pos == None or pos == "all":
+                    elif pos is None or pos == "all":
                         retvals.append(values)
                 elif sensor == "ir":
                     values = self._get(Scribbler.GET_IR_ALL, 2)
@@ -631,7 +632,7 @@ class Scribbler(Robot):
                         retvals.append(values[0])
                     elif pos in [1, "right"]:
                         retvals.append(values[1])
-                    elif pos == None or pos == "all":
+                    elif pos is None or pos == "all":
                         retvals.append(values)
                 elif sensor == "line":
                     values = self._get(Scribbler.GET_LINE_ALL, 2)
@@ -670,7 +671,8 @@ class Scribbler(Robot):
         # retval = self._get(Scribbler.GET_INFO, mode="line")
 
         oldtimeout = self.ser.timeout
-        self.ser.setTimeout(4)
+        # self.ser.setTimeout(4)
+        self.ser.timeout = 4
 
         # self.ser.flushInput()
         # self.ser.flushOutput()
@@ -679,18 +681,18 @@ class Scribbler(Robot):
         # have to do this twice since sometime the first echo isn't
         # echoed correctly (spaces) from the scribbler
 
-        self.ser.write(chr(Scribbler.GET_INFO) + (" " * 8))
+        self.ser.write(bytes(chr(Scribbler.GET_INFO) + (" " * 8), "ISO-8859-1"))
         retval = self.ser.readline()
         # print "Got", retval
 
         time.sleep(0.1)
 
-        self.ser.write(chr(Scribbler.GET_INFO) + (" " * 8))
-        retval = self.ser.readline()
+        self.ser.write(bytes(chr(Scribbler.GET_INFO) + (" " * 8), "ISO-8859-1"))
+        retval = self.ser.readline().decode("ISO-8859-1")
         # print "Got", retval
 
         # remove echoes
-        if retval == None or len(retval) == 0:
+        if retval is None or len(retval) == 0:
             return {}
 
         if retval[0] == "P" or retval[0] == "p":
@@ -699,7 +701,8 @@ class Scribbler(Robot):
         if retval[0] == "P" or retval[0] == "p":
             retval = retval[1:]
 
-        self.ser.setTimeout(oldtimeout)
+        # self.ser.setTimeout(oldtimeout)
+        self.ser.timeout = oldtimeout
 
         retDict = {}
         for pair in retval.split(","):
@@ -717,7 +720,7 @@ class Scribbler(Robot):
             else:
                 return retval
 
-    ########################################################## Dongle Commands
+    # Dongle Commands
 
     # the set_blob_yuv function will set the YUV colorspace for the blob
     # detection on the fluke based upon the average hue of a rectangle of
@@ -880,15 +883,15 @@ class Scribbler(Robot):
             )
         try:
             self.lock.acquire()
-            self.ser.write(chr(Scribbler.SET_RLE))
-            self.ser.write(chr(delay))
-            self.ser.write(chr(smooth_thresh))
-            self.ser.write(chr(y_low))
-            self.ser.write(chr(y_high))
-            self.ser.write(chr(u_low))
-            self.ser.write(chr(u_high))
-            self.ser.write(chr(v_low))
-            self.ser.write(chr(v_high))
+            self.ser.write(bytes(chr(Scribbler.SET_RLE), "ISO-8859-1"))
+            self.ser.write(bytes(chr(delay), "ISO-8859-1"))
+            self.ser.write(bytes(chr(smooth_thresh), "ISO-8859-1"))
+            self.ser.write(bytes(chr(y_low), "ISO-8859-1"))
+            self.ser.write(bytes(chr(y_high), "ISO-8859-1"))
+            self.ser.write(bytes(chr(u_low), "ISO-8859-1"))
+            self.ser.write(bytes(chr(u_high), "ISO-8859-1"))
+            self.ser.write(bytes(chr(v_low), "ISO-8859-1"))
+            self.ser.write(bytes(chr(v_high), "ISO-8859-1"))
         finally:
             self.lock.release()
 
@@ -938,7 +941,7 @@ class Scribbler(Robot):
     def grab_jpeg_color(self, reliable):
         try:
             self.lock.acquire()
-            if self.color_header == None:
+            if self.color_header is None:
                 self.ser.write(chr(self.GET_JPEG_COLOR_HEADER))
                 self.color_header = self.read_jpeg_header()
 
@@ -954,7 +957,7 @@ class Scribbler(Robot):
     def grab_jpeg_gray(self, reliable):
         try:
             self.lock.acquire()
-            if self.gray_header == None:
+            if self.gray_header is None:
                 self.ser.write(chr(self.GET_JPEG_GRAY_HEADER))
                 self.gray_header = self.read_jpeg_header()
 
@@ -975,7 +978,7 @@ class Scribbler(Robot):
     }
 
     def takePicture(self, mode=None):
-        if mode == None:
+        if mode is None:
             mode = "jpeg"
         width = self.imagewidth
         height = self.imageheight
@@ -1101,7 +1104,8 @@ class Scribbler(Robot):
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(0.01)
+            # self.ser.setTimeout(0.01)
+            self.ser.timeout = 0.01
             self.ser.write(chr(Scribbler.GET_IMAGE))
             size = width * height
             line = BufferedRead(self.ser, size, start=0)
@@ -1159,7 +1163,8 @@ class Scribbler(Robot):
                     buffer[(i * width + j) * 3 + 2] = int(
                         max(min(Y + 2.03211 * U, 255), 0)
                     )
-            self.ser.setTimeout(oldtimeout)
+            # self.ser.setTimeout(oldtimeout)
+            self.ser.timeout = oldtimeout
         finally:
             self.lock.release()
 
@@ -1172,7 +1177,8 @@ class Scribbler(Robot):
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(0.01)
+            # self.ser.setTimeout(0.01)
+            self.ser.timeout = 0.01
             self.ser.write(chr(Scribbler.GET_IMAGE))
             size = width * height
             line = BufferedRead(self.ser, size, start=0)
@@ -1258,7 +1264,8 @@ class Scribbler(Robot):
                         min(Y - 0.39466 * U - 0.58060 * V, 255), 0
                     )
                     buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211 * U, 255), 0)
-            self.ser.setTimeout(oldtimeout)
+            # self.ser.setTimeout(oldtimeout)
+            self.ser.timeout = oldtimeout
         finally:
             self.lock.release()
         return buffer
@@ -1270,7 +1277,8 @@ class Scribbler(Robot):
         try:
             self.lock.acquire()
             oldtimeout = self.ser.timeout
-            self.ser.setTimeout(0.01)
+            # self.ser.setTimeout(0.01)
+            self.ser.timeout = 0.01
             self.ser.write(chr(Scribbler.GET_IMAGE))
             size = width * height
             line = BufferedRead(self.ser, size, start=0)
@@ -1348,7 +1356,8 @@ class Scribbler(Robot):
                         min(Y - 0.39466 * U - 0.58060 * V, 255), 0
                     )
                     buffer[(i * width + j) * 3 + 2] = max(min(Y + 2.03211 * U, 255), 0)
-            self.ser.setTimeout(oldtimeout)
+            # self.ser.setTimeout(oldtimeout)
+            self.ser.timeout = oldtimeout
         finally:
             self.lock.release()
         return buffer
@@ -1484,7 +1493,7 @@ class Scribbler(Robot):
             self.lock.release()
 
     def getObstacle(self, value=None):
-        if value == None:
+        if value is None:
             return self.get("obstacle")
         try:
             self.lock.acquire()
@@ -1501,7 +1510,7 @@ class Scribbler(Robot):
 
     def getDistance(self, value=None):
         if self._IsScribbler2():
-            if value == None:
+            if value is None:
                 return self.get("distance")
             try:
                 self.lock.acquire()
@@ -1523,7 +1532,7 @@ class Scribbler(Robot):
         # conf_gray_window(self.ser, 1, 84,  0, 170, 191, 1, 1)
         # conf_gray_window(self.ser, 2, 170, 0, 254, 191, 1, 1)
 
-        if window == None or window == "all":
+        if window is None or window == "all":
             return self.get("bright")
         if type(window) == str:
             if window in ["left"]:
@@ -1604,9 +1613,9 @@ class Scribbler(Robot):
     def set_cam_param(self, addr, byte):
         try:
             self.lock.acquire()
-            self.ser.write(chr(self.SET_CAM_PARAM))
-            self.ser.write(chr(addr))
-            self.ser.write(chr(byte))
+            self.ser.write(bytes(chr(self.SET_CAM_PARAM), "ISO-8859-1"))
+            self.ser.write(bytes(chr(addr), "ISO-8859-1"))
+            self.ser.write(bytes(chr(byte), "ISO-8859-1"))
             time.sleep(0.15)  # camera needs time to reconfigure
         finally:
             self.lock.release()
@@ -1672,7 +1681,7 @@ class Scribbler(Robot):
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_DEFAULT)
         self.set_cam_param(self.CAM_COMB, self.CAM_COMB_DEFAULT)
 
-    ########################################################## End Dongle Commands
+    # End Dongle Commands
 
     def reset(self):
         for p in [127, 127, 127, 127, 0, 0, 0, 0]:
@@ -1801,7 +1810,7 @@ class Scribbler(Robot):
         # 0..255 and save.
 
         if self._oldFudge[0] != self._fudge[0]:
-            if self.dongle == None:
+            if self.dongle is None:
                 self.setSingleData(0, int(self._fudge[0] * 127.0))
             else:
                 self.setSingleData(3, int(self._fudge[0] * 127.0))
@@ -1809,21 +1818,21 @@ class Scribbler(Robot):
             self._oldFudge[0] = self._fudge[0]
 
         if self._oldFudge[1] != self._fudge[1]:
-            if self.dongle == None:
+            if self.dongle is None:
                 self.setSingleData(1, int(self._fudge[1] * 127.0))
             else:
                 self.setSingleData(2, int(self._fudge[1] * 127.0))
             self._oldFudge[1] = self._fudge[1]
 
         if self._oldFudge[2] != self._fudge[2]:
-            if self.dongle == None:
+            if self.dongle is None:
                 self.setSingleData(2, int(self._fudge[2] * 127.0))
             else:
                 self.setSingleData(1, int(self._fudge[2] * 127.0))
             self._oldFudge[2] = self._fudge[2]
 
         if self._oldFudge[3] != self._fudge[3]:
-            if self.dongle == None:
+            if self.dongle is None:
                 self.setSingleData(3, int(self._fudge[3] * 127.0))
             else:
                 self.setSingleData(0, int(self._fudge[3] * 127.0))
@@ -1842,7 +1851,7 @@ class Scribbler(Robot):
                 self._fudge[i] = 127
             self._fudge[i] = self._fudge[i] / 127.0  # convert back to floating point!
 
-        if self.dongle != None:
+        if self.dongle is not None:
             self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3] = (
                 self._fudge[3],
                 self._fudge[2],
@@ -2088,7 +2097,7 @@ class Scribbler(Robot):
     def update(self):
         pass
 
-    ####################### Private
+    # Private
 
     def _IsScribbler2(self):
         if self.robotinfo == "Scribbler2":
@@ -2145,20 +2154,20 @@ class Scribbler(Robot):
 
         self._set(Scribbler.SET_MOTORS, rightPower, leftPower)
 
-    def _read(self, bytes=1):
+    def _read(self, bytes_=1):
 
         if self.debug:
-            print("Trying to read", bytes, "bytes", "timeout =", self.ser.timeout)
+            print("Trying to read", bytes_, "bytes_", "timeout =", self.ser.timeout)
 
-        c = self.ser.read(bytes)
+        c = self.ser.read(bytes_).decode("ISO-8859-1")
 
         if self.debug:
-            print("Initially read", len(c), "bytes:", end=" ")
+            print("Initially read", len(c), "bytes_:", end=" ")
             print(["0x%x" % ord(x) for x in c])
 
         # .nah. bug fix
-        while bytes > 1 and len(c) < bytes:
-            c = c + self.ser.read(bytes - len(c))
+        while bytes_ > 1 and len(c) < bytes_:
+            c = c + self.ser.read(bytes_ - len(c))
             if self.debug:
                 print(["0x%x" % ord(x) for x in c])
 
@@ -2167,9 +2176,9 @@ class Scribbler(Robot):
             print("_read (%d)" % len(c))
             print(["0x%x" % ord(x) for x in c])
 
-        if self.dongle == None:
+        if self.dongle is None:
             time.sleep(0.01)  # HACK! THIS SEEMS TO NEED TO BE HERE!
-        if bytes == 1:
+        if bytes_ == 1:
             x = -1
             if c != "":
                 x = ord(c)
@@ -2181,14 +2190,14 @@ class Scribbler(Robot):
 
     def _write(self, rawdata):
         t = [chr(int(x)) for x in rawdata]
-        data = string.join(t, "") + (chr(0) * (Scribbler.PACKET_LENGTH - len(t)))[:9]
+        data = "".join(t) + (chr(0) * (Scribbler.PACKET_LENGTH - len(t)))[:9]
         if self.debug:
             print("_write:", data, len(data), end=" ")
             print("data:", end=" ")
             print(["0x%x" % ord(x) for x in data])
-        if self.dongle == None:
+        if self.dongle is None:
             time.sleep(0.01)  # HACK! THIS SEEMS TO NEED TO BE HERE!
-        self.ser.write(data)  # write packets
+        self.ser.write(bytes(data, "ISO-8859-1"))  # write packetss
 
     def _set(self, *values):
         try:
@@ -2221,11 +2230,11 @@ class Scribbler(Robot):
         finally:
             self.lock.release()
 
-    def _getWithSetByte(self, packetValue, bytes=1, mode="byte", setByte=0xFF):
+    def _getWithSetByte(self, packetValue, bytes_=1, mode="byte", setByte=0xFF):
         """Allows user to pass in a byte when calling a method that get data.   Can be used to zero out values like encoders"""
-        return self._get(packetValue, bytes, mode, setByte)
+        return self._get(packetValue, bytes_, mode, setByte)
 
-    def _get(self, value, bytes=1, mode="byte", setByte=0xFF):
+    def _get(self, value, bytes_=1, mode="byte", setByte=0xFF):
         try:
             self.lock.acquire()
             if setByte != 0xFF:
@@ -2234,15 +2243,15 @@ class Scribbler(Robot):
                 self._write([value])
             self._read(Scribbler.PACKET_LENGTH)  # read the echo
             if mode == "byte":
-                retval = self._read(bytes)
+                retval = self._read(bytes_)
             elif mode == "word":
-                retvalBytes = self._read(bytes)
+                retvalBytes = self._read(bytes_)
                 retval = []
                 for p in range(0, len(retvalBytes), 2):
                     retval.append(retvalBytes[p] << 8 | retvalBytes[p + 1])
             elif mode == "long":
-                retvalBytes = self.ser.read(bytes)
-                retval = list(unpack(">" + "i" * (bytes / 4), retvalBytes))
+                retvalBytes = self.ser.read(bytes_)
+                retval = list(unpack(">" + "i" * (bytes_ / 4), retvalBytes))
             elif mode == "line":  # until hit \n newline
                 retval = self.ser.readline()
                 if self.debug:
@@ -2290,23 +2299,23 @@ def cap(c):
 def conf_window(self, window, X_LOW, Y_LOW, X_HIGH, Y_HIGH, X_STEP, Y_STEP):
     # fluke2 needs 16-bit numbers to specify image coordinates
     if self.dongle_version >= [3, 0, 0]:
-        self.ser.write(chr(Scribbler.SET_WINDOW))
-        self.ser.write(chr(window))
+        self.ser.write(bytes(chr(Scribbler.SET_WINDOW), "ISO-8859-1"))
+        self.ser.write(bytes(chr(window), "ISO-8859-1"))
         write_2byte(self.ser, X_LOW)
         write_2byte(self.ser, Y_LOW)
         write_2byte(self.ser, X_HIGH)
         write_2byte(self.ser, Y_HIGH)
-        self.ser.write(chr(X_STEP))
-        self.ser.write(chr(Y_STEP))
+        self.ser.write(bytes(chr(X_STEP), "ISO-8859-1"))
+        self.ser.write(bytes(chr(Y_STEP), "ISO-8859-1"))
     else:
-        self.ser.write(chr(Scribbler.SET_WINDOW))
-        self.ser.write(chr(window))
-        self.ser.write(chr(X_LOW))
-        self.ser.write(chr(Y_LOW))
-        self.ser.write(chr(X_HIGH))
-        self.ser.write(chr(Y_HIGH))
-        self.ser.write(chr(X_STEP))
-        self.ser.write(chr(Y_STEP))
+        self.ser.write(bytes(chr(Scribbler.SET_WINDOW), "ISO-8859-1"))
+        self.ser.write(bytes(chr(window), "ISO-8859-1"))
+        self.ser.write(bytes(chr(X_LOW), "ISO-8859-1"))
+        self.ser.write(bytes(chr(Y_LOW), "ISO-8859-1"))
+        self.ser.write(bytes(chr(X_HIGH), "ISO-8859-1"))
+        self.ser.write(bytes(chr(Y_HIGH), "ISO-8859-1"))
+        self.ser.write(bytes(chr(X_STEP), "ISO-8859-1"))
+        self.ser.write(bytes(chr(Y_STEP), "ISO-8859-1"))
 
 
 def conf_gray_window(self, window, lx, ly, ux, uy, xstep, ystep):
@@ -2385,8 +2394,9 @@ def read_3byte(ser):
 
 
 def write_2byte(ser, value):
-    ser.write(chr((value >> 8) & 0xFF))
-    ser.write(chr(value & 0xFF))
+    value = int(value)
+    ser.write(bytes(chr((value >> 8) & 0xFF), "ISO-8859-1"))
+    ser.write(bytes(chr(value & 0xFF), "ISO-8859-1"))
 
 
 def read_mem(ser, page, offset):
@@ -2455,5 +2465,5 @@ def quadrupleSize(line, width):
 
 
 def set_ir_power(ser, power):
-    ser.write(chr(Scribbler.SET_DONGLE_IR))
-    ser.write(chr(power))
+    ser.write(bytes(chr(Scribbler.SET_DONGLE_IR), "ISO-8859-1"))
+    ser.write(bytes(chr(power), "ISO-8859-1"))

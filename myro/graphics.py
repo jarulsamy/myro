@@ -119,12 +119,22 @@ http://mcsp.wartburg.edu/zelle/python for a quick reference"""
 #     Fixed Garbage collection of Tkinter images bug.
 #     Added ability to set text atttributes.
 #     Added Entry boxes.
+import _thread
+import array
+import atexit
+import math
 import os
 import sys
 import time
-import tkinter
+import tkinter.colorchooser
+import tkinter.dialog
+import tkinter.filedialog
+from copy import copy
+from queue import Queue
 
+import myro.globvars
 from . import globvars
+from myro.widgets import AlertDialog
 
 # try:
 #     import PIL.Image as PyImage
@@ -141,9 +151,7 @@ from . import globvars
 #     )
 
 # TODO: Fix tkinter for Py > 3
-tk = Tkinter
-import array
-import math
+tk = tkinter
 
 # try:
 #     import tkSnack
@@ -175,11 +183,6 @@ DEAD_THREAD = "Graphics thread quit unexpectedly"
 ###########################################################################
 # Support to run Tk in a separate thread
 
-import myro.globvars
-from copy import copy
-from queue import Queue
-import _thread
-import atexit
 
 _tk_request = Queue(0)
 _tk_result = Queue(1)
@@ -307,9 +310,6 @@ def moveToTop(window):
 
 ############################################################################
 # Graphics classes start here
-
-import tkinter.filedialog, tkinter.colorchooser, tkinter.dialog
-from myro.widgets import AlertDialog
 
 
 def distance(tuple1, tuple2):
@@ -443,15 +443,15 @@ class GraphWin(tk.Canvas):
     def _setStatus(self, format=""):
         _tkCall(self.status.config, text=format)
 
-    ## Trying to get IDLE subprocess windows to be on top!
-    ##    def toFront(self):
-    ##        _tkCall(self.__toFront_help)
+    # Trying to get IDLE subprocess windows to be on top!
+    # def toFront(self):
+    # _tkCall(self.__toFront_help)
     ##
-    ##    def __toFront_help(self):
-    ##        _root.tkraise()
-    ##        #self.master.after(50, self.master.deiconify)
-    ##        #self.master.after(70, self.master.tkraise)
-    ##        #self.master.after(70, self.master.focus)
+    # def __toFront_help(self):
+    # _root.tkraise()
+    # self.master.after(50, self.master.deiconify)
+    # self.master.after(70, self.master.tkraise)
+    # self.master.after(70, self.master.focus)
 
     def __checkOpen(self):
         if self.closed:
@@ -662,7 +662,6 @@ class GraphicsObject:
         self._reconfig("width", width)
 
     def draw(self, graphwin):
-
         """Draw the object in graphwin, which should be a GraphWin
         object.  A GraphicsObject may only be drawn into one
         window. Raises an error if attempt made to draw an object that
@@ -680,7 +679,6 @@ class GraphicsObject:
             _tkCall(_root.update)
 
     def undraw(self):
-
         """Undraw the object (i.e. hide it). Returns silently if the
         object is not currently drawn."""
 
@@ -697,7 +695,6 @@ class GraphicsObject:
         self.id = None
 
     def move(self, dx, dy):
-
         """move object dx units in x direction and dy units in y
         direction"""
 
@@ -2047,7 +2044,7 @@ class Calibrate(tkinter.Toplevel):
         self.initHandlers()
         self.canvas.pack(side=tkinter.BOTTOM)
 
-        ##        self.circle_dim = (10, 100, 210, 120) #x0, y0, x1, y1
+        # self.circle_dim = (10, 100, 210, 120) #x0, y0, x1, y1
         ##
         ##        self.circle = self.canvas.create_rectangle(self.circle_dim, fill = 'white')
 
