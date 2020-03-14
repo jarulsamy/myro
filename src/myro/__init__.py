@@ -1,15 +1,39 @@
-# -*- coding: utf-8 -*-
-__VERSION__ = "3.0.0"
-__AUTHOR__ = "Joshua Arulsamy"
+import atexit
+import copy
+import glob
+import io
+import os
+import pickle
+import random
+import signal
+import sys
+import threading
+import time
+import traceback
+import types
+import urllib.error
+import urllib.parse
+import urllib.request
 
-import sys, atexit, time, random, pickle, threading, os, types, copy
-import io, traceback, urllib.request, urllib.parse, urllib.error, glob
+import ImageChops
 import myro.globvars
-from myro.media import *
-from myro.speech import *
+import myro.graphics
+import pygame
+from GifImagePlugin import getdata
+from GifImagePlugin import getheader
 from myro.chat import *
+from myro.graphics import *
+from myro.media import *
+from myro.robots.epuck import Epuck
+from myro.robots.scribbler import Scribbler
+from myro.robots.simulator import SimScribbler
+from myro.robots.surveyor import Surveyor
+from myro.robots.surveyor import watch
+from myro.speech import *
 from myro.system import *
 
+__VERSION__ = "3.0.0"
+__AUTHOR__ = "Joshua Arulsamy"
 # Check versions of things:
 # _pil_version = None
 # try:
@@ -310,7 +334,7 @@ def gamepad(*phrases, **kwargs):
             else:
                 freqs[1] = 659
 
-        ## speak
+        # speak
         if length > 5 and button[5]:
             if doneSpeaking:
                 speak(phrases[0], async_=1)
@@ -621,7 +645,6 @@ class Robot(object):
         raise AttributeError("this method needs to be written")
 
     def beep(self, duration, frequency1, frequency2=None):
-        import myro.graphics
 
         print("beep!")
         return myro.graphics._tkCall(
@@ -636,7 +659,7 @@ class Robot(object):
         """ Update the robot """
         raise AttributeError("this method needs to be written")
 
-    ### The rest of these methods are just rearrangements of the above
+    # The rest of these methods are just rearrangements of the above
 
     def getVersion(self):
         """ Returns robot version information. """
@@ -839,6 +862,8 @@ class Computer(Robot):
 computer = Computer()
 
 # functions:
+
+
 def _cleanup():
     if myro.globvars.robot:
         if "robot" in myro.globvars.robot.robotinfo:
@@ -852,9 +877,6 @@ def _cleanup():
             myro.globvars.robot.close()
         except:
             pass
-
-
-import signal
 
 
 def ctrlc_handler(signum, frame):
@@ -881,7 +903,7 @@ if not myro.globvars.setup:
     print("[See http://www.roboteducation.org/ for more information]", file=sys.stderr)
     print("Myro version %s is ready!" % (__VERSION__,), file=sys.stderr)
 
-## Functional interface:
+# Functional interface:
 
 
 def requestStop():
@@ -1338,7 +1360,7 @@ def playNote(tup, wholeNoteDuration=0.545):
         raise AttributeError("need to initialize robot")
 
 
-########################### New dongle commands
+# New dongle commands
 
 
 def getBright(position=None):
@@ -1480,7 +1502,7 @@ def setLEDBack(value):
         raise AttributeError("need to initialize robot")
 
 
-########################### Pictures:
+# Pictures:
 
 
 def _ndim(n, *args, **kwargs):
@@ -1647,8 +1669,6 @@ def writePictureTo(picture, filename):
 
 def savePicture(picture, filename):
     if type(picture) == type([]):
-        import ImageChops
-        from GifImagePlugin import getheader, getdata
 
         # open output file
         fp = open(filename, "wb")
@@ -1900,8 +1920,6 @@ def doTogether(*functions):
             thread_results[position] = result
             return result
 
-        import threading
-
         thread = threading.Thread()
         thread.run = newfunction
         return thread
@@ -1988,19 +2006,13 @@ def _myroExceptionHandler(etype, value, tb):
 
 sys.excepthook = _myroExceptionHandler
 
-from myro.robots.scribbler import Scribbler
-from myro.robots.surveyor import Surveyor, watch
 
 # from myro.robots.roomba import Roomba, Create
-from myro.robots.epuck import Epuck
-from myro.robots.simulator import SimScribbler
-from myro.graphics import *
 
 #######
-## have to load pygame after mostly everything
+# have to load pygame after mostly everything
 if not "darwin" in sys.platform:
     try:
-        import pygame
 
         pygame.init()
 

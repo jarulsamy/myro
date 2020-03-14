@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-The client robot connection programs for the PyrobotSimulator
-non-symbolic robots.
-
-(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
-"""
-
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision: 360 $"
 
@@ -16,10 +8,7 @@ import time
 from myro.robots import Robot
 from myro.robots.device import *  # Device, GripperDevice, SensorValue
 
-try:
-    import pickle as pickle
-except:
-    import pickle
+import pickle
 
 colorMap = {
     "red": (255, 0, 0),

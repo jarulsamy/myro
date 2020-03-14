@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import importlib
 import math
 import os
@@ -100,7 +99,6 @@ class Robot:
     """
 
     def __init__(self, **kwargs):
-
         """
         Robot object holds the devices and moves the actual robot.
 
@@ -300,7 +298,8 @@ class Robot:
         1
         """
         if devname not in self.__dict__:
-            self.devices.append(devname)  # keep track of all of the loaded types
+            # keep track of all of the loaded types
+            self.devices.append(devname)
             self.__dict__[devname] = [None]
             return 0
         else:

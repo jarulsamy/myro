@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-# from myro import *
-import time
-from tkinter import *
+from tkinter import Frame
+from tkinter import Tk
 
-from myro import backward
-from myro import forward
 from myro import init
 from myro import motors
 from myro import stop
-from myro import turnLeft
-from myro import turnRight
-
 
 init("COM5")
 

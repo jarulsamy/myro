@@ -1,7 +1,14 @@
-# -*- coding: utf-8 -*-
+import os
 import string
 import tkinter
 from functools import reduce
+from os import chdir
+from os import getcwd
+from os import getenv
+from string import splitfields
+from string import strip
+from subprocess import getoutput
+from tkinter import Tk
 
 
 def roundStr(item, places=3):
@@ -100,7 +107,6 @@ class ModalDialog(Dialog):
         Dialog.__init__(self, master)
 
     def Show(self):
-        import string
 
         self.SetupDialog()
         self.CenterDialog()
@@ -144,7 +150,6 @@ class AlertDialog(ModalDialog):
         Dialog.__init__(self, widget)
 
     def SetupDialog(self):
-        import string
 
         upperFrame = tkinter.Frame(self.top)
         upperFrame["relief"] = "raised"
@@ -368,8 +373,6 @@ class MessageDialog(AlertDialog):
 
 class FileDialog(ModalDialog):
     def __init__(self, widget, title, filter_="*", pyro_dir=""):
-        from os import getcwd
-        from string import strip
 
         self.widget = widget
         self.filter_ = strip(filter_)
@@ -384,7 +387,6 @@ class FileDialog(ModalDialog):
         # 	setup routine called back from Dialog
 
         def HomePressed(self):
-            from os import getenv
 
             if self.goHomeButton["text"] == "Home":
                 # if self.cwd != getenv('HOME') and \
@@ -567,9 +569,6 @@ class FileDialog(ModalDialog):
     # 	update the listboxes and directory label after a change of directory
 
     def UpdateListBoxes(self):
-        import os
-        from subprocess import getoutput
-        from string import splitfields
 
         cwd = self.cwd
         self.fileLb.delete(0, self.fileLb.size())
@@ -607,7 +606,6 @@ class FileDialog(ModalDialog):
 
     def DoSelection(self, event):
         from posixpath import join
-        import string
 
         lb = event.widget
         field = self.fileNameEntry
@@ -648,7 +646,6 @@ class FileDialog(ModalDialog):
 
     def FileNameReturnKey(self, event):
         from posixpath import isabs, expanduser, join
-        from string import strip
 
         # 	if its a relative path then include the cwd in the name
         name = strip(self.fileNameEntry.get())
@@ -659,7 +656,6 @@ class FileDialog(ModalDialog):
         self.OkPressed()
 
     def FilterReturnKey(self, event):
-        from string import strip
 
         filter_ = strip(self.filter_Entry.get())
         self.filter_Entry.delete(0, "end")
@@ -674,7 +670,6 @@ class FileDialog(ModalDialog):
         self.TerminateDialog(0)
 
     def CopyPressed(self):
-        import os
 
         filename = self.fileNameEntry.get()
         myfilename = os.getenv("HOME") + "/my" + filename.split("/")[-1]
@@ -687,7 +682,6 @@ class FileDialog(ModalDialog):
         self.EditPressed(myfilename, 1)
 
     def EditPressed(self, filename=None, selectIt=0):
-        import os
 
         if filename == None:
             filename = self.fileNameEntry.get()
@@ -706,7 +700,6 @@ class FileDialog(ModalDialog):
     # 	chdir to cwd and get the path there.
 
     def cwd_print(self):
-        from os import chdir, getcwd
 
         chdir(self.cwd)
         p = getcwd()
@@ -797,7 +790,6 @@ class Application(tkinter.Frame):
 
 def file_exists(file_name):
     from posixpath import exists
-    import string
 
     if len(file_name) == 0:
         return 0
@@ -811,8 +803,6 @@ def file_exists(file_name):
 
 
 def readlines(fd):
-    from string import strip
-
     return list(map(lambda s, f=strip: f(s), fd.readlines()))
 
 
@@ -961,7 +951,6 @@ def string_printable(s):
 
 
 if __name__ == "__main__":
-    from tkinter import Tk
 
     tk = Tk()
     w = Watcher(tk)

@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
 import os
 import random
 import re
 import sys
 
 import myro.globvars
+import pyTTS
+from myro import ask
+from myro import askQuestion
 
 # if not "darwin" in sys.platform:
 #     try:
@@ -58,7 +60,6 @@ class LinuxTTSEngine(TTSEngine):
 
 class WindowsTTSEngine(TTSEngine):
     def __init__(self, name=None, echo=1):
-        import pyTTS
 
         self.tts = pyTTS.Create()
         if name != None:
@@ -197,7 +198,6 @@ def saveSpeech(message, filename):
 
 
 def makeStory(story):
-    from myro import ask
 
     # go through story, get "items"
     variables = re.findall('"(.*?)"', story)
@@ -217,7 +217,6 @@ def makeStory(story):
 
 
 def variables():
-    from myro import askQuestion
 
     raceStory = """
 One day, the "animal1" and the "animal2" decided to race to the "place_name".
@@ -243,7 +242,6 @@ Then "name" "verb4_past" the "animal"'s "part_of_body" and ran to "verb5_present
 
 
 def numberGame(stop=100, maxGuesses=10):
-    from myro import ask
 
     count = 1
     secret = int(random.random() * 100) + 1

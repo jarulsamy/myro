@@ -1,14 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-The device module. All devices (sonar, laser, position, etc) derive
-from these.
-
-(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
-"""
 import math
 import random
 import threading
 import tkinter
+
+import myro
 
 
 # constants:
@@ -30,7 +25,6 @@ class DeviceWindow(tkinter.Toplevel):
 
     def __init__(self, device, title=None):
         """Constructor for the DeviceWindow class."""
-        import myro
 
         if not myro._gui:
             myro._gui = tkinter.Tk()

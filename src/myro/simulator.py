@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 A simple simulator.
 """
@@ -281,7 +280,8 @@ class Simulator:
         self.lights = []
         self.trail = []
         self.needToMove = []  # list of robots that need to move (see step)
-        self.maxTrailSize = 10  # 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
+        # 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
+        self.maxTrailSize = 10
         self.trailStart = 0
         self.world = []
         self.time = 0.0
@@ -683,7 +683,8 @@ class Simulator:
                     retval = None
                 except:
                     pass
-            elif message[0] == "j":  # "j_index_p_t_z" ptz[index].setPose(p, t, z)
+            # "j_index_p_t_z" ptz[index].setPose(p, t, z)
+            elif message[0] == "j":
                 code, index, p, t, z = [None] * 5
                 try:
                     code, index, p, t, z = message
@@ -844,7 +845,8 @@ class TkSimulator(tkinter.Toplevel, Simulator):
         #    if myro.globvars.gui == None:
         #        myro.globvars.gui = Tkinter.Tk()
         #        myro.globvars.gui.withdraw()
-        tkinter.Toplevel.__init__(self, myro.globvars.gui)  # , myro.globvars.gui)
+        # , myro.globvars.gui)
+        tkinter.Toplevel.__init__(self, myro.globvars.gui)
         Simulator.__init__(self, dimensions, offsets, scale)
         self.root = myro.globvars.gui  # root
         self.wm_title("Myro Simulator")
@@ -1337,7 +1339,8 @@ class SimRobot:
         self.subscribed = 0
         self.x, self.y, self.a = (0.0, 0.0, 0.0)  # localize
         self.boundingBox = (
-            boundingBox  # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
+            # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
+            boundingBox
         )
         self.boundingSeg = []
         if boundingBox != []:
@@ -1357,7 +1360,8 @@ class SimRobot:
         }
         self.devices = []
         self.simulator = None  # will be set when added to simulator
-        self.vx, self.vy, self.va = (0.0, 0.0, 0.0)  # meters / second, rads / second
+        # meters / second, rads / second
+        self.vx, self.vy, self.va = (0.0, 0.0, 0.0)
         self.friction = 1.0
         # -1: don't automatically turn display on when subscribing:
         self.display = {
@@ -1606,7 +1610,8 @@ class SimRobot:
                     i += 1
             elif d.type == "gripper":
                 # cast a ray in two places, set scan = 1 if it is "broken"
-                x = d.pose[0] + 0.07  # first beam distance from center of robot
+                # first beam distance from center of robot
+                x = d.pose[0] + 0.07
                 y = d.armPosition  # distance between arms
                 d.scan = [0] * (2 + 3)  # two beams, 3 sensors (no lift)
                 d.objs = []
@@ -1650,7 +1655,7 @@ class SimRobot:
                                 "lineTooFar", x1, y1, 0, b1, "blue"
                             )  # extended
                             angle = seg1.angle()
-                            ### perpendiculars to line segment:
+                            # perpendiculars to line segment:
                             r90 = (
                                 angle + math.pi / 4
                             )  # perpendicular and rotated for screen
@@ -1667,7 +1672,7 @@ class SimRobot:
                             seg2 = Segment((x3, y3), (x4, y4))
                             b2 = seg2.yintercept
                             angle2 = seg2.angle()
-                            ### perpendicular through robot:
+                            # perpendicular through robot:
                             # b3 = y - (angle2 * x)
                             # FIX: how do you get a line from slope and point?
                             # I'm using b2 because I can't compute b3!
@@ -2947,8 +2952,8 @@ if __name__ == "__main__":
         print("Simulator starting listener on port", port, "...")
         t = Thread(simulator, port)
         _tkCall(t.start)
-    ###print "here"
+    # print "here"
     u = Updater(simulator)
     _tkCall(u.start)
     _tkCall(simulator.mainloop)
-    ##print "Done!"
+    # print "Done!"

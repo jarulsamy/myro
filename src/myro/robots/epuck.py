@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import array
 import platform
 import time
@@ -425,7 +424,7 @@ class Epuck(myro.Robot):
     # ----------------------------------------------------------------------
     # external sensors
 
-    ## looking down from top with camera at north...
+    # looking down from top with camera at north...
     # front right sensor is #0
     # sensors proceed clockwise
     # sensor#  angle of offset clockwise from north (counterclockwise)
@@ -490,7 +489,7 @@ class Epuck(myro.Robot):
                 groupVals = [vals[i] for i in group]
                 return sum(groupVals) / len(groupVals)
 
-    ## return accelerometer readings as [x, y, z]
+    # return accelerometer readings as [x, y, z]
     def getAccel(self):
         vals = [int(x) for x in self.send("A").strip().split(",")[1:]]
         return vals
@@ -528,7 +527,7 @@ class Epuck(myro.Robot):
         elif sensor == "wheels":
             return self.getWheels()
 
-    ## return microphone readings as [front-right, front-left, rear]
+    # return microphone readings as [front-right, front-left, rear]
     def getSound(self):
         vals = [int(x) for x in self.send("U").strip().split(",")[1:]]
         return vals

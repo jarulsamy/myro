@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Module that supports robot-to-robot communication via IM.
 

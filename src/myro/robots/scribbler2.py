@@ -1,20 +1,15 @@
-# -*- coding: utf-8 -*-
-
 __AUTHOR__ = "Joshua Arulsamy"
 
-import time, string
+import time
+import string
 import os
-
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: scribbler won't work!")
-
+import serial
 from myro import Robot, ask
 from myro.graphics import _askQuestion, Picture, rgb2yuv
 import myro.globvars
 import io
 import array
+from math import sqrt
 
 
 class BufferedRead:
@@ -429,7 +424,8 @@ class Scribbler(Robot):
     def restart(self):
 
         self.manual_flush()
-        self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+        # send command to get out of broadcast; turn off echo
+        self.setEchoMode(0)
         time.sleep(0.25)  # give it some time
         while 1:
             self.ser.flushInput()  # flush "IPREScribby"...
@@ -438,7 +434,8 @@ class Scribbler(Robot):
             if self.ser.inWaiting() == 0:  # if none, then we are out of here!
                 break
             print("Waking robot from sleep...")
-            self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+            # send command to get out of broadcast; turn off echo
+            self.setEchoMode(0)
             time.sleep(0.25)  # give it some time
         self.ser.flushInput()
         self.ser.flushOutput()
@@ -544,7 +541,8 @@ class Scribbler(Robot):
                         self.getBright("right"),
                     ]
                 elif sensor == "all":
-                    retval = self._get(Scribbler.GET_ALL, 11)  # returned as bytes
+                    # returned as bytes
+                    retval = self._get(Scribbler.GET_ALL, 11)
                     self._lastSensors = retval  # single bit sensors
                     if self.dongle == None:
                         return {
@@ -686,7 +684,7 @@ class Scribbler(Robot):
             else:
                 return retval
 
-    ########################################################## Dongle Commands
+    # Dongle Commands
 
     # the set_blob_yuv function will set the YUV colorspace for the blob
     # detection on the fluke based upon the average hue of a rectangle of
@@ -704,7 +702,6 @@ class Scribbler(Robot):
     # the MYRO API, donated by redwar15@cs.utk.edu
 
     def set_blob_yuv(self, picture, x1, y1, x2, y2):
-        from math import sqrt
 
         # Find min/max of rectangle.
         xs = [x1, x2]
@@ -1624,7 +1621,7 @@ class Scribbler(Robot):
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_DEFAULT)
         self.set_cam_param(self.CAM_COMB, self.CAM_COMB_DEFAULT)
 
-    ########################################################## End Dongle Commands
+    # End Dongle Commands
 
     def reset(self):
         for p in [127, 127, 127, 127, 0, 0, 0, 0]:
@@ -1792,7 +1789,8 @@ class Scribbler(Robot):
             self._fudge[i] = self.get("data", i)
             if self._fudge[i] == 0:
                 self._fudge[i] = 127
-            self._fudge[i] = self._fudge[i] / 127.0  # convert back to floating point!
+            # convert back to floating point!
+            self._fudge[i] = self._fudge[i] / 127.0
 
         if self.dongle != None:
             self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3] = (
@@ -1849,7 +1847,7 @@ class Scribbler(Robot):
     def update(self):
         pass
 
-    ####################### Private
+    # Private
 
     def _adjustSpeed(self):
         left = min(max(self._lastTranslate - self._lastRotate, -1), 1)

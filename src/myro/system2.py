@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import string
 import sys
@@ -10,12 +9,9 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: can't upgrade robot!")
-from myro import __VERSION__ as myro_version
 import myro.globvars
+import serial
+from myro import __VERSION__ as myro_version
 
 # copied below from scribbler.py:
 # from myro.robots.scribbler import set_scribbler_start_program, set_scribbler_memory

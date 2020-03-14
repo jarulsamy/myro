@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ----------------------------------------------------
 An Artificial Neural Network System Implementing
@@ -28,6 +27,10 @@ import time
 import sys
 import operator
 from functools import reduce
+import pickle
+from pyrobot.brain.cascor import CascorNetwork
+import re
+import pickle
 
 # try:
 #     import psyco
@@ -77,7 +80,6 @@ def loadNetworkFromFile(filename, mode="pickle"):
     Loads network from a file using pickle. See Network.saveNetworkToFile()
     """
     if mode == "pickle":
-        import pickle
 
         fp = open(filename)
         network = pickle.load(fp)
@@ -115,7 +117,6 @@ def loadNetworkFromFile(filename, mode="pickle"):
                 temp, netType = line.split(",")
                 netType = netType.strip().lower()
                 if netType == "cascornetwork":
-                    from pyrobot.brain.cascor import CascorNetwork
 
                     network = CascorNetwork()
                 elif netType == "network":
@@ -925,7 +926,8 @@ class Network(object):
         )  # some maximum value (not all pythons have Infinity)
         self._cv = False  # set true when in cross validation
         self._sweeping = (
-            0  # flag set when sweeping through corpus (as apposed to just stepping)
+            # flag set when sweeping through corpus (as apposed to just stepping)
+            0
         )
         self._maxRandom = 0.1
         self.currentSweepCount = None
@@ -2659,6 +2661,7 @@ class Network(object):
     ACTPRIME = ACTPRIMEASIG
     actDeriv = actDerivASIG
     # backpropagation
+
     def backprop(self, **args):
         """
         Computes error and wed for back propagation of error.
@@ -2713,7 +2716,7 @@ class Network(object):
                     # print "CASE D"
                     nextStep[i] = (
                         nextStep[i] + e * s + m * d
-                    )  ##  Last step was zero, so only use linear   ##
+                    )  # Last step was zero, so only use linear   ##
             newDweight = nextStep
             # print "Next Step = ", nextStep[i]
         else:  # backprop
@@ -3191,7 +3194,6 @@ class Network(object):
         """
         # modes: pickle/conx, plain, tlearn
         if "?" in filename:  # replace ? pattern in filename with epoch number
-            import re
 
             char = "?"
             match = re.search(re.escape(char) + "+", filename)
@@ -3210,7 +3212,6 @@ class Network(object):
                 self.lastAutoSaveWeightsFilename = filename
         if mode == "pickle":
             mylist = self.arrayify()
-            import pickle
 
             fp = open(filename, "w")
             pickle.dump(mylist, fp)
@@ -3268,7 +3269,6 @@ class Network(object):
         """
         # modes: pickle, plain/conx, tlearn
         if mode == "pickle":
-            import pickle
 
             fp = open(filename, "r")
             mylist = pickle.load(fp)
@@ -3398,7 +3398,6 @@ class Network(object):
         Saves network to file using pickle.
         """
         if "?" in filename:  # replace ? pattern in filename with epoch number
-            import re
 
             char = "?"
             match = re.search(re.escape(char) + "+", filename)
@@ -3415,7 +3414,6 @@ class Network(object):
                 self.lastAutoSaveNetworkFilename = filename
         if mode == "pickle":
             # dump network via pickle:
-            import pickle
 
             basename = filename.split(".")[0]
             filename += ".pickle"
@@ -4408,7 +4406,8 @@ if __name__ == "__main__":
         print("getError('output', 'output') :", n.getError("output", "output"))
         # test crossvalidation ---------------------------------
         print("Testing crossvalidation.. saving network sweep in 'sample.cv'...")
-        import posix, posixpath
+        import posix
+        import posixpath
 
         if posixpath.exists("sample.cv"):
             posix.unlink("sample.cv")
@@ -4507,7 +4506,6 @@ if __name__ == "__main__":
         n.setReportRate(5)
         n.train()
         if ask("Do you want to pickle the previous network?"):
-            import pickle
 
             print("Pickling network...")
             print("Filename to save data (.pickle): ", end=" ")
