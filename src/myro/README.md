@@ -1,1 +1,1 @@
-Myro Robot Library for Scribbler.
+Myro Robot Library for Scribbler and Scribbler 2.
