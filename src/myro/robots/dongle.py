@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 SOFT_RESET = 33
 GET_ALL = 65
 GET_ALL_BINARY = 66

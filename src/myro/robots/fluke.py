@@ -1,27 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-NOTICE: This file is a copy of scribbler.py.
-IT IS NOT USED BY MYRO2!
-
-This file contains experimental modifications for using the Fluke on it's
-own, without a scribbler. If you are trying to modify Myro2 (the Python
-verson of Myro) you should be working on the scribbler.py file instead!
-
-Myro code for the Fluke board.
-(c) 2007, Institute for Personal Robots in Education
-http://roboteducation.org/
-Distributed under a Shared Source License
-"""
-
 __REVISION__ = "$Revision: 1235 $"
 __AUTHOR__ = "Keith O'Hara and Doug Blank"
 
-import time, string
+import time
+import string
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: fluke won't work!")
+import serial
 from myro import ask
 from myro.graphics import _askQuestion, Picture
 import myro.globvars
@@ -388,7 +371,7 @@ class Fluke:
                 retDict[it.lower().strip()] = value.strip()
         return retDict
 
-    ########################################################## Dongle Commands
+    # Dongle Commands
 
     def conf_rle_range(self, picture, x1, y1, x2, y2):
         xs = [x1, x2]
@@ -1126,7 +1109,7 @@ class Fluke:
         self.set_cam_param(self.CAM_COMA, self.CAM_COMA_DEFAULT)
         self.set_cam_param(self.CAM_COMB, self.CAM_COMB_DEFAULT)
 
-    ########################################################## End Dongle Commands
+    # End Dongle Commands
 
     def setData(self, position, value):
         data = self._get(Fluke.GET_DATA, 8)
@@ -1208,7 +1191,7 @@ class Fluke:
     def stop(self):
         pass
 
-    ####################### Private
+    # Private
 
     def _read(self, bytes=1):
 

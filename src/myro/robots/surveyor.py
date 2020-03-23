@@ -1,31 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Surveyor SVR-1 Classes.
-(c) 2006, Institute for Personal Robots in Education
-http://roboteducation.org/
-Distributed under a Shared Source License
-"""
-
 __REVISION__ = "$Revision: 500 $"
 __AUTHOR__ = "Doug"
 
-import time, string
+import time
+import string
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: surveyor won't work!")
+import serial
 from myro import Robot, ask
 import myro.globvars
 import io
 import tkinter
 
-try:
-    import ImageTk
-    from PIL import Image
-except:
-    ImageTk = None
-    Image = None
+import ImageTk
+from PIL import Image
+
+ImageTk = None
+Image = None
 
 
 def ascii(vec):
@@ -454,7 +443,7 @@ class Surveyor(Robot):
         i = self._send("I")
         return i
 
-    ####################### Private
+    # Private
 
     def _adjustSpeed(self):
         left = min(max(self._lastTranslate - self._lastRotate, -1), 1)

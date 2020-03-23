@@ -1,7 +1,14 @@
-# -*- coding: utf-8 -*-
+import os
 import string
 import tkinter
 from functools import reduce
+from os import chdir
+from os import getcwd
+from os import getenv
+from subprocess import getoutput
+from tkinter import Tk
+
+import myro
 
 
 def roundStr(item, places=3):
@@ -13,7 +20,7 @@ def roundStr(item, places=3):
                 values.append(("%%.%df" % places) % v)
             else:
                 values.append(str(v))
-        return "[%s]" % string.join(values, ", ")
+        return "[{}]".format(", ".join(values))
     else:
         return str(item)
 
@@ -31,14 +38,6 @@ class StatusBar(tkinter.Frame):
     def clear(self):
         self.label.config(text="")
         self.label.update_idletasks()
-
-
-####
-# 	Class Dialog
-#
-# 	Purpose
-# 	Base class for many dialog box classes.
-####
 
 
 class HelpWindow(tkinter.Toplevel):
@@ -100,7 +99,6 @@ class ModalDialog(Dialog):
         Dialog.__init__(self, master)
 
     def Show(self):
-        import string
 
         self.SetupDialog()
         self.CenterDialog()
@@ -144,7 +142,6 @@ class AlertDialog(ModalDialog):
         Dialog.__init__(self, widget)
 
     def SetupDialog(self):
-        import string
 
         upperFrame = tkinter.Frame(self.top)
         upperFrame["relief"] = "raised"
@@ -152,7 +149,7 @@ class AlertDialog(ModalDialog):
         upperFrame.pack({"expand": "yes", "side": "top", "fill": "both"})
         self.bitmap = tkinter.Label(upperFrame)
         self.bitmap.pack({"side": "left"})
-        msgList = string.splitfields(self.msgString, "\n")
+        msgList = self.msgString.split()
         for i in range(len(msgList)):
             msgText = tkinter.Label(upperFrame)
             msgText["text"] = msgList[i]
@@ -368,11 +365,9 @@ class MessageDialog(AlertDialog):
 
 class FileDialog(ModalDialog):
     def __init__(self, widget, title, filter_="*", pyro_dir=""):
-        from os import getcwd
-        from string import strip
 
         self.widget = widget
-        self.filter_ = strip(filter_)
+        self.filter_ = filter_.strip()
         self.orig_dir = getcwd()
         self.pyro_dir = pyro_dir
         self.cwd = getcwd()
@@ -384,7 +379,6 @@ class FileDialog(ModalDialog):
         # 	setup routine called back from Dialog
 
         def HomePressed(self):
-            from os import getenv
 
             if self.goHomeButton["text"] == "Home":
                 # if self.cwd != getenv('HOME') and \
@@ -567,10 +561,6 @@ class FileDialog(ModalDialog):
     # 	update the listboxes and directory label after a change of directory
 
     def UpdateListBoxes(self):
-        import os
-        from subprocess import getoutput
-        from string import splitfields
-
         cwd = self.cwd
         self.fileLb.delete(0, self.fileLb.size())
         filter__ = self.filter_Entry.get()
@@ -587,7 +577,7 @@ class FileDialog(ModalDialog):
                 cmdOutput = getoutput(cmd)
             else:
                 raise AttributeError("your OS (%s) is not supported" % os.name)
-        files = splitfields(cmdOutput, "\n")
+        files = cmdOutput.split()
         files.sort()
         for i in range(len(files)):
             if os.path.isfile(os.path.join(cwd, files[i])):
@@ -607,7 +597,6 @@ class FileDialog(ModalDialog):
 
     def DoSelection(self, event):
         from posixpath import join
-        import string
 
         lb = event.widget
         field = self.fileNameEntry
@@ -648,10 +637,9 @@ class FileDialog(ModalDialog):
 
     def FileNameReturnKey(self, event):
         from posixpath import isabs, expanduser, join
-        from string import strip
 
         # 	if its a relative path then include the cwd in the name
-        name = strip(self.fileNameEntry.get())
+        name = self.fileNameEntry.get().strip()
         if not isabs(expanduser(name)):
             self.fileNameEntry.delete(0, "end")
             self.fileNameEntry.insert(0, join(self.cwd_print(), name))
@@ -659,9 +647,8 @@ class FileDialog(ModalDialog):
         self.OkPressed()
 
     def FilterReturnKey(self, event):
-        from string import strip
 
-        filter_ = strip(self.filter_Entry.get())
+        filter_ = self.filter_Entry.get().strip()
         self.filter_Entry.delete(0, "end")
         self.filter_Entry.insert(0, filter_)
         self.filter_Button.flash()
@@ -674,7 +661,6 @@ class FileDialog(ModalDialog):
         self.TerminateDialog(0)
 
     def CopyPressed(self):
-        import os
 
         filename = self.fileNameEntry.get()
         myfilename = os.getenv("HOME") + "/my" + filename.split("/")[-1]
@@ -687,7 +673,6 @@ class FileDialog(ModalDialog):
         self.EditPressed(myfilename, 1)
 
     def EditPressed(self, filename=None, selectIt=0):
-        import os
 
         if filename == None:
             filename = self.fileNameEntry.get()
@@ -706,7 +691,6 @@ class FileDialog(ModalDialog):
     # 	chdir to cwd and get the path there.
 
     def cwd_print(self):
-        from os import chdir, getcwd
 
         chdir(self.cwd)
         p = getcwd()
@@ -797,7 +781,6 @@ class Application(tkinter.Frame):
 
 def file_exists(file_name):
     from posixpath import exists
-    import string
 
     if len(file_name) == 0:
         return 0
@@ -805,21 +788,8 @@ def file_exists(file_name):
         return exists(file_name)
 
 
-#
-# 	read the lines from a file and strip them of their trailing newlines
-#
-
-
 def readlines(fd):
-    from string import strip
-
     return list(map(lambda s, f=strip: f(s), fd.readlines()))
-
-
-#
-# 	Various set operations on sequence arguments.
-# 	in joins the values in 'a' take precedence over those in 'b'
-#
 
 
 def seq_join(a, b):
@@ -961,7 +931,6 @@ def string_printable(s):
 
 
 if __name__ == "__main__":
-    from tkinter import Tk
 
     tk = Tk()
     w = Watcher(tk)

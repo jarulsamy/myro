@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Myro Simulator Classes.
-(c) 2006, Institute for Personal Robots in Education
-http://roboteducation.org/
-Distributed under a Shared Source License
-"""
-
 __REVISION__ = "$Revision: 271 $"
 __AUTHOR__ = "Doug Blank"
 
@@ -15,7 +7,10 @@ __AUTHOR__ = "Doug Blank"
 # line   0,1     0,1    none,line?
 # stall ok
 
-import os, atexit, time, threading
+import os
+import atexit
+import time
+import threading
 from myro import Robot
 from myro.robots.symbolic import TCPRobot
 import myro.globvars

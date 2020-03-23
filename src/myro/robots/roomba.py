@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Defines Roomba, a subclass of robot.
-
-Includes code modified from IntelliBrain.py & Khepera.py
-Also Includes code from the ERDOS project.
-
-For more info. about ERDOS contact Zach Dodds(dodd@cs.hmc.edu)
-or visit http://www.cs.hmc.edu/~dodds/erdos/
-
-(c) 2006, SUNY Potsdam. Licenced under the GNU GPL.
-"""
-
 __author__ = "James Snow <snow91@potsdam.edu>"
 __version__ = "$Revision: 817 $"
 
@@ -20,14 +7,13 @@ from myro.robots import Robot as PyroRobot
 from myro.robots.fluke import Fluke
 from myro.robots.device import *
 import myro.globvars
-import string, array, math, struct
+import string
+import array
+import math
+import struct
 import threading
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: roomba won't work!")
-import time
+import serial
 
 
 def lookupRC(val):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import string
 import sys
@@ -9,13 +8,18 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from os import makedirs
+from os.path import abspath
+from os.path import dirname
+from os.path import exists
+from os.path import normpath
 
-try:
-    import serial
-except:
-    print("WARNING: pyserial not loaded: can't upgrade robot!")
-from myro import __VERSION__ as myro_version
 import myro.globvars
+import serial
+from myro import __VERSION__ as myro_version
+from myro import ask
+
+from .intelhex import IntelHex
 
 # copied below from scribbler.py:
 # from myro.robots.scribbler import set_scribbler_start_program, set_scribbler_memory
@@ -133,8 +137,6 @@ def import_file(filename):
 
 
 def makePath(path):
-    from os import makedirs
-    from os.path import normpath, dirname, exists, abspath
 
     print("      Checking directory", path)
     dpath = normpath(dirname(path))
@@ -188,7 +190,6 @@ def upgrade_myro(url=None, version=None):
 
 class SerialRobot:
     def __init__(self, serialport=None, baudrate=38400):
-        from myro import ask
 
         self.robotinfo = {}
         if serialport == None:
@@ -708,7 +709,6 @@ def upgrade_fluke(url=None):
         print("Sending magic key")
 
     if version >= [3, 0, 0]:
-        import time
 
         s.flushOutput()
         s.flushInput()
@@ -738,8 +738,6 @@ def upgrade_fluke(url=None):
             print(".")
 
     else:
-        from .intelhex import IntelHex
-        import time
 
         ih = IntelHex(filename)
         binarray = ih.tobinarray()

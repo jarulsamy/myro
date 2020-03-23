@@ -1,15 +1,34 @@
-# -*- coding: utf-8 -*-
-__VERSION__ = "3.0.0"
-__AUTHOR__ = "Joshua Arulsamy"
+import atexit
+import glob
+import io
+import os
+import pickle
+import random
+import signal
+import sys
+import threading
+import time
+import traceback
+import urllib.error
+import urllib.parse
+import urllib.request
 
-import sys, atexit, time, random, pickle, threading, os, types, copy
-import io, traceback, urllib.request, urllib.parse, urllib.error, glob
 import myro.globvars
-from myro.media import *
-from myro.speech import *
+import myro.graphics
+import pygame
 from myro.chat import *
+from myro.graphics import *
+from myro.media import *
+from myro.robots.epuck import Epuck
+from myro.robots.scribbler import Scribbler
+from myro.robots.simulator import SimScribbler
+from myro.robots.surveyor import Surveyor
+from myro.robots.surveyor import watch
+from myro.speech import *
 from myro.system import *
 
+__VERSION__ = "3.0.0"
+__AUTHOR__ = "Joshua Arulsamy"
 # Check versions of things:
 # _pil_version = None
 # try:
@@ -18,7 +37,7 @@ from myro.system import *
 #     del Image
 # except:
 #     print("ERROR: you need to install Python Image Library to make pictures", file=sys.stderr)
-# if _pil_version != None:
+# if _pil_version is not None:
 #     if _pil_version.split(".") < ["1", "1", "5"]:
 #         print(("ERROR: you need to upgrade Python Image Library to at least 1.1.5 (you're running %s)" %
 #                               _pil_version), file=sys.stderr)
@@ -69,8 +88,8 @@ def sendPicture(picture, photoname, password, robotname=None):
     global pickled
     photoname = photoname.replace(" ", "")
     photoname = photoname.replace("/", "")
-    if robotname == None:
-        if myro.globvars.robot != None:
+    if robotname is None:
+        if myro.globvars.robot is not None:
             robotname = myro.globvars.robot.getName()
         else:
             raise AttributeError("no robot name given and robot not connected")
@@ -104,25 +123,23 @@ def register(oldname=None):
     ch = Chat(answers["Your robot's name"], answers["Create a Myro password"])
     if ch.ok == 1:
         oldstr = ""
-        if oldname != None:
+        if oldname is not None:
             oldstr += "rename: %s\n" % oldname
         email = answers["Your email address"]
         robot = answers["Your robot's name"]
         password = answers["Create a Myro password"]
         keyword = answers["Course keyword"]
-        ch.send(
-            "admin",
-            """register
-email: %s
-username: %s
-password: %s
-keyword: %s
-%s"""
-            % (email, robot, password, keyword, oldstr),
-        )
+        data = f"""
+        email: {email}
+        username: {robot}
+        password: {password}
+        keyword: {keyword}
+        {oldstr}
+        """
+        ch.send("admin", data)
+
         # send a special message to create account
         # wait for response:
-        messages = ch.receive()
         while len(messages) == 0:
             messages = ch.receive()
             wait(1)
@@ -132,7 +149,7 @@ keyword: %s
             print(message[1])
             print()
         # if you have your robot on, then set its name:
-        if myro.globvars.robot != None:
+        if myro.globvars.robot is not None:
             myro.globvars.robot.set("name", answers["Your robot's name"])
             print("Your robot's name was set to", myro.globvars.robot.get("name"))
     else:
@@ -300,17 +317,17 @@ def gamepad(*phrases, **kwargs):
         if length > 2 and button[2]:
             freqs[0] = 523
         if length > 3 and button[3]:
-            if freqs[0] == None:
+            if freqs[0] is None:
                 freqs[0] = 587
             else:
                 freqs[1] = 587
         if length > 4 and button[4]:
-            if freqs[0] == None:
+            if freqs[0] is None:
                 freqs[0] = 659
             else:
                 freqs[1] = 659
 
-        ## speak
+        # speak
         if length > 5 and button[5]:
             if doneSpeaking:
                 speak(phrases[0], async_=1)
@@ -430,31 +447,32 @@ def getGamepadNow(*what):
         js = myro.globvars.joysticks[id]
     else:
         js = None
+
+    function_calls = {
+        "init": js.get_init,
+        "name": js.get_name,
+        "robot": lambda: [-js.get_axis(1), -js.get_axis(0)],
+        "axis": lambda: [js.get_axis(i) for i in range(js.get_numaxes())],
+        "ball": lambda: [js.get_ball(i) for i in range(js.get_numballs())],
+        "button": lambda: [js.get_button(i) for i in range(js.get_numbuttons())],
+        "hat": lambda: [js.get_hat(i) for i in range(js.get_numhats())],
+    }
+
     retval = {}
     if len(what) == 0:
         what = ["init", "name", "axis", "ball", "button", "hat"]
     for item in what:
         if item == "count":
             retval["count"] = pygame.joystick.get_count()
-        elif js != None:
-            if item == "init":
-                retval["init"] = js.get_init()
-            elif item == "name":
-                retval["name"] = js.get_name()
-            elif item == "robot":
-                retval["robot"] = [-js.get_axis(1), -js.get_axis(0)]
-            elif item == "axis":
-                retval["axis"] = [js.get_axis(i) for i in range(js.get_numaxes())]
-            elif item == "ball":
-                retval["ball"] = [js.get_ball(i) for i in range(js.get_numballs())]
-            elif item == "button":
-                retval["button"] = [
-                    js.get_button(i) for i in range(js.get_numbuttons())
-                ]
-            elif item == "hat":
-                retval["hat"] = [js.get_hat(i) for i in range(js.get_numhats())]
+        elif js is not None:
+            try:
+                func = function_calls[item]
+                func()
+            except TypeError:
+                retval[item] = function_calls[item]
         else:
             raise AttributeError("not a valid gamepad id: %d" % id)
+
     if len(list(retval.keys())) == 0:
         return None
     elif len(list(retval.keys())) == 1:
@@ -621,7 +639,6 @@ class Robot(object):
         raise AttributeError("this method needs to be written")
 
     def beep(self, duration, frequency1, frequency2=None):
-        import myro.graphics
 
         print("beep!")
         return myro.graphics._tkCall(
@@ -636,7 +653,7 @@ class Robot(object):
         """ Update the robot """
         raise AttributeError("this method needs to be written")
 
-    ### The rest of these methods are just rearrangements of the above
+    # The rest of these methods are just rearrangements of the above
 
     def getVersion(self):
         """ Returns robot version information. """
@@ -703,13 +720,13 @@ class Robot(object):
 
     def forward(self, speed=1, interval=None):
         self.move(speed, 0)
-        if interval != None:
+        if interval is not None:
             time.sleep(interval)
             self.stop()
 
     def backward(self, speed=1, interval=None):
         self.move(-speed, 0)
-        if interval != None:
+        if interval is not None:
             time.sleep(interval)
             self.stop()
 
@@ -726,21 +743,21 @@ class Robot(object):
                 retval = self.move(0, 0)  # aka, stop!
             else:
                 retval = "error"
-        if interval != None:
+        if interval is not None:
             time.sleep(interval)
             self.stop()
         return retval
 
     def turnLeft(self, speed=1, interval=None):
         retval = self.move(0, speed)
-        if interval != None:
+        if interval is not None:
             time.sleep(interval)
             self.stop()
         return retval
 
     def turnRight(self, speed=1, interval=None):
         retval = self.move(0, -speed)
-        if interval != None:
+        if interval is not None:
             time.sleep(interval)
             self.stop()
         return retval
@@ -791,7 +808,7 @@ class Computer(Robot):
 
     def speak(self, message, async_=0):
         """ Speaks a text message. """
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             myro.globvars.tts.speak(message, async_)
         else:
             print("Text-to-speech is not loaded")
@@ -800,37 +817,37 @@ class Computer(Robot):
         return {}
 
     def stopSpeaking(self):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             myro.globvars.tts.stop()
         else:
             print("Text-to-speech is not loaded")
 
     def setVoice(self, name):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             myro.globvars.tts.setVoice(name)
         else:
             print("Text-to-speech is not loaded")
 
     def getVoice(self):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             return str(myro.globvars.tts.getVoice())
         else:
             print("Text-to-speech is not loaded")
 
     def getVoices(self):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             return list(map(str, myro.globvars.tts.getVoices()))
         else:
             print("Text-to-speech is not loaded")
 
     def playSpeech(self, filename):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             myro.globvars.tts.playSpeech(filename)
         else:
             print("Text-to-speech is not loaded")
 
     def saveSpeech(self, message, filename):
-        if myro.globvars.tts != None:
+        if myro.globvars.tts is not None:
             myro.globvars.tts.saveSpeech(message, filename)
         else:
             print("Text-to-speech is not loaded")
@@ -839,6 +856,8 @@ class Computer(Robot):
 computer = Computer()
 
 # functions:
+
+
 def _cleanup():
     if myro.globvars.robot:
         if "robot" in myro.globvars.robot.robotinfo:
@@ -852,9 +871,6 @@ def _cleanup():
             myro.globvars.robot.close()
         except:
             pass
-
-
-import signal
 
 
 def ctrlc_handler(signum, frame):
@@ -881,7 +897,7 @@ if not myro.globvars.setup:
     print("[See http://www.roboteducation.org/ for more information]", file=sys.stderr)
     print("Myro version %s is ready!" % (__VERSION__,), file=sys.stderr)
 
-## Functional interface:
+# Functional interface:
 
 
 def requestStop():
@@ -1214,10 +1230,10 @@ def beep(duration=0.5, frequency1=None, frequency2=None):
         frequency2 = frequency1
         frequency1 = duration
         duration = 0.5
-    if frequency1 == None:
+    if frequency1 is None:
         frequency1 = random.randrange(200, 10000)
     if type(frequency1) in [tuple, list]:
-        if frequency2 == None:
+        if frequency2 is None:
             frequency2 = [None for i in range(len(frequency1))]
         for (f1, f2) in zip(frequency1, frequency2):
             if myro.globvars.robot:
@@ -1338,7 +1354,7 @@ def playNote(tup, wholeNoteDuration=0.545):
         raise AttributeError("need to initialize robot")
 
 
-########################### New dongle commands
+# New dongle commands
 
 
 def getBright(position=None):
@@ -1478,9 +1494,6 @@ def setLEDBack(value):
         return myro.globvars.robot.setLEDBack(value)
     else:
         raise AttributeError("need to initialize robot")
-
-
-########################### Pictures:
 
 
 def _ndim(n, *args, **kwargs):
@@ -1627,7 +1640,7 @@ def _mouseCallbackRelease(point, name="default", scale=1):
     ):
         if abs(window.lastX - point.x) < 3 or abs(window.lastY - point.y) < 3:
             return
-        if myro.globvars.robot != None:
+        if myro.globvars.robot is not None:
             yMin, yMax, uMin, uMax, vMin, vMax = myro.globvars.robot.set_blob_yuv(
                 picture,
                 window.lastX / scale,
@@ -1647,8 +1660,6 @@ def writePictureTo(picture, filename):
 
 def savePicture(picture, filename):
     if type(picture) == type([]):
-        import ImageChops
-        from GifImagePlugin import getheader, getdata
 
         # open output file
         fp = open(filename, "wb")
@@ -1677,7 +1688,7 @@ def savePicture(picture, filename):
 
 
 def show(picture, name="default"):
-    if myro.globvars.windows.get(name, None) == None:
+    if myro.globvars.windows.get(name, None) is None:
         myro.globvars.windows[name] = GraphWin("Myro: %s" % name)
     try:
         myro.globvars.windows[name].delete("image")
@@ -1703,7 +1714,7 @@ def show(picture, name="default"):
 
 
 def repaint(picture=None, name="default"):
-    if picture == None:
+    if picture is None:
         picture = myro.globvars.pictures[name]
     elif picture.displayScale != 1:
         picture = Picture(picture)
@@ -1722,7 +1733,7 @@ def getWindow(name="default"):
 
 
 def draw(obj, win=None):
-    if win == None:
+    if win is None:
         win = myro.globvars.windows["default"]
     obj.draw(win)
 
@@ -1759,7 +1770,7 @@ def setGray(picture, x, y, gray):
     return getPixel(picture, x, y).setRGB([gray, gray, gray])
 
 
-############################# Pixels and Colors
+# Pixels and Colors
 
 
 def getX(pixel):
@@ -1900,8 +1911,6 @@ def doTogether(*functions):
             thread_results[position] = result
             return result
 
-        import threading
-
         thread = threading.Thread()
         thread.run = newfunction
         return thread
@@ -1940,9 +1949,6 @@ def getFilenames(pattern):
     filenames = glob.glob(pattern)
     filenames.sort()  # get in order, back to front
     return filenames
-
-
-############################
 
 
 def _startSimulator():
@@ -1987,30 +1993,6 @@ def _myroExceptionHandler(etype, value, tb):
 
 
 sys.excepthook = _myroExceptionHandler
-
-from myro.robots.scribbler import Scribbler
-from myro.robots.surveyor import Surveyor, watch
-
-# from myro.robots.roomba import Roomba, Create
-from myro.robots.epuck import Epuck
-from myro.robots.simulator import SimScribbler
-from myro.graphics import *
-
-#######
-## have to load pygame after mostly everything
-if not "darwin" in sys.platform:
-    try:
-        import pygame
-
-        pygame.init()
-
-        for i in range(pygame.joystick.get_count()):
-            js = pygame.joystick.Joystick(i)
-            js.init()
-            myro.globvars.joysticks.append(js)
-    except:
-        pygame = None
-        pass
 
 
 _functions = (

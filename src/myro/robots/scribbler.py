@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Myro code for the Scribbler robot from Parallax
-(c) 2007, Institute for Personal Robots in Education
-http://roboteducation.org/
-Distributed under a Shared Source License
-"""
-
 __AUTHOR__ = "Joshua Arulsamy"
 
 import time
@@ -19,6 +11,7 @@ import myro.globvars
 import io
 import array
 from struct import unpack
+from math import sqrt
 
 
 class BufferedRead:
@@ -457,7 +450,8 @@ class Scribbler(Robot):
     def restart(self):
 
         self.manual_flush()
-        self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+        # send command to get out of broadcast; turn off echo
+        self.setEchoMode(0)
         time.sleep(0.25)  # give it some time
         while 1:
             self.ser.flushInput()  # flush "IPREScribby"...
@@ -466,7 +460,8 @@ class Scribbler(Robot):
             if self.ser.inWaiting() == 0:  # if none, then we are out of here!
                 break
             print("Waking robot from sleep...")
-            self.setEchoMode(0)  # send command to get out of broadcast; turn off echo
+            # send command to get out of broadcast; turn off echo
+            self.setEchoMode(0)
             time.sleep(0.25)  # give it some time
         self.ser.flushInput()
         self.ser.flushOutput()
@@ -576,7 +571,8 @@ class Scribbler(Robot):
                         self.getBright("right"),
                     ]
                 elif sensor == "all":
-                    retval = self._get(Scribbler.GET_ALL, 11)  # returned as bytes
+                    # returned as bytes
+                    retval = self._get(Scribbler.GET_ALL, 11)
                     self._lastSensors = retval  # single bit sensors
                     if self.dongle is None:
                         return {
@@ -738,7 +734,6 @@ class Scribbler(Robot):
     # the MYRO API, donated by redwar15@cs.utk.edu
 
     def set_blob_yuv(self, picture, x1, y1, x2, y2):
-        from math import sqrt
 
         # Find min/max of rectangle.
         xs = [x1, x2]
@@ -1849,7 +1844,8 @@ class Scribbler(Robot):
             self._fudge[i] = self.get("data", i)
             if self._fudge[i] == 0:
                 self._fudge[i] = 127
-            self._fudge[i] = self._fudge[i] / 127.0  # convert back to floating point!
+            # convert back to floating point!
+            self._fudge[i] = self._fudge[i] / 127.0
 
         if self.dongle is not None:
             self._fudge[0], self._fudge[1], self._fudge[2], self._fudge[3] = (
