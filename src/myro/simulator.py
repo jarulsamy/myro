@@ -4,6 +4,7 @@ A simple simulator.
 import importlib
 import math
 import os
+import pickle
 import random
 import socket
 import socketserver
@@ -15,11 +16,6 @@ import tkinter
 import myro.globvars
 from myro.graphics import _tkCall
 from myro.graphics import _tkExec
-
-# try:
-#     import pickle as pickle
-# except:
-#     import pickle
 
 PIOVER180 = myro.globvars.PIOVER180
 PIOVER2 = myro.globvars.PIOVER2

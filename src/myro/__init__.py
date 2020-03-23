@@ -1,5 +1,4 @@
 import atexit
-import copy
 import glob
 import io
 import os
@@ -10,17 +9,13 @@ import sys
 import threading
 import time
 import traceback
-import types
 import urllib.error
 import urllib.parse
 import urllib.request
 
-import ImageChops
 import myro.globvars
 import myro.graphics
 import pygame
-from GifImagePlugin import getdata
-from GifImagePlugin import getheader
 from myro.chat import *
 from myro.graphics import *
 from myro.media import *
@@ -452,6 +447,17 @@ def getGamepadNow(*what):
         js = myro.globvars.joysticks[id]
     else:
         js = None
+
+    function_calls = {
+        "init": js.get_init,
+        "name": js.get_name,
+        "robot": lambda: [-js.get_axis(1), -js.get_axis(0)],
+        "axis": lambda: [js.get_axis(i) for i in range(js.get_numaxes())],
+        "ball": lambda: [js.get_ball(i) for i in range(js.get_numballs())],
+        "button": lambda: [js.get_button(i) for i in range(js.get_numbuttons())],
+        "hat": lambda: [js.get_hat(i) for i in range(js.get_numhats())],
+    }
+
     retval = {}
     if len(what) == 0:
         what = ["init", "name", "axis", "ball", "button", "hat"]
@@ -459,24 +465,14 @@ def getGamepadNow(*what):
         if item == "count":
             retval["count"] = pygame.joystick.get_count()
         elif js is not None:
-            if item == "init":
-                retval["init"] = js.get_init()
-            elif item == "name":
-                retval["name"] = js.get_name()
-            elif item == "robot":
-                retval["robot"] = [-js.get_axis(1), -js.get_axis(0)]
-            elif item == "axis":
-                retval["axis"] = [js.get_axis(i) for i in range(js.get_numaxes())]
-            elif item == "ball":
-                retval["ball"] = [js.get_ball(i) for i in range(js.get_numballs())]
-            elif item == "button":
-                retval["button"] = [
-                    js.get_button(i) for i in range(js.get_numbuttons())
-                ]
-            elif item == "hat":
-                retval["hat"] = [js.get_hat(i) for i in range(js.get_numhats())]
+            try:
+                func = function_calls[item]
+                func()
+            except TypeError:
+                retval[item] = function_calls[item]
         else:
             raise AttributeError("not a valid gamepad id: %d" % id)
+
     if len(list(retval.keys())) == 0:
         return None
     elif len(list(retval.keys())) == 1:

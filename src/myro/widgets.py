@@ -5,10 +5,10 @@ from functools import reduce
 from os import chdir
 from os import getcwd
 from os import getenv
-from string import splitfields
-from string import strip
 from subprocess import getoutput
 from tkinter import Tk
+
+import myro
 
 
 def roundStr(item, places=3):
@@ -20,7 +20,7 @@ def roundStr(item, places=3):
                 values.append(("%%.%df" % places) % v)
             else:
                 values.append(str(v))
-        return "[%s]" % string.join(values, ", ")
+        return "[{}]".format(", ".join(values))
     else:
         return str(item)
 
@@ -38,14 +38,6 @@ class StatusBar(tkinter.Frame):
     def clear(self):
         self.label.config(text="")
         self.label.update_idletasks()
-
-
-####
-# 	Class Dialog
-#
-# 	Purpose
-# 	Base class for many dialog box classes.
-####
 
 
 class HelpWindow(tkinter.Toplevel):
@@ -157,7 +149,7 @@ class AlertDialog(ModalDialog):
         upperFrame.pack({"expand": "yes", "side": "top", "fill": "both"})
         self.bitmap = tkinter.Label(upperFrame)
         self.bitmap.pack({"side": "left"})
-        msgList = string.splitfields(self.msgString, "\n")
+        msgList = self.msgString.split()
         for i in range(len(msgList)):
             msgText = tkinter.Label(upperFrame)
             msgText["text"] = msgList[i]
@@ -375,7 +367,7 @@ class FileDialog(ModalDialog):
     def __init__(self, widget, title, filter_="*", pyro_dir=""):
 
         self.widget = widget
-        self.filter_ = strip(filter_)
+        self.filter_ = filter_.strip()
         self.orig_dir = getcwd()
         self.pyro_dir = pyro_dir
         self.cwd = getcwd()
@@ -569,7 +561,6 @@ class FileDialog(ModalDialog):
     # 	update the listboxes and directory label after a change of directory
 
     def UpdateListBoxes(self):
-
         cwd = self.cwd
         self.fileLb.delete(0, self.fileLb.size())
         filter__ = self.filter_Entry.get()
@@ -586,7 +577,7 @@ class FileDialog(ModalDialog):
                 cmdOutput = getoutput(cmd)
             else:
                 raise AttributeError("your OS (%s) is not supported" % os.name)
-        files = splitfields(cmdOutput, "\n")
+        files = cmdOutput.split()
         files.sort()
         for i in range(len(files)):
             if os.path.isfile(os.path.join(cwd, files[i])):
@@ -648,7 +639,7 @@ class FileDialog(ModalDialog):
         from posixpath import isabs, expanduser, join
 
         # 	if its a relative path then include the cwd in the name
-        name = strip(self.fileNameEntry.get())
+        name = self.fileNameEntry.get().strip()
         if not isabs(expanduser(name)):
             self.fileNameEntry.delete(0, "end")
             self.fileNameEntry.insert(0, join(self.cwd_print(), name))
@@ -657,7 +648,7 @@ class FileDialog(ModalDialog):
 
     def FilterReturnKey(self, event):
 
-        filter_ = strip(self.filter_Entry.get())
+        filter_ = self.filter_Entry.get().strip()
         self.filter_Entry.delete(0, "end")
         self.filter_Entry.insert(0, filter_)
         self.filter_Button.flash()
@@ -797,19 +788,8 @@ def file_exists(file_name):
         return exists(file_name)
 
 
-#
-# 	read the lines from a file and strip them of their trailing newlines
-#
-
-
 def readlines(fd):
     return list(map(lambda s, f=strip: f(s), fd.readlines()))
-
-
-#
-# 	Various set operations on sequence arguments.
-# 	in joins the values in 'a' take precedence over those in 'b'
-#
 
 
 def seq_join(a, b):
