@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from tkinter import Frame
 from tkinter import Tk
 

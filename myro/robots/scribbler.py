@@ -1,11 +1,12 @@
 __AUTHOR__ = "Joshua Arulsamy"
 
 import time
-import string
 import os
 
 import serial
-from myro import Robot, ask
+
+from .. import Robot
+
 from myro.graphics import _askQuestion, Picture, rgb2yuv
 import myro.globvars
 import io
@@ -223,8 +224,7 @@ class Scribbler(Robot):
             if "MYROROBOT" in os.environ:
                 serialport = os.environ["MYROROBOT"]
                 print("Connecting to", serialport)
-            else:
-                serialport = ask("Port", useCache=1)
+
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
         # be in the format "\\.\COM#"
         hasPort = True
@@ -354,7 +354,7 @@ class Scribbler(Robot):
             lines = "".join(lines)
             if "IPRE" in lines:
                 position = lines.index("IPRE")
-                name = lines[position + 4 : position + 9 + 4]
+                name = lines[position + 4: position + 9 + 4]
                 name = name.replace("\x00", "")
                 name = name.strip()
                 s = port.replace("\\", "")
@@ -893,10 +893,10 @@ class Scribbler(Robot):
     def read_uint32(self):
         buf = self.ser.read(4)
         return (
-            ord(buf[0])
-            + ord(buf[1]) * 256
-            + ord(buf[2]) * 65536
-            + ord(buf[3]) * 16777216
+            ord(buf[0]) +
+            ord(buf[1]) * 256 +
+            ord(buf[2]) * 65536 +
+            ord(buf[3]) * 16777216
         )
 
     def read_jpeg_scan(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Myro globals and constants
 # globals:
 import math

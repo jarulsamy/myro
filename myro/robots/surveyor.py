@@ -5,16 +5,11 @@ import time
 import string
 
 import serial
-from myro import Robot, ask
+from . import Robot
+# from myro import ask
 import myro.globvars
 import io
 import tkinter
-
-import ImageTk
-from PIL import Image
-
-ImageTk = None
-Image = None
 
 
 def ascii(vec):
@@ -232,6 +227,7 @@ class CameraWindow(tkinter.Toplevel):
             time.sleep(self.delay)
 
     def update(self, image=None):
+        from PIL import ImageTk
         if image == None:
             image = self.robot.getImage()  # returns jpeg string
         fileThing = io.StringIO(image)
@@ -258,14 +254,12 @@ class CameraWindow(tkinter.Toplevel):
 
 
 class Surveyor(Robot):
-    def __init__(self, serialport=None, baudrate=115200):
+    def __init__(self, serialport, baudrate=115200):
         Robot.__init__(self)
         self.debug = 0
         self._lastTranslate = 0
         self._lastRotate = 0
         self._volume = 0
-        if serialport == None:
-            serialport = ask("Port", useCache=1)
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
         # be in the format "\\.\COM#"
         if type(serialport) == str and serialport.lower().startswith("com"):
@@ -462,7 +456,7 @@ class Surveyor(Robot):
                 newline = self.ser.read(1)
                 retval = [0 for x in range(80)]
                 for i in range(len(retval)):
-                    retval[i] = int(data[i * 2 : i * 2 + 2].strip(), 16) / 64.0
+                    retval[i] = int(data[i * 2: i * 2 + 2].strip(), 16) / 64.0
             except KeyboardInterrupt:
                 raise
             except:
@@ -491,10 +485,10 @@ class Surveyor(Robot):
                 header = self.ser.read(10)
                 resolution = header[5]  # 1, 3, 5
                 length = (
-                    ord(header[6]) * 256 ** 0
-                    + ord(header[7]) * 256 ** 1
-                    + ord(header[8]) * 256 ** 2
-                    + ord(header[9]) * 256 ** 3
+                    ord(header[6]) * 256 ** 0 +
+                    ord(header[7]) * 256 ** 1 +
+                    ord(header[8]) * 256 ** 2 +
+                    ord(header[9]) * 256 ** 3
                 )
                 data = self.ser.read(length)
                 if len(data) != length:

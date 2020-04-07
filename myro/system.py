@@ -17,8 +17,6 @@ from os.path import normpath
 import myro.globvars
 import serial
 from myro import __VERSION__ as myro_version
-from myro import ask
-
 from .intelhex import IntelHex
 
 # copied below from scribbler.py:
@@ -189,11 +187,9 @@ def upgrade_myro(url=None, version=None):
 
 
 class SerialRobot:
-    def __init__(self, serialport=None, baudrate=38400):
+    def __init__(self, serialport, baudrate=38400):
 
         self.robotinfo = {}
-        if serialport == None:
-            serialport = ask("Port", useCache=0)
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
         # be in the format "\\.\COM#"
         if type(serialport) == str and serialport.lower().startswith("com"):
@@ -373,9 +369,9 @@ def load_scribbler(s, f, force=False, scrib_version=1):
 
     # check to see if we need to send magicKey when upgrading
     if (
-        myro.globvars.robot
-        and "dongle" in dir(myro.globvars.robot)
-        and myro.globvars.robot.dongle
+        myro.globvars.robot and
+        "dongle" in dir(myro.globvars.robot) and
+        myro.globvars.robot.dongle
     ):
         info = myro.globvars.robot.dongle
     else:
@@ -593,10 +589,10 @@ def check_sum(binarray, arlen):
     for i in range(0, 8):
         temp_int = 0
         temp_int = (
-            binarray[i * 4 + 0]
-            | binarray[i * 4 + 1] << 8
-            | binarray[i * 4 + 2] << 16
-            | binarray[i * 4 + 3] << 24
+            binarray[i * 4 + 0] |
+            binarray[i * 4 + 1] << 8 |
+            binarray[i * 4 + 2] << 16 |
+            binarray[i * 4 + 3] << 24
         )
         sum = sum + temp_int
     sum = -sum
@@ -608,10 +604,10 @@ def check_sum(binarray, arlen):
     for i in range(0, 8):
         temp_int = 0
         temp_int = (
-            binarray[i * 4 + 0]
-            | binarray[i * 4 + 1] << 8
-            | binarray[i * 4 + 2] << 16
-            | binarray[i * 4 + 3] << 24
+            binarray[i * 4 + 0] |
+            binarray[i * 4 + 1] << 8 |
+            binarray[i * 4 + 2] << 16 |
+            binarray[i * 4 + 3] << 24
         )
         sum = sum + temp_int
     for i in range(0, arlen):
@@ -686,7 +682,7 @@ def upgrade_fluke(url=None):
                 if file.startswith(upgrade_prefix):
                     end = file.index(".hex")
                     # patch_ver = file[15:end].split(".")
-                    patch_ver = file[len(upgrade_prefix) : end].split(".")
+                    patch_ver = file[len(upgrade_prefix): end].split(".")
                     print(patch_ver, version)
                     if list(map(int, patch_ver)) > list(map(int, version)):
                         # download it

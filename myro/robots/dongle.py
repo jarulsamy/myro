@@ -1,3 +1,5 @@
+import numpy as np
+
 SOFT_RESET = 33
 GET_ALL = 65
 GET_ALL_BINARY = 66
@@ -122,8 +124,8 @@ def grab_window(ser, window, lx, ly, ux, uy, xstep, ystep):
     width = (ux - lx + 1) / xstep
     size = width * height
 
-    v = zeros(((height + 1), (width + 1)), dtype=uint8)
-    v3 = zeros(((height + 1), (width + 1), 3), dtype=uint8)
+    v = np.zeros(((height + 1), (width + 1)), dtype="uint8")
+    v3 = np.zeros(((height + 1), (width + 1), 3), dtype="uint8")
 
     # done = True
     print(("grabbing image = ", window, "width = ", width, "height = ", height))
@@ -217,8 +219,8 @@ def grab_image(robotser):
     height = 192
     ser = robotser
 
-    v = zeros(((height + 1), (width + 1)), dtype=uint8)
-    v3 = zeros(((height + 1), (width + 1), 3), dtype=uint8)
+    v = np.zeros(((height + 1), (width + 1)), dtype="uint8")
+    v3 = np.zeros(((height + 1), (width + 1), 3), dtype="uint8")
 
     # done = True
     print("grabbing image")

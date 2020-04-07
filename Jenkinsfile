@@ -35,7 +35,7 @@ pipeline {
                 echo "Style check"
                 sh  ''' source /var/lib/jenkins/miniconda3/etc/profile.d/conda.sh
                         conda activate ${BUILD_TAG}
-                        pylint src || true
+                        pylint myro || true
                     '''
             }
         }
@@ -47,18 +47,16 @@ pipeline {
                 }
             }
             steps {
-				dir('src') {
                 sh  ''' source /var/lib/jenkins/miniconda3/etc/profile.d/conda.sh
                         conda activate ${BUILD_TAG}
                         python setup.py bdist_wheel
                     '''
-				}
             }
             post {
                 always {
                     // Archive unit tests for the future
                     archiveArtifacts (allowEmptyArchive: true,
-                                     artifacts: 'src/dist/*whl',
+                                     artifacts: 'dist/*whl',
                                      fingerprint: true)
                 }
             }

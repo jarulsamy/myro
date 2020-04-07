@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 from setuptools import find_packages
 from setuptools import setup
 
 setup(
     name="myro",
-    version="3.0.1",
+    version="3.0.2",
     packages=find_packages(),
     install_requires=["pyserial"],
     author="Joshua Arulsamy",
