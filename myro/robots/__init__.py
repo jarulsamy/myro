@@ -4,7 +4,7 @@ __author__ = "Joshua Arulsamy"
 def file_exists(file_name):
     from posixpath import exists
 
-    if type(file_name) == type(""):
+    if isinstance(file_name, str):
         if len(file_name) == 0:
             return 0
         else:
