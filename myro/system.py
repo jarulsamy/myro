@@ -373,9 +373,9 @@ def load_scribbler(s, f, force=False, scrib_version=1):
 
     # check to see if we need to send magicKey when upgrading
     if (
-        myro.globvars.robot
-        and "dongle" in dir(myro.globvars.robot)
-        and myro.globvars.robot.dongle
+        myro.globvars.robot and
+        "dongle" in dir(myro.globvars.robot) and
+        myro.globvars.robot.dongle
     ):
         info = myro.globvars.robot.dongle
     else:
@@ -593,10 +593,10 @@ def check_sum(binarray, arlen):
     for i in range(0, 8):
         temp_int = 0
         temp_int = (
-            binarray[i * 4 + 0]
-            | binarray[i * 4 + 1] << 8
-            | binarray[i * 4 + 2] << 16
-            | binarray[i * 4 + 3] << 24
+            binarray[i * 4 + 0] |
+            binarray[i * 4 + 1] << 8 |
+            binarray[i * 4 + 2] << 16 |
+            binarray[i * 4 + 3] << 24
         )
         sum = sum + temp_int
     sum = -sum
@@ -608,10 +608,10 @@ def check_sum(binarray, arlen):
     for i in range(0, 8):
         temp_int = 0
         temp_int = (
-            binarray[i * 4 + 0]
-            | binarray[i * 4 + 1] << 8
-            | binarray[i * 4 + 2] << 16
-            | binarray[i * 4 + 3] << 24
+            binarray[i * 4 + 0] |
+            binarray[i * 4 + 1] << 8 |
+            binarray[i * 4 + 2] << 16 |
+            binarray[i * 4 + 3] << 24
         )
         sum = sum + temp_int
     for i in range(0, arlen):
@@ -686,7 +686,7 @@ def upgrade_fluke(url=None):
                 if file.startswith(upgrade_prefix):
                     end = file.index(".hex")
                     # patch_ver = file[15:end].split(".")
-                    patch_ver = file[len(upgrade_prefix) : end].split(".")
+                    patch_ver = file[len(upgrade_prefix): end].split(".")
                     print(patch_ver, version)
                     if list(map(int, patch_ver)) > list(map(int, version)):
                         # download it

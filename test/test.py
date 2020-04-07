@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from myro import backward
 from myro import forward
 from myro import init

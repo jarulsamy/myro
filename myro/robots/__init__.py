@@ -347,7 +347,7 @@ class Robot:
                 return [deviceList]
             else:
                 return self.startDevices(deviceList, **args)  # dict of objs
-        elif isinstance(item, (type((1,)), type([1,]))):
+        elif isinstance(item, (type((1,)), type([1, ]))):
             retval = []
             for i in item:
                 retval.append(self.startDevice(i, **args))

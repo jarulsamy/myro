@@ -462,7 +462,7 @@ class Surveyor(Robot):
                 newline = self.ser.read(1)
                 retval = [0 for x in range(80)]
                 for i in range(len(retval)):
-                    retval[i] = int(data[i * 2 : i * 2 + 2].strip(), 16) / 64.0
+                    retval[i] = int(data[i * 2: i * 2 + 2].strip(), 16) / 64.0
             except KeyboardInterrupt:
                 raise
             except:
@@ -491,10 +491,10 @@ class Surveyor(Robot):
                 header = self.ser.read(10)
                 resolution = header[5]  # 1, 3, 5
                 length = (
-                    ord(header[6]) * 256 ** 0
-                    + ord(header[7]) * 256 ** 1
-                    + ord(header[8]) * 256 ** 2
-                    + ord(header[9]) * 256 ** 3
+                    ord(header[6]) * 256 ** 0 +
+                    ord(header[7]) * 256 ** 1 +
+                    ord(header[8]) * 256 ** 2 +
+                    ord(header[9]) * 256 ** 3
                 )
                 data = self.ser.read(length)
                 if len(data) != length:
