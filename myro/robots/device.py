@@ -35,7 +35,7 @@ class DeviceWindow(tkinter.Toplevel):
         self.wm_title(title)
         self.widgets = {}  # Tkinter widget, keyed by a name
         self.variables = {}  # Tkvar -> pythonvar, keyed by python object's fieldname
-        if self._dev != None:
+        if self._dev is not None:
             self._dev.addWidgets(self)  # self is window, add widgets to it
             if self.visibleData:  # are any of those widgets data?
                 v = self.makeVariable(self._dev, "visible", 1)
@@ -173,7 +173,7 @@ class SensorValue:
 
     def angle(self, unit="degrees"):
         """Method to return the angle. Can change the units of return angle."""
-        if self.geometry == None:
+        if self.geometry is None:
             return None
         if unit.lower() == "radians":
             return self.geometry[3]  # radians
@@ -184,7 +184,7 @@ class SensorValue:
 
     def _hit(self):
         """Internal get for the .hit property."""
-        if self.geometry == None:
+        if self.geometry is None:
             return (None, None, None)
         return (self._hitX(), self._hitY(), self._hitZ())
 
@@ -418,7 +418,7 @@ class Device(object):
         length = len(self)
         for pos in range(length):
             yield self.getSensorValue(pos)
-        raise exceptions.StopIteration
+        raise StopIteration
 
     def __getitem__(self, item):
         """Get a SensorValue, a range, or a set."""
@@ -459,7 +459,7 @@ class Device(object):
         """Return all of the groups a pos is in."""
         retval = []
         for key in self.groups:
-            if self.groups[key] != None:
+            if self.groups[key] is not None:
                 if pos in self.groups[key]:
                     retval.append(key)
         return retval
@@ -476,7 +476,7 @@ class Device(object):
     def rawToUnits(self, raw, noise=0.0, units=None):
         """Convert the sensor units into default units."""
         # what do you want the return value in?
-        if units == None:
+        if units is None:
             units = self.units.upper()
         else:
             units = units.upper()
