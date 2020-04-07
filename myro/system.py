@@ -17,8 +17,6 @@ from os.path import normpath
 import myro.globvars
 import serial
 from myro import __VERSION__ as myro_version
-from myro import ask
-
 from .intelhex import IntelHex
 
 # copied below from scribbler.py:
@@ -189,11 +187,9 @@ def upgrade_myro(url=None, version=None):
 
 
 class SerialRobot:
-    def __init__(self, serialport=None, baudrate=38400):
+    def __init__(self, serialport, baudrate=38400):
 
         self.robotinfo = {}
-        if serialport == None:
-            serialport = ask("Port", useCache=0)
         # Deal with requirement that Windows "COM#" names where # >= 9 needs to
         # be in the format "\\.\COM#"
         if type(serialport) == str and serialport.lower().startswith("com"):

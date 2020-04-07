@@ -4,7 +4,7 @@ import time
 
 import myro.globvars
 import serial
-from myro import Robot
+from . import Robot
 
 # -----------------------------------------------------------------------------
 # this function maps epuck ID numbers to port names, and is system-specific
@@ -83,7 +83,7 @@ class Pixel(myro.graphics.Pixel):
         return self.y
 
 
-class Epuck(myro.Robot):
+class Epuck(Robot):
 
     sensorGroups = {
         "left": 5,
@@ -99,7 +99,7 @@ class Epuck(myro.Robot):
 
     # establishes a serial connection to the specified robot
     def __init__(self, id):
-        myro.Robot.__init__(self)
+        super().__init__(self)
         myro.globvars.robot = self
         self.robotinfo = {"robot": "epuck", "robot-version": "0.1"}
         self.portname = portname(id)

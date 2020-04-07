@@ -11,7 +11,7 @@ import os
 import atexit
 import time
 import threading
-from myro import Robot
+from . import Robot
 from myro.robots.symbolic import TCPRobot
 import myro.globvars
 
