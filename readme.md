@@ -29,10 +29,6 @@ Within a python file, to initalize a robot:
     turnLeft(1,1)
     turnRight(1,1)
 
-## License
-
-This project is licensed under the MIT License
-
 ## FAQ
 
 -   When attempting to init() I get: `Serial element not found... Replace if this continues`
