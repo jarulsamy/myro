@@ -1,12 +1,12 @@
-__author__ = "Douglas Blank <dblank@brynmawr.edu>"
-__version__ = "$Revision: 360 $"
+__author__ = "Joshua Arulsamy"
 
 import socket
 import threading
-import random
 import time
-from myro.robots import Robot
-from myro.robots.device import *  # Device, GripperDevice, SensorValue
+from ..robot import Robot
+
+# from ..robot.device import *  # Device, GripperDevice, SensorValue
+from .device import Device, GripperDevice
 
 import pickle
 

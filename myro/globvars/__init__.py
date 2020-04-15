@@ -109,8 +109,11 @@ def makeEnvironment(local, funcs, type="function"):
     else:  # variables
         pattern = formats[2]
     for f in funcs:
-        n = makeName(f, pattern)
-        if n not in local:
-            old = makeName(f, "itemName")  # delete default
-            local[n] = local[old]
-            del local[old]
+        try:
+            n = makeName(f, pattern)
+            if n not in local:
+                old = makeName(f, "itemName")  # delete default
+                local[n] = local[old]
+                del local[old]
+        except Exception:
+            pass
