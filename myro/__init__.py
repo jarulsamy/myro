@@ -1,12 +1,29 @@
-import threading
-import signal
-from . import globvars
 import atexit
+import glob
+import os
+import random
+import signal
 import sys
+import threading
+import time
+import traceback
 
+import serial
+from PIL import Image
+from PIL import ImageChops
+
+from . import globvars
+from .graphics import AskDialog
+from .graphics import Calibrate
+from .graphics import Color
+from .graphics import GraphWin
+from .graphics import makePixmap
+from .graphics import Picture
+from .graphics import Pixel
+from .graphics import Point
 from .robot import Robot
 from .robots.scribbler import Scribbler
-
+from .robots.simulator import SimScribbler
 from .version import __VERSION__
 
 # import atexit
@@ -19,7 +36,6 @@ from .version import __VERSION__
 # import sys
 # import threading
 # import time
-import traceback
 # import urllib.error
 # import urllib.parse
 # import urllib.request
@@ -94,107 +110,9 @@ def timeRemaining(seconds=0):
 pickled = None
 
 
-def sendPicture(picture, photoname, password, robotname=None):
-    global pickled
-    photoname = photoname.replace(" ", "")
-    photoname = photoname.replace("/", "")
-    if robotname is None:
-        if globvars.robot is not None:
-            robotname = globvars.robot.getName()
-        else:
-            raise AttributeError("no robot name given and robot not connected")
-    ch = Chat(robotname, password)
-    if ch.ok == 1:
-        image = picture.image
-        if image.mode != "RGB":
-            image = image.convert("RGB")
-        sio = io.StringIO()
-        image.save(sio, "jpeg")
-        compressed = sio.getvalue()
-        pickled = pickle.dumps(compressed)
-        try:
-            ch.send("admin", ("photo\nname: %s\n" % photoname) + pickled)
-        except IOError:
-            print("ERROR: image file is too big")
-            return
-        print("Sent!")
-
-
-def register(oldname=None):
-    answers = ask(
-        [
-            "Your email address",
-            "Your robot's name",
-            "Create a Myro password",
-            "Course keyword",
-        ],
-        useCache=1,
-    )
-    ch = Chat(answers["Your robot's name"], answers["Create a Myro password"])
-    if ch.ok == 1:
-        oldstr = ""
-        if oldname is not None:
-            oldstr += "rename: %s\n" % oldname
-        email = answers["Your email address"]
-        robot = answers["Your robot's name"]
-        password = answers["Create a Myro password"]
-        keyword = answers["Course keyword"]
-        data = f"""
-        email: {email}
-        username: {robot}
-        password: {password}
-        keyword: {keyword}
-        {oldstr}
-        """
-        ch.send("admin", data)
-
-        # send a special message to create account
-        # wait for response:
-        while len(messages) == 0:
-            messages = ch.receive()
-            wait(1)
-            print("   waiting for confirmation...")
-        print("received messages:")
-        for message in messages:
-            print(message[1])
-            print()
-        # if you have your robot on, then set its name:
-        if globvars.robot is not None:
-            globvars.robot.set("name", answers["Your robot's name"])
-            print("Your robot's name was set to", globvars.robot.get("name"))
-    else:
-        print(
-            "The name '%s' has already been taken. Please try another."
-            % answers["Your robot's name"]
-        )
-
-
-def setPassword(robotName, emailAddress, newPassword):
-    ch = Chat("myro", "request")
-    if ch.ok == 1:
-        # send a special message to create account
-        # wait for response:
-        ch.send(
-            "admin",
-            "password reset\nemail: %s\nusername: %s\npassword: %s"
-            % (emailAddress, robotName, newPassword),
-        )
-        messages = ch.receive()
-        while len(messages) == 0:
-            messages = ch.receive()
-            wait(1)
-            print("   waiting for confirmation...")
-        print("received messages:")
-        for message in messages:
-            print(message[1])
-            print()
-    else:
-        print("The Myro chat account doesn't seem to be taking requests right now.")
-
-
 def wait(seconds):
     """
-    Wrapper for time.sleep() so that we may later overload.
+    Wrapper for time.sleep() so it can be later overloaded.
     """
     return time.sleep(seconds)
 
@@ -245,255 +163,6 @@ def randomNumber():
     return random.random()
 
 
-def gamepad(*phrases, **kwargs):
-    """
-    Run the gamepad controller.
-    """
-    if "darwin" in sys.platform:
-        print("Sorry gamepad not supported on mac os x yet :(")
-        return
-
-    if len(phrases) == 0:
-        try:
-            name = getName()
-        except AttributeError:
-            name = "Scribby"
-        phrases = [
-            "Hello. My name is %s." % name,
-            "Ouch! I'm a sensitive robot.",
-            "I'm hungry. Do you have any batteries?",
-        ]
-    elif type(phrases[0]) == type(gamepad):
-        print("Gamepad is now running...")
-        while True:
-            retval = getGamepad()
-            button = retval["button"]
-            for i in range(len(phrases)):
-                if button[i]:
-                    retval = phrases[i]()
-                    if retval == "exit":
-                        break
-        return
-    print("        Pad   Action")
-    print("     ------   -------")
-    print(" Left/Right   turnLeft() and turnRight()")
-    print("    Up/Down   forward() and backward()")
-    print("")
-
-    # Added by JWS to make sure that retval and button are defined.
-    retval = getGamepadNow()
-    button = retval["button"]
-
-    if len(button) > 0:
-        print("     Button   Action")
-        print("     ------   -------")
-        if len(button) > 0:
-            print("          1   stop()")
-        if len(button) > 1:
-            print("          2   takePicture()")
-        if len(button) > 2:
-            print("          3   beep(.25, 523)")
-        if len(button) > 3:
-            print("          4   beep(.25, 587)")
-        if len(button) > 4:
-            print("          5   beep(.25, 659)")
-        if len(button) > 5:
-            print("          6   speak('%s')" % phrases[0])
-        if len(button) > 6:
-            print("          7   speak('%s')" % phrases[1])
-        if len(button) > 7:
-            print("          8   speak('%s')" % phrases[2])
-        print("")
-
-    print("Gamepad is now running... Press button 1 to stop.")
-    lastMove = [0, 0]
-    doneSpeaking = True
-    retval = getGamepadNow()
-    button = retval["button"]
-    length = len(button)
-    tryToMove = True
-    while True:
-        retval = getGamepad()  # changed to blocking, JWS
-        button = retval["button"]
-        axis = retval["axis"]
-        freqs = [None, None]
-        if length > 0 and button[0]:
-            stop()
-            break
-        if length > 1 and button[1]:
-            speak("Say cheese!", async_=1)
-            pic = takePicture()
-            show(pic)
-        if length > 2 and button[2]:
-            freqs[0] = 523
-        if length > 3 and button[3]:
-            if freqs[0] is None:
-                freqs[0] = 587
-            else:
-                freqs[1] = 587
-        if length > 4 and button[4]:
-            if freqs[0] is None:
-                freqs[0] = 659
-            else:
-                freqs[1] = 659
-
-        # speak
-        if length > 5 and button[5]:
-            if doneSpeaking:
-                speak(phrases[0], async_=1)
-                doneSpeaking = False
-        elif length > 6 and button[6]:
-            if doneSpeaking:
-                speak(phrases[1], async_=1)
-                doneSpeaking = False
-        elif length > 7 and button[7]:
-            if doneSpeaking:
-                speak(phrases[2], async_=1)
-                doneSpeaking = False
-        else:
-            doneSpeaking = True
-
-        if tryToMove and (axis[0], axis[1]) != lastMove:
-            try:
-                move(-axis[1], -axis[0])
-                lastMove = axis[0], axis[1]
-            except:
-                tryToMove = False
-        if freqs != [None, None]:
-            try:
-                beep(0.25, *freqs)
-            except:
-                computer.beep(0.25, *freqs)
-
-
-def getGamepad(*what, **kwargs):
-    """
-    Return readings from a gamepad/joystick when there is a change.
-
-    what can be empty, "init", "name", "axis", "ball", "button",
-    "hat", or "count".  If what is more than 1 item, then getGamepad
-    will return a dictionary, else it will return the 1 item's
-    value(s). If the first arg given to this function is an int, then
-    it refers to that joystick ID. If the first arg is a list of ints,
-    then it will return those joystick data.
-    """
-    if "count" in what:
-        return _getGamepadNow(*what)
-    if "wait" in kwargs:
-        waitTime = kwargs["wait"]
-        del kwargs["wait"]
-    else:
-        waitTime = 0.05
-    if "any" in what:
-        any = True
-        what = list(what)
-        what.remove("any")
-    else:
-        any = False
-    retval = _getGamepadNow(*what)
-    newRetval = _getGamepadNow(*what)
-    while retval == newRetval:
-        newRetval = _getGamepadNow(*what)
-        wait(waitTime)
-    if any:
-        return _or(newRetval, retval)
-    return newRetval
-
-
-def _or(a, b):
-    """
-    For buttons, it is handy to just have a 1 if it was pressed
-    or let up.
-    """
-    if type(a) == type(0):
-        return a or b
-    elif type(a) == type(True):
-        return a or b
-    elif type(a) == type(1.0):
-        return a
-    elif type(a) == type(""):
-        return a
-    elif type(a) in [type([]), type((0,))]:
-        retval = []
-        for i in range(len(a)):
-            retval.append(_or(a[i], b[i]))
-        return retval
-    elif type(a) == type({}):
-        retval = {}
-        for k in a:
-            retval[k] = _or(a[k], b[k])
-        return retval
-    else:
-        raise AttributeError("invalid type: %s" % str(a))
-
-
-def getGamepadNow(*what):
-    """
-    Return readings from a gamepad/joystick immediately.
-
-    what can be empty, "init", "name", "axis", "ball", "button",
-    "hat", or "count".  If what is more than 1 item, then getGamepad
-    will return a dictionary, else it will return the 1 item's
-    value(s). If the first arg given to this function is an int, then
-    it refers to that joystick ID. If the first arg is a list of ints,
-    then it will return those joystick data.
-    """
-    if len(what) > 0:
-        if type(what[0]) == type(0):  # particular gamepad id
-            id = what[0]
-            what = what[1:]
-        elif type(what[0]) == type([]):  # list of gamepad ids
-            retval = []
-            for i in what[0]:
-                retval.append((i, _getGamepadNow(i, *what[1:])))
-            return retval
-        else:
-            id = 0
-    else:
-        id = 0
-    # globvars.pygame.event.pump()
-    pygame.event.pump()
-    if id < len(globvars.joysticks):
-        js = globvars.joysticks[id]
-    else:
-        js = None
-
-    function_calls = {
-        "init": js.get_init,
-        "name": js.get_name,
-        "robot": lambda: [-js.get_axis(1), -js.get_axis(0)],
-        "axis": lambda: [js.get_axis(i) for i in range(js.get_numaxes())],
-        "ball": lambda: [js.get_ball(i) for i in range(js.get_numballs())],
-        "button": lambda: [js.get_button(i) for i in range(js.get_numbuttons())],
-        "hat": lambda: [js.get_hat(i) for i in range(js.get_numhats())],
-    }
-
-    retval = {}
-    if len(what) == 0:
-        what = ["init", "name", "axis", "ball", "button", "hat"]
-    for item in what:
-        if item == "count":
-            retval["count"] = pygame.joystick.get_count()
-        elif js is not None:
-            try:
-                func = function_calls[item]
-                func()
-            except TypeError:
-                retval[item] = function_calls[item]
-        else:
-            raise AttributeError("not a valid gamepad id: %d" % id)
-
-    if len(list(retval.keys())) == 0:
-        return None
-    elif len(list(retval.keys())) == 1:
-        return retval[list(retval.keys())[0]]
-    else:
-        return retval
-
-
-_getGamepadNow = getGamepadNow
-
-
 def ask(item, title="Information Request", useCache=0, useDict=0):
     """ Ask the user for a value """
     if type(item) in [list, tuple] and len(item) == 1:
@@ -533,7 +202,7 @@ def _ask(data, title="Information Request", forceAsk=1, forceConsole=0, useCache
     # if I got it all, and don't need to ask, return
     # else, ask it all:
     if needToAsk or forceAsk:
-        if globvars.gui == None or forceConsole:
+        if globvars.gui is None or forceConsole:
             _askConsole(data, title)
         else:
             data = _askGUI(data, title)
@@ -572,9 +241,6 @@ def _askConsole(data, title="Information Request"):
         if retval != "":
             data[key] = retval
     return data
-
-
-
 
 
 class Computer(Robot):
@@ -638,8 +304,6 @@ class Computer(Robot):
 
 computer = Computer()
 
-# functions:
-
 
 def _cleanup():
     if globvars.robot:
@@ -647,12 +311,12 @@ def _cleanup():
             try:
                 globvars.robot.stop()  # hangs?
                 time.sleep(0.5)
-            except:  # catch serial.SerialException
+            except serial.SerialException:  # catch serial.SerialException
                 # port already closed
                 pass
         try:
             globvars.robot.close()
-        except:
+        except Exception:
             pass
 
 
@@ -676,9 +340,7 @@ if not globvars.setup:
     globvars.setup = 1
     atexit.register(_cleanup)
     # Ok, now we're ready!
-    print("(c) 2006-2007 Institute for Personal Robots in Education", file=sys.stderr)
-    print("[See http://www.roboteducation.org/ for more information]", file=sys.stderr)
-    print("Myro version %s is ready!" % (__VERSION__,), file=sys.stderr)
+    print(f"Myro version {__VERSION__} is ready!", file=sys.stderr)
 
 # Functional interface:
 
@@ -688,21 +350,21 @@ def requestStop():
         globvars.robot.requestStop = 1
 
 
-def initialize(id=None):
-    if id == "simulator":
+def initialize(id_=None):
+    if id_ == "simulator":
         simulator(None)
     else:
-        globvars.robot = Scribbler(id)
+        globvars.robot = Scribbler(id_)
     __builtins__["robot"] = globvars.robot
 
 
 init = initialize
 
 
-def simulator(id=None):
+def simulator(id_=None):
     _startSimulator()
     time.sleep(2)
-    globvars.robot = SimScribbler(id)
+    globvars.robot = SimScribbler(id_)
     __builtins__["robot"] = globvars.robot
 
 
@@ -1109,13 +771,6 @@ def restart():
         raise AttributeError("need to initialize robot")
 
 
-def joyStick(showSensors=0):
-    if globvars.robot:
-        return Joystick(globvars.robot, showSensors)
-    else:
-        raise AttributeError("need to initialize robot")
-
-
 def calibrate():
     if globvars.robot:
         return Calibrate(globvars.robot)
@@ -1313,7 +968,7 @@ class Array(object):
         else:
             current = self.data
             for i in args:
-                n, rest = args[0], args[1:]
+                n, _ = args[0], args[1:]
                 current = current[n]
             return current
 
@@ -1361,8 +1016,6 @@ def makePicture(*args):
     elif len(args) == 1:
         filename = args[0]
         retval = Picture()
-        if filename.startswith("http://"):
-            filename, message = urllib.request.urlretrieve(filename)
         retval.load(filename)
     elif len(args) == 2:
         x = args[0]
@@ -1475,7 +1128,7 @@ def show(picture, name="default"):
         globvars.windows[name] = GraphWin("Myro: %s" % name)
     try:
         globvars.windows[name].delete("image")
-    except:
+    except Exception:
         globvars.windows[name] = GraphWin("Myro: %s" % name)
     if picture.displayScale != 1:
         picture = Picture(picture)
