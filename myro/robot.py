@@ -1,7 +1,9 @@
+import pickle
 import threading
 import time
-import pickle
+
 from . import graphics
+
 
 class BackgroundThread(threading.Thread):
     """
@@ -80,9 +82,7 @@ class Robot(object):
     def beep(self, duration, frequency1, frequency2=None):
 
         print("beep!")
-        return graphics._tkCall(
-            graphics._beep, duration, frequency1, frequency2
-        )
+        return graphics._tkCall(graphics._beep, duration, frequency1, frequency2)
 
     def getLastSensors(self):
         """ Should not get the current, but the last. This is default behavior. """
