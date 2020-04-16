@@ -25,7 +25,7 @@ pipeline {
                 sh  ''' conda create --yes -n ${BUILD_TAG} python
                         source /var/lib/jenkins/miniconda3/etc/profile.d/conda.sh
                         conda activate ${BUILD_TAG}
-                        pip install pylint pyserial
+                        pip install pylint pyserial pillow
                     '''
             }
         }
