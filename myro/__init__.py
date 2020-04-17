@@ -17,7 +17,6 @@ from .graphics import AskDialog
 from .graphics import Calibrate
 from .graphics import Color
 from .graphics import GraphWin
-from .graphics import makePixmap
 from .graphics import Picture
 from .graphics import Pixel
 from .graphics import Point
@@ -1136,7 +1135,6 @@ def show(picture, name="default"):
     globvars.pictures[name] = picture
     globvars.windows[name]["width"] = picture.width
     globvars.windows[name]["height"] = picture.height
-    globvars.pixmaps[name] = makePixmap(picture)
     globvars.windows[name].setMouseHandler(
         lambda point: _mouseCallback(point, name, picture.displayScale)
     )
