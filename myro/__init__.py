@@ -25,49 +25,6 @@ from .robots.scribbler import Scribbler
 from .robots.simulator import SimScribbler
 from .version import __VERSION__
 
-# import atexit
-# import glob
-# import io
-# import os
-# import pickle
-# import random
-# import signal
-# import sys
-# import threading
-# import time
-# import urllib.error
-# import urllib.parse
-# import urllib.request
-
-# import globvars
-# import myro.graphics
-# import pygame
-# from myro.chat import *
-# from myro.graphics import *
-# from myro.media import *
-# from myro.robots.epuck import Epuck
-# from .robots.scribbler import Scribbler
-
-# from myro.robots.simulator import SimScribbler
-# from myro.robots.surveyor import Surveyor
-# from myro.system import *
-# from myro.robots.surveyor import watch
-
-
-# Check versions of things:
-# _pil_version = None
-# try:
-#     import PIL.Image as Image
-#     _pil_version = Image.VERSION
-#     del Image
-# except:
-#     print("ERROR: you need to install Python Image Library to make pictures", file=sys.stderr)
-# if _pil_version is not None:
-#     if _pil_version.split(".") < ["1", "1", "5"]:
-#         print(("ERROR: you need to upgrade Python Image Library to at least 1.1.5 (you're running %s)" %
-#                               _pil_version), file=sys.stderr)
-# del _pil_version
-
 
 def timer(seconds=0):
     """ A function to be used with 'for' """
