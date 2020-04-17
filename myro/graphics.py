@@ -962,12 +962,6 @@ class Entry(GraphicsObject):
             _tkExec(self.entry.config, fg=color)
 
 
-# TODO: Refer to lower TODO.
-# def makePixmap(picture):
-#     photoimage = ImageTk.PhotoImage(picture.image)
-#     return Pixmap(photoimage)
-
-
 class Picture(object):
     def __init__(self, original=None):
         if original is not None:
@@ -1271,179 +1265,6 @@ class Color(object):
 
 makeColor = Color
 
-
-class Image(GraphicsObject):
-    idCount = 0
-
-    def __init__(self, *center_point_and_pixmap):
-        """
-        Create a Image where p = Point, pixmap is a filename or image.
-        """
-        GraphicsObject.__init__(self, [])  # initialize
-        if len(center_point_and_pixmap) == 1:  # assume image
-            self.anchor = None
-            self.pixmap = center_point_and_pixmap[0]
-        elif len(center_point_and_pixmap) == 2:  # assume point, image
-            self.anchor = center_point_and_pixmap[0].clone()
-            self.pixmap = center_point_and_pixmap[1]
-        else:
-            raise AttributeError("invalid parameters to Image(); need 1 or 2")
-
-        self.imageId = Image.idCount  # give this image a number
-        Image.idCount = Image.idCount + 1  # increment global counter
-
-        # New code by JWS to work with a Picture, Filename, or Pixmap.
-        # if type(self.pixmap) == type(""):  # assume a filename
-        if isinstance(self.pixmap, str):
-            picture = Picture()
-            picture.load(self.pixmap)
-            self.pixmap = makePixmap(picture)
-            self.img = self.pixmap.image
-
-        elif type(self.pixmap) == Picture:  # Create from a picture
-            self.pixmap = makePixmap(self.pixmap)
-            self.img = self.pixmap.image
-
-        else:  # Otherwise, assume they gave us a valid pixmap!
-            self.img = self.pixmap.image
-
-    def getP1(self):
-        return Point(
-            self.anchor.x - self.pixmap.getWidth() / 2,
-            self.anchor.y - self.pixmap.getHeight() / 2,
-        )
-
-    def getP2(self):
-        return Point(
-            self.anchor.x + self.pixmap.getWidth() / 2,
-            self.anchor.y + self.pixmap.getHeight() / 2,
-        )
-
-    def getCenter(self):
-        return self.anchor.clone()
-
-    def refresh(self, canvas):
-        _tkCall(self._refresh, canvas)
-
-    def _refresh(self, canvas):
-        p = self.anchor
-        x, y = canvas.toScreen(p.x, p.y)
-        canvas.delete("image")
-        return canvas.create_image(x, y, image=self.img, tag="image")
-
-    def _draw(self, canvas, options):
-        if self.anchor is None:
-            self.anchor = Point(0, 0)  # FIX: center point on canvas
-        p = self.anchor
-        x, y = canvas.toScreen(p.x, p.y)
-        return canvas.create_image(x, y, image=self.img, tag="image")
-
-    def _move(self, dx, dy):
-        self.anchor.move(dx, dy)
-
-    def undraw(self):
-        GraphicsObject.undraw(self)
-
-    def getAnchor(self):
-        return self.anchor.clone()
-
-    def clone(self):
-        imgCopy = Pixmap(_tkCall(self.img.copy))
-        other = Image(self.anchor, imgCopy)
-        other.config = self.config.copy()
-        return other
-
-
-class Pixmap:
-    """Pixmap represents an image as a 2D array of color values.
-    A Pixmap can be made from a file (gif or ppm):
-
-       pic = Pixmap("myPicture.gif")
-
-    or initialized to a given size (initially transparent):
-
-       pic = Pixmap(512, 512)
-
-
-    """
-
-    def __init__(self, *args):
-        if len(args) == 1:  # a file name or pixmap
-            if isinstance(args[0], str):
-                self.image = _tkCall(tk.PhotoImage, file=args[0], master=_root)
-            else:
-                self.image = args[0]
-        else:  # arguments are width and height
-            width, height = args
-            self.image = _tkCall(
-                tk.PhotoImage, master=_root, width=width, height=height
-            )
-
-    def getWidth(self):
-        """Returns the width of the image in pixels"""
-        return _tkCall(self.image.width)
-
-    def getHeight(self):
-        """Returns the height of the image in pixels"""
-        return _tkCall(self.image.height)
-
-    def getPixel(self, x, y):
-        """Returns a list [r,g,b] with the RGB color values for pixel (x,y)
-        r,g,b are in range(256)
-
-        """
-        value = _tkCall(self.image.get, x, y)
-        if type(value) == int:
-            return [value, value, value]
-        else:
-            return list(map(int, value.split()))
-
-    def setPixel(self, x, y, xxx_todo_changeme):
-        """Sets pixel (x,y) to the color given by RGB values r, g, and b.
-        r,g,b should be in range(256)
-
-        """
-        (r, g, b) = xxx_todo_changeme
-        _tkExec(self.image.put, "{%s}" % color_rgb(r, g, b), (x, y))
-
-    def clone(self):
-        """Returns a copy of this Pixmap"""
-        return Pixmap(self.image.copy())
-
-    def save(self, filename):
-        """Saves the pixmap image to filename.
-        The format for the save image is determined from the filname extension.
-
-        """
-
-        path, name = os.path.split(filename)
-        ext = name.split(".")[-1]
-        _tkExec(self.image.write, filename, format=ext)
-
-
-def color_rgb(r, g, b):
-    """r,g,b are intensities of red, green, and blue in range(256)
-    Returns color specifier string for the resulting color"""
-    return "#%02x%02x%02x" % (r, g, b)
-
-
-# Used by the Color object so that it can accept "colors" produced by
-# the color_rgb() method <above> so that pixels and object graphics
-# can use the same colors.
-
-
-def rgb_color(color):
-    """ Returns (r,g,b), input '#rrggbb' or 'rrggbb' """
-    color = color.strip()
-    if color[0] == "#":
-        color = color[1:]
-    if len(color) != 6:
-        raise ValueError("#%s incorrect format use #rrggbb" % color)
-    r, g, b = color[:2], color[2:4], color[4:]
-    r, g, b = [int(n, 16) for n in (r, g, b)]
-    return (r, g, b)
-
-
 black = Color(0, 0, 0)
 white = Color(255, 255, 255)
 blue = Color(0, 0, 255)
@@ -1460,10 +1281,6 @@ cyan = Color(0, 255, 255)
 
 def makeWindow(*args, **kwargs):
     return GraphWin(*args, **kwargs)
-
-
-def makeImage(*args, **kwargs):
-    return Image(*args, **kwargs)
 
 
 def makeEntry(*args, **kwargs):
@@ -1883,7 +1700,6 @@ _functions = (
     "pick A File",
     "pick A Color",
     "pick A Folder",
-    "make Pixmap",
     "make Window",
     "make Image",
     "make Entry",
