@@ -56,7 +56,6 @@ import _thread
 import array
 import atexit
 import math
-import os
 import sys
 import time
 import tkinter.colorchooser
@@ -79,7 +78,9 @@ tk = tkinter
 
 
 class GraphicsError(Exception):
-    """Generic error class for graphics module exceptions."""
+    """
+    Generic error class for graphics module exceptions.
+    """
 
     def __init__(self, args=None):
         self.args = args
@@ -268,7 +269,9 @@ def askQuestion(
     default=0,
     bitmap=tkinter.dialog.DIALOG_ICON,
 ):
-    """ Displays a question and returns answer. """
+    """
+    Displays a question and returns answer.
+    """
     d = _tkCall(
         tkinter.dialog.Dialog,
         myro.globvars.gui,
@@ -286,13 +289,17 @@ _askQuestion = askQuestion
 
 
 def pickAFile():
-    """ Returns a filename """
+    """
+    Returns a filename
+    """
     path = _tkCall(tkinter.filedialog.askopenfilename)
     return path
 
 
 def pickAColor():
-    """ Returns an RGB color tuple """
+    """
+    Returns an RGB color tuple
+    """
     color = _tkCall(tkinter.colorchooser.askcolor)
     if color[0] is not None:
         return Color(color[0][0], color[0][1], color[0][2])
@@ -308,7 +315,9 @@ def pickAFolder():
 
 class GraphWin(tk.Canvas):
 
-    """A GraphWin is a toplevel window for displaying graphics."""
+    """
+    A GraphWin is a toplevel window for displaying graphics.
+    """
 
     def __init__(self, title="Graphics Window", width=200, height=200, autoflush=False):
         _tkCall(self.__init_help, title, width, height, autoflush)
@@ -357,14 +366,18 @@ class GraphWin(tk.Canvas):
             raise GraphicsError("window is closed")
 
     def setBackground(self, color):
-        """Set background color of the window"""
+        """
+        Set background color of the window
+        """
         self.__checkOpen()
         _tkExec(self.config, bg=color)
         # self.config(bg=color)
 
     def setCoords(self, x1, y1, x2, y2):
-        """Set coordinates of window to run from (x1,y1) in the
-        lower-left corner to (x2,y2) in the upper-right corner."""
+        """
+        Set coordinates of window to run from (x1,y1) in the
+        lower-left corner to (x2,y2) in the upper-right corner.
+        """
         self.trans = Transform(self.width, self.height, x1, y1, x2, y2)
 
     def close(self):
@@ -373,7 +386,9 @@ class GraphWin(tk.Canvas):
         _tkCall(self.__close_help)
 
     def __close_help(self):
-        """Close the window"""
+        """
+        Close the window
+        """
         self.closed = True
         self.master.destroy()
         _root.update()
@@ -386,7 +401,9 @@ class GraphWin(tk.Canvas):
             _tkCall(_root.update)
 
     def plot(self, x, y, color="black"):
-        """Set pixel (x,y) to the given color"""
+        """
+        Set pixel (x,y) to the given color
+        """
         self.__checkOpen()
         xs, ys = self.toScreen(x, y)
         # self.create_line(xs,ys,xs+1,ys, fill=color)
@@ -394,15 +411,19 @@ class GraphWin(tk.Canvas):
         self.__autoflush()
 
     def plotPixel(self, x, y, color="black"):
-        """Set pixel raw (independent of window coordinates) pixel
-        (x,y) to color"""
+        """
+        Set pixel raw (independent of window coordinates) pixel
+        (x,y) to color
+        """
         self.__checkOpen()
         # self.create_line(x,y,x+1,y, fill=color)
         _tkExec(self.create_line, x, y, x + 1, y, fill=color, tag="line")
         self.__autoflush()
 
     def flush(self):
-        """Update drawing to the window"""
+        """
+        Update drawing to the window
+        """
         # self.update_idletasks()
         self.__checkOpen()
         _tkCall(self.update_idletasks)
@@ -411,8 +432,10 @@ class GraphWin(tk.Canvas):
         _tkCall(self.update)
 
     def getMouse(self):
-        """Wait for mouse click and return Point object representing
-        the click"""
+        """
+        Wait for mouse click and return Point object representing
+        the click
+        """
         self.mouseX = None
         self.mouseY = None
         while self.mouseX is None or self.mouseY is None:
@@ -427,8 +450,10 @@ class GraphWin(tk.Canvas):
         return Point(x, y)
 
     def checkMouse(self):
-        """Return mouse click last mouse click or None if mouse has
-        not been clicked since last call"""
+        """
+        Return mouse click last mouse click or None if mouse has
+        not been clicked since last call
+        """
         if self.isClosed():
             raise GraphicsError("checkMouse in closed window")
         _tkCall(self.update)
@@ -441,11 +466,15 @@ class GraphWin(tk.Canvas):
             return None
 
     def getHeight(self):
-        """Return the height of the window"""
+        """
+        Return the height of the window
+        """
         return self.height
 
     def getWidth(self):
-        """Return the width of the window"""
+        """
+        Return the width of the window
+        """
         return self.width
 
     def toScreen(self, x, y):
@@ -486,7 +515,9 @@ class GraphWin(tk.Canvas):
 
 class Transform:
 
-    """Internal class for 2-D coordinate transformations"""
+    """
+    Internal class for 2-D coordinate transformations
+    """
 
     def __init__(self, w, h, xlow, ylow, xhigh, yhigh):
         # w, h are width and height of window
@@ -527,7 +558,9 @@ DEFAULT_CONFIG = {
 
 class GraphicsObject:
 
-    """Generic base class for all of the drawable objects"""
+    """
+    Generic base class for all of the drawable objects
+    """
 
     # A subclass of GraphicsObject should override _draw and
     #   and _move methods.
@@ -549,22 +582,30 @@ class GraphicsObject:
         self.config = config
 
     def setFill(self, color):
-        """Set interior color to color"""
+        """
+        Set interior color to color
+        """
         self._reconfig("fill", color)
 
     def setOutline(self, color):
-        """Set outline color to color"""
+        """
+        Set outline color to color
+        """
         self._reconfig("outline", color)
 
     def setWidth(self, width):
-        """Set line weight to width"""
+        """
+        Set line weight to width
+        """
         self._reconfig("width", width)
 
     def draw(self, graphwin):
-        """Draw the object in graphwin, which should be a GraphWin
+        """
+        Draw the object in graphwin, which should be a GraphWin
         object.  A GraphicsObject may only be drawn into one
         window. Raises an error if attempt made to draw an object that
-        is already visible."""
+        is already visible.
+        """
 
         if self.canvas and not self.canvas.isClosed():
             raise GraphicsError(OBJ_ALREADY_DRAWN)
@@ -578,8 +619,10 @@ class GraphicsObject:
             _tkCall(_root.update)
 
     def undraw(self):
-        """Undraw the object (i.e. hide it). Returns silently if the
-        object is not currently drawn."""
+        """
+        Undraw the object (i.e. hide it). Returns silently if the
+        object is not currently drawn.
+        """
 
         if not self.canvas:
             return
@@ -594,8 +637,10 @@ class GraphicsObject:
         self.id = None
 
     def move(self, dx, dy):
-        """move object dx units in x direction and dy units in y
-        direction"""
+        """
+        move object dx units in x direction and dy units in y
+        direction
+        """
 
         self._move(dx, dy)
         canvas = self.canvas
@@ -629,12 +674,16 @@ class GraphicsObject:
                 _tkCall(_root.update)
 
     def _draw(self, canvas, options):
-        """draws appropriate figure on canvas with options provided
-        Returns Tk id of item drawn"""
+        """
+        draws appropriate figure on canvas with options provided
+        Returns Tk id of item drawn
+        """
         pass  # must override in subclass
 
     def _move(self, dx, dy):
-        """updates internal state of object to move it dx,dy units"""
+        """
+        updates internal state of object to move it dx,dy units
+        """
         pass  # must override in subclass
 
 
@@ -1386,7 +1435,9 @@ class Senses(tkinter.Toplevel):
             frame.pack(side="bottom", fill="both", expand="y")
 
     def updateWidget(self, name, pos, value):
-        """Updates the device view window."""
+        """
+        Updates the device view window.
+        """
         try:
             self.widgets["%s%d.entry" % (name, pos)].delete(0, "end")
             self.widgets["%s%d.entry" % (name, pos)].insert(0, str(value))
@@ -1519,7 +1570,9 @@ class Calibrate(tkinter.Toplevel):
             frame.pack(side="bottom", fill="both", expand="y")
 
     def updateWidget(self, name, pos, value):
-        """Updates the device view window."""
+        """
+        Updates the device view window.
+        """
         try:
             self.widgets["%s%d.entry" % (name, pos)].delete(0, "end")
             self.widgets["%s%d.entry" % (name, pos)].insert(0, value)
@@ -1651,7 +1704,9 @@ class Calibrate(tkinter.Toplevel):
 # TODO: Switch everything to np arrays.
 # Then use either PIL/CV2 color conversion methods.
 def rgb2hsv(red, green, blue):
-    """Converts red, green, and blue to hue, saturation, and brightness """
+    """
+    Converts red, green, and blue to hue, saturation, and brightness
+    """
     return colorsys.rgb_to_hsv(red, green, blue)
 
 
