@@ -7,13 +7,11 @@ __AUTHOR__ = "Doug Blank"
 # line   0,1     0,1    none,line?
 # stall ok
 
-import os
-import atexit
-import time
 import threading
-from . import Robot
-from myro.robots.symbolic import TCPRobot
-import myro.globvars
+from .. import Robot
+from .symbolic import TCPRobot
+
+# from .. import globvars
 
 
 class SimScribbler(Robot):

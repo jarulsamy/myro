@@ -1,11 +1,13 @@
 from setuptools import find_packages
 from setuptools import setup
 
+from myro.version import __VERSION__
+
 setup(
     name="myro",
-    version="3.0.2",
+    version=__VERSION__,
     packages=find_packages(),
-    install_requires=["pyserial"],
+    install_requires=["pyserial", "pillow"],
     author="Joshua Arulsamy",
     author_email="joshua.gf.arul@gmail.com",
     description="A robot communication library for Scribbler / Scribbler 2",

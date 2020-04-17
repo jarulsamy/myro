@@ -1,7 +1,10 @@
+import pickle
 import threading
 import time
-import pickle
+
 from . import graphics
+from .version import __VERSION__
+
 
 class BackgroundThread(threading.Thread):
     """
@@ -45,29 +48,6 @@ class Robot(object):
         """
         self.lock = threading.Lock()
 
-    def initializeRemoteControl(self, password):
-        self.chat = Chat(self.getName(), password)
-
-    def processRemoteControlLoop(self, threaded=1):
-        if threaded:
-            self.thread = BackgroundThread(self.processRemoteControl, 1)  # seconds
-            self.thread.start()
-        else:
-            while 1:
-                self.processRemoteControl()
-
-    def processRemoteControl(self):
-        messages = self.chat.receive()
-        # print "process", messages
-        for _from, message in messages:
-            if message.startswith("robot."):
-                # For user IM messages
-                # print ">>> self." + message[6:]
-                retval = eval("self." + message[6:])
-                name, domain = _from.split("@")
-                # print "sending:", pickle.dumps(retval)
-                self.chat.send(name.lower(), pickle.dumps(retval))
-
     def translate(self, amount):
         raise AttributeError("this method needs to be written")
 
@@ -80,9 +60,7 @@ class Robot(object):
     def beep(self, duration, frequency1, frequency2=None):
 
         print("beep!")
-        return graphics._tkCall(
-            graphics._beep, duration, frequency1, frequency2
-        )
+        return graphics._tkCall(graphics._beep, duration, frequency1, frequency2)
 
     def getLastSensors(self):
         """ Should not get the current, but the last. This is default behavior. """

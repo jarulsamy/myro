@@ -1,8 +1,9 @@
 # graphics.py
-"""Simple object oriented graphics library
+"""
+Simple object oriented graphics library
 
 Original code by John Zelle
-Updates       by Doug Blank
+Updates       by Joshua Arulsamy
 
 The library is designed to make it very easy for novice programmers to
 experiment with computer graphics in an object oriented fashion. It is
@@ -14,8 +15,6 @@ GPL (http://www.gnu.org/licenses/gpl.html).
 
 PLATFORMS: The package is a wrapper around Tkinter and should run on
 any platform where Tkinter is available.
-
-INSTALLATION: Put this file somewhere where Python can see it.
 
 OVERVIEW: There are two kinds of objects in the library. The GraphWin
 class implements a window where drawing can be done and various
@@ -52,77 +51,11 @@ Various attributes of graphical objects can be set such as
 outline-color, fill-color and line-width. Graphical objects also
 support moving and hiding for animation effects.
 
-The library also provides a very simple class for pixel-based image
-manipulation, Pixmap. A pixmap can be loaded from a file and displayed
-using an Image object. Both getPixel and setPixel methods are provided
-for manipulating the image.
-
-DOCUMENTATION: For complete documentation, see Chapter 5 of "Python
-Programming: An Introduction to Computer Science" by John Zelle,
-published by Franklin, Beedle & Associates.  Also see
-http://mcsp.wartburg.edu/zelle/python for a quick reference"""
-# Version 3.3 8/8/06
-#     Added checkMouse method to GraphWin
-# Version 3.2.2 5/30/05
-#     Cleaned up handling of exceptions in Tk thread. The graphics package
-#     now raises an exception if attempt is made to communicate with
-#     a dead Tk thread.
-# Version 3.2.1 5/22/05
-#     Added shutdown function for tk thread to eliminate race-condition
-#        error "chatter" when main thread terminates
-#     Renamed various private globals with _
-# Version 3.2 5/4/05
-#     Added Pixmap object for simple image manipulation.
-# Version 3.1 4/13/05
-#     Improved the Tk thread communication so that most Tk calls
-#        do not have to wait for synchonization with the Tk thread.
-#        (see _tkCall and _tkExec)
-# Version 3.0 12/30/04
-#     Implemented Tk event loop in separate thread. Should now work
-#        interactively with IDLE. Undocumented autoflush feature is
-#        no longer necessary. Its default is now False (off). It may
-#        be removed in a future version.
-#     Better handling of errors regarding operations on windows that
-#       have been closed.
-#     Addition of an isClosed method to GraphWindow class.
-# Version 2.2 8/26/04
-#     Fixed cloning bug reported by Joseph Oldham.
-#     Now implements deep copy of config info.
-# Version 2.1 1/15/04
-#     Added autoflush option to GraphWin. When True (default) updates on
-#        the window are done after each action. This makes some graphics
-#        intensive programs sluggish. Turning off autoflush causes updates
-#        to happen during idle periods or when flush is called.
-# Version 2.0
-#     Updated Documentation
-#     Made Polygon accept a list of Points in constructor
-#     Made all drawing functions call TK update for easier animations
-#          and to make the overall package work better with
-#          Python 2.3 and IDLE 1.0 under Windows (still some issues).
-#     Removed vestigial turtle graphics.
-#     Added ability to configure font for Entry objects (analogous to Text)
-#     Added setTextColor for Text as an alias of setFill
-#     Changed to class-style exceptions
-#     Fixed cloning of Text objects
-# Version 1.6
-#     Fixed Entry so StringVar uses _root as master, solves weird
-#            interaction with shell in Idle
-#     Fixed bug in setCoords. X and Y coordinates can increase in
-#           "non-intuitive" direction.
-#     Tweaked wm_protocol so window is not resizable and kill box closes.
-# Version 1.5
-#     Fixed bug in Entry. Can now define entry before creating a
-#     GraphWin. All GraphWins are now toplevel windows and share
-#     a fixed root (called _root).
-# Version 1.4
-#     Fixed Garbage collection of Tkinter images bug.
-#     Added ability to set text atttributes.
-#     Added Entry boxes.
+"""
 import _thread
 import array
 import atexit
 import math
-import os
 import sys
 import time
 import tkinter.colorchooser
@@ -131,45 +64,23 @@ import tkinter.filedialog
 from copy import copy
 from queue import Queue
 
+import PIL.Image as PyImage
+
 import myro.globvars
+from . import globvars
 from myro.widgets import AlertDialog
 
-from . import globvars
-
-# try:
-#     import PIL.Image as PyImage
-# except:
-#     print(
-#         "WARNING: Image not found; do you need Python Imaging Library?", file=sys.stderr
-#     )
-#
-# try:
-#     import ImageTk
-# except:
-#     print(
-#         "WARNING: ImageTk not found; do you need the TkInter Library?", file=sys.stderr
-#     )
 
 # TODO: Fix tkinter for Py > 3
 tk = tkinter
 
-# try:
-#     import tkSnack
-#
-#     # _tkExec(tkSnack.initializeSnack, myro.globvars.gui)
-# except:
-#     tkSnack = None
-#     print >> sys.stderr, "WARNING: sound did not load; need tkSnack?"
-
-
-##########################################################################
 # Module Exceptions
-
-# import exceptions
 
 
 class GraphicsError(Exception):
-    """Generic error class for graphics module exceptions."""
+    """
+    Generic error class for graphics module exceptions.
+    """
 
     def __init__(self, args=None):
         self.args = args
@@ -180,10 +91,7 @@ UNSUPPORTED_METHOD = "Object doesn't support operation"
 BAD_OPTION = "Illegal option value"
 DEAD_THREAD = "Graphics thread quit unexpectedly"
 
-###########################################################################
 # Support to run Tk in a separate thread
-
-
 _tk_request = Queue(0)
 _tk_result = Queue(1)
 _POLL_INTERVAL = 10
@@ -202,9 +110,10 @@ def _tk_thread():
         _root.withdraw()
         _root.after(_POLL_INTERVAL, _tk_pump)
         _root.mainloop()
-    except:
+    except Exception as e:
         _root = None
         print("ERROR: graphics did not start", file=sys.stderr)
+        print(e)
 
 
 def _tk_pump():
@@ -221,15 +130,15 @@ def _tk_pump():
             result = command()
             if returns_value:
                 _tk_result.put(result)
-        except:
+        except Exception as e:
             _thread_running = False
             if returns_value:
                 _tk_result.put(None)  # release client
-            raise  # re-raise the exception -- kills the thread
+            raise e  # re-raise the exception -- kills the thread
     if _thread_running:
         try:
             _root.after(_POLL_INTERVAL, _tk_pump)
-        except:
+        except Exception:
             print("Graphics: Can't pump anymore")
 
 
@@ -301,19 +210,19 @@ def updateGraphics():
 
 
 def moveToTop(window):
-    if not "darwin" in sys.platform and "win" in sys.platform:
+    if "darwin" not in sys.platform and "win" in sys.platform:
         window.wm_attributes("-topmost", 1)
+
     # window.lift(aboveThis=_root)
     window.lift()
     window.focus()
 
 
-############################################################################
-# Graphics classes start here
-
-
 def distance(tuple1, tuple2):
     return math.sqrt(sum([(t1 - t2) ** 2 for (t1, t2) in zip(tuple1, tuple2)]))
+
+
+# Graphics classes start here
 
 
 class AskDialog(AlertDialog):
@@ -360,7 +269,9 @@ def askQuestion(
     default=0,
     bitmap=tkinter.dialog.DIALOG_ICON,
 ):
-    """ Displays a question and returns answer. """
+    """
+    Displays a question and returns answer.
+    """
     d = _tkCall(
         tkinter.dialog.Dialog,
         myro.globvars.gui,
@@ -373,19 +284,24 @@ def askQuestion(
     return answers[int(d.num)]
 
 
+# This is a HACK.
 _askQuestion = askQuestion
 
 
 def pickAFile():
-    """ Returns a filename """
+    """
+    Returns a filename
+    """
     path = _tkCall(tkinter.filedialog.askopenfilename)
     return path
 
 
 def pickAColor():
-    """ Returns an RGB color tuple """
+    """
+    Returns an RGB color tuple
+    """
     color = _tkCall(tkinter.colorchooser.askcolor)
-    if color[0] != None:
+    if color[0] is not None:
         return Color(color[0][0], color[0][1], color[0][2])
 
 
@@ -399,7 +315,9 @@ def pickAFolder():
 
 class GraphWin(tk.Canvas):
 
-    """A GraphWin is a toplevel window for displaying graphics."""
+    """
+    A GraphWin is a toplevel window for displaying graphics.
+    """
 
     def __init__(self, title="Graphics Window", width=200, height=200, autoflush=False):
         _tkCall(self.__init_help, title, width, height, autoflush)
@@ -443,29 +361,23 @@ class GraphWin(tk.Canvas):
     def _setStatus(self, format=""):
         _tkCall(self.status.config, text=format)
 
-    # Trying to get IDLE subprocess windows to be on top!
-    # def toFront(self):
-    # _tkCall(self.__toFront_help)
-    ##
-    # def __toFront_help(self):
-    # _root.tkraise()
-    # self.master.after(50, self.master.deiconify)
-    # self.master.after(70, self.master.tkraise)
-    # self.master.after(70, self.master.focus)
-
     def __checkOpen(self):
         if self.closed:
             raise GraphicsError("window is closed")
 
     def setBackground(self, color):
-        """Set background color of the window"""
+        """
+        Set background color of the window
+        """
         self.__checkOpen()
         _tkExec(self.config, bg=color)
         # self.config(bg=color)
 
     def setCoords(self, x1, y1, x2, y2):
-        """Set coordinates of window to run from (x1,y1) in the
-        lower-left corner to (x2,y2) in the upper-right corner."""
+        """
+        Set coordinates of window to run from (x1,y1) in the
+        lower-left corner to (x2,y2) in the upper-right corner.
+        """
         self.trans = Transform(self.width, self.height, x1, y1, x2, y2)
 
     def close(self):
@@ -474,7 +386,9 @@ class GraphWin(tk.Canvas):
         _tkCall(self.__close_help)
 
     def __close_help(self):
-        """Close the window"""
+        """
+        Close the window
+        """
         self.closed = True
         self.master.destroy()
         _root.update()
@@ -487,7 +401,9 @@ class GraphWin(tk.Canvas):
             _tkCall(_root.update)
 
     def plot(self, x, y, color="black"):
-        """Set pixel (x,y) to the given color"""
+        """
+        Set pixel (x,y) to the given color
+        """
         self.__checkOpen()
         xs, ys = self.toScreen(x, y)
         # self.create_line(xs,ys,xs+1,ys, fill=color)
@@ -495,15 +411,19 @@ class GraphWin(tk.Canvas):
         self.__autoflush()
 
     def plotPixel(self, x, y, color="black"):
-        """Set pixel raw (independent of window coordinates) pixel
-        (x,y) to color"""
+        """
+        Set pixel raw (independent of window coordinates) pixel
+        (x,y) to color
+        """
         self.__checkOpen()
         # self.create_line(x,y,x+1,y, fill=color)
         _tkExec(self.create_line, x, y, x + 1, y, fill=color, tag="line")
         self.__autoflush()
 
     def flush(self):
-        """Update drawing to the window"""
+        """
+        Update drawing to the window
+        """
         # self.update_idletasks()
         self.__checkOpen()
         _tkCall(self.update_idletasks)
@@ -512,11 +432,13 @@ class GraphWin(tk.Canvas):
         _tkCall(self.update)
 
     def getMouse(self):
-        """Wait for mouse click and return Point object representing
-        the click"""
+        """
+        Wait for mouse click and return Point object representing
+        the click
+        """
         self.mouseX = None
         self.mouseY = None
-        while self.mouseX == None or self.mouseY == None:
+        while self.mouseX is None or self.mouseY is None:
             # self.update()
             _tkCall(self.update)
             if self.isClosed():
@@ -528,12 +450,14 @@ class GraphWin(tk.Canvas):
         return Point(x, y)
 
     def checkMouse(self):
-        """Return mouse click last mouse click or None if mouse has
-        not been clicked since last call"""
+        """
+        Return mouse click last mouse click or None if mouse has
+        not been clicked since last call
+        """
         if self.isClosed():
             raise GraphicsError("checkMouse in closed window")
         _tkCall(self.update)
-        if self.mouseX != None and self.mouseY != None:
+        if self.mouseX is not None and self.mouseY is not None:
             x, y = self.toWorld(self.mouseX, self.mouseY)
             self.mouseX = None
             self.mouseY = None
@@ -542,11 +466,15 @@ class GraphWin(tk.Canvas):
             return None
 
     def getHeight(self):
-        """Return the height of the window"""
+        """
+        Return the height of the window
+        """
         return self.height
 
     def getWidth(self):
-        """Return the width of the window"""
+        """
+        Return the width of the window
+        """
         return self.width
 
     def toScreen(self, x, y):
@@ -587,7 +515,9 @@ class GraphWin(tk.Canvas):
 
 class Transform:
 
-    """Internal class for 2-D coordinate transformations"""
+    """
+    Internal class for 2-D coordinate transformations
+    """
 
     def __init__(self, w, h, xlow, ylow, xhigh, yhigh):
         # w, h are width and height of window
@@ -628,7 +558,9 @@ DEFAULT_CONFIG = {
 
 class GraphicsObject:
 
-    """Generic base class for all of the drawable objects"""
+    """
+    Generic base class for all of the drawable objects
+    """
 
     # A subclass of GraphicsObject should override _draw and
     #   and _move methods.
@@ -650,22 +582,30 @@ class GraphicsObject:
         self.config = config
 
     def setFill(self, color):
-        """Set interior color to color"""
+        """
+        Set interior color to color
+        """
         self._reconfig("fill", color)
 
     def setOutline(self, color):
-        """Set outline color to color"""
+        """
+        Set outline color to color
+        """
         self._reconfig("outline", color)
 
     def setWidth(self, width):
-        """Set line weight to width"""
+        """
+        Set line weight to width
+        """
         self._reconfig("width", width)
 
     def draw(self, graphwin):
-        """Draw the object in graphwin, which should be a GraphWin
+        """
+        Draw the object in graphwin, which should be a GraphWin
         object.  A GraphicsObject may only be drawn into one
         window. Raises an error if attempt made to draw an object that
-        is already visible."""
+        is already visible.
+        """
 
         if self.canvas and not self.canvas.isClosed():
             raise GraphicsError(OBJ_ALREADY_DRAWN)
@@ -679,8 +619,10 @@ class GraphicsObject:
             _tkCall(_root.update)
 
     def undraw(self):
-        """Undraw the object (i.e. hide it). Returns silently if the
-        object is not currently drawn."""
+        """
+        Undraw the object (i.e. hide it). Returns silently if the
+        object is not currently drawn.
+        """
 
         if not self.canvas:
             return
@@ -695,8 +637,10 @@ class GraphicsObject:
         self.id = None
 
     def move(self, dx, dy):
-        """move object dx units in x direction and dy units in y
-        direction"""
+        """
+        move object dx units in x direction and dy units in y
+        direction
+        """
 
         self._move(dx, dy)
         canvas = self.canvas
@@ -730,12 +674,16 @@ class GraphicsObject:
                 _tkCall(_root.update)
 
     def _draw(self, canvas, options):
-        """draws appropriate figure on canvas with options provided
-        Returns Tk id of item drawn"""
+        """
+        draws appropriate figure on canvas with options provided
+        Returns Tk id of item drawn
+        """
         pass  # must override in subclass
 
     def _move(self, dx, dy):
-        """updates internal state of object to move it dx,dy units"""
+        """
+        updates internal state of object to move it dx,dy units
+        """
         pass  # must override in subclass
 
 
@@ -854,7 +802,7 @@ class Circle(Oval):
 
 class Line(_BBox):
     def __init__(self, p1, p2):
-        _BBox.__init__(self, p1, p2, ["arrow", "fill", "width"])
+        super().__init__(self, p1, p2, ["arrow", "fill", "width"])
         self.setFill(DEFAULT_CONFIG["outline"])
         self.setOutline = self.setFill
 
@@ -871,7 +819,7 @@ class Line(_BBox):
         return canvas.create_line(x1, y1, x2, y2, options, tag="line")
 
     def setArrow(self, option):
-        if not option in ["first", "last", "both", "none"]:
+        if option not in ["first", "last", "both", "none"]:
             raise GraphicsError(BAD_OPTION)
         self._reconfig("arrow", option)
 
@@ -879,7 +827,7 @@ class Line(_BBox):
 class Polygon(GraphicsObject):
     def __init__(self, *points):
         # if points passed as a list, extract it
-        if len(points) == 1 and type(points[0] == type([])):
+        if len(points) == 1 and isinstance(points[0], list):
             points = points[0]
         self.points = list(map(Point.clone, points))
         self.p1 = Point(
@@ -1063,11 +1011,6 @@ class Entry(GraphicsObject):
             _tkExec(self.entry.config, fg=color)
 
 
-def makePixmap(picture):
-    photoimage = ImageTk.PhotoImage(picture.image)
-    return Pixmap(photoimage)
-
-
 class Picture(object):
     def __init__(self, original=None):
         if original is not None:
@@ -1090,7 +1033,7 @@ class Picture(object):
         self.height = height
         self.mode = mode
         if mode.lower() == "color":
-            if data == None:
+            if data is None:
                 if type(value) == int:
                     data = array.array("B", [value] * (height * width * 3))
                 elif len(value) == 3:
@@ -1112,10 +1055,7 @@ class Picture(object):
         self.pixels = self.image.load()
         self.palette = self.image.getpalette()
         self.filename = "Camera Image"
-        if self.pixels == None:
-            raise AttributeError(
-                "Myro needs at least Python Imaging Library version 1.1.6"
-            )
+
         # self.image = ImageTk.PhotoImage(self.temp, master=_root)
         maxsize = max(self.width, self.height)
         smallWindowThreshold = 250
@@ -1153,7 +1093,7 @@ class Picture(object):
         self.height = self.image.size[1]
         self.palette = self.image.getpalette()
         self.filename = filename
-        if self.pixels == None:
+        if self.pixels is None:
             raise AttributeError(
                 "Myro needs at least Python Imaging Library version 1.1.6"
             )
@@ -1374,178 +1314,6 @@ class Color(object):
 
 makeColor = Color
 
-
-class Image(GraphicsObject):
-    idCount = 0
-
-    def __init__(self, *center_point_and_pixmap):
-        """
-        Create a Image where p = Point, pixmap is a filename or image.
-        """
-        GraphicsObject.__init__(self, [])  # initialize
-        if len(center_point_and_pixmap) == 1:  # assume image
-            self.anchor = None
-            self.pixmap = center_point_and_pixmap[0]
-        elif len(center_point_and_pixmap) == 2:  # assume point, image
-            self.anchor = center_point_and_pixmap[0].clone()
-            self.pixmap = center_point_and_pixmap[1]
-        else:
-            raise AttributeError("invalid parameters to Image(); need 1 or 2")
-
-        self.imageId = Image.idCount  # give this image a number
-        Image.idCount = Image.idCount + 1  # increment global counter
-
-        # New code by JWS to work with a Picture, Filename, or Pixmap.
-        if type(self.pixmap) == type(""):  # assume a filename
-            picture = Picture()
-            picture.load(self.pixmap)
-            self.pixmap = makePixmap(picture)
-            self.img = self.pixmap.image
-
-        elif type(self.pixmap) == Picture:  # Create from a picture
-            self.pixmap = makePixmap(self.pixmap)
-            self.img = self.pixmap.image
-
-        else:  # Otherwise, assume they gave us a valid pixmap!
-            self.img = self.pixmap.image
-
-    def getP1(self):
-        return Point(
-            self.anchor.x - self.pixmap.getWidth() / 2,
-            self.anchor.y - self.pixmap.getHeight() / 2,
-        )
-
-    def getP2(self):
-        return Point(
-            self.anchor.x + self.pixmap.getWidth() / 2,
-            self.anchor.y + self.pixmap.getHeight() / 2,
-        )
-
-    def getCenter(self):
-        return self.anchor.clone()
-
-    def refresh(self, canvas):
-        _tkCall(self._refresh, canvas)
-
-    def _refresh(self, canvas):
-        p = self.anchor
-        x, y = canvas.toScreen(p.x, p.y)
-        canvas.delete("image")
-        return canvas.create_image(x, y, image=self.img, tag="image")
-
-    def _draw(self, canvas, options):
-        if self.anchor == None:
-            self.anchor = Point(0, 0)  # FIX: center point on canvas
-        p = self.anchor
-        x, y = canvas.toScreen(p.x, p.y)
-        return canvas.create_image(x, y, image=self.img, tag="image")
-
-    def _move(self, dx, dy):
-        self.anchor.move(dx, dy)
-
-    def undraw(self):
-        GraphicsObject.undraw(self)
-
-    def getAnchor(self):
-        return self.anchor.clone()
-
-    def clone(self):
-        imgCopy = Pixmap(_tkCall(self.img.copy))
-        other = Image(self.anchor, imgCopy)
-        other.config = self.config.copy()
-        return other
-
-
-class Pixmap:
-    """Pixmap represents an image as a 2D array of color values.
-    A Pixmap can be made from a file (gif or ppm):
-
-       pic = Pixmap("myPicture.gif")
-
-    or initialized to a given size (initially transparent):
-
-       pic = Pixmap(512, 512)
-
-
-    """
-
-    def __init__(self, *args):
-        if len(args) == 1:  # a file name or pixmap
-            if type(args[0]) == type(""):
-                self.image = _tkCall(tk.PhotoImage, file=args[0], master=_root)
-            else:
-                self.image = args[0]
-        else:  # arguments are width and height
-            width, height = args
-            self.image = _tkCall(
-                tk.PhotoImage, master=_root, width=width, height=height
-            )
-
-    def getWidth(self):
-        """Returns the width of the image in pixels"""
-        return _tkCall(self.image.width)
-
-    def getHeight(self):
-        """Returns the height of the image in pixels"""
-        return _tkCall(self.image.height)
-
-    def getPixel(self, x, y):
-        """Returns a list [r,g,b] with the RGB color values for pixel (x,y)
-        r,g,b are in range(256)
-
-        """
-        value = _tkCall(self.image.get, x, y)
-        if type(value) == int:
-            return [value, value, value]
-        else:
-            return list(map(int, value.split()))
-
-    def setPixel(self, x, y, xxx_todo_changeme):
-        """Sets pixel (x,y) to the color given by RGB values r, g, and b.
-        r,g,b should be in range(256)
-
-        """
-        (r, g, b) = xxx_todo_changeme
-        _tkExec(self.image.put, "{%s}" % color_rgb(r, g, b), (x, y))
-
-    def clone(self):
-        """Returns a copy of this Pixmap"""
-        return Pixmap(self.image.copy())
-
-    def save(self, filename):
-        """Saves the pixmap image to filename.
-        The format for the save image is determined from the filname extension.
-
-        """
-
-        path, name = os.path.split(filename)
-        ext = name.split(".")[-1]
-        _tkExec(self.image.write, filename, format=ext)
-
-
-def color_rgb(r, g, b):
-    """r,g,b are intensities of red, green, and blue in range(256)
-    Returns color specifier string for the resulting color"""
-    return "#%02x%02x%02x" % (r, g, b)
-
-
-# Used by the Color object so that it can accept "colors" produced by
-# the color_rgb() method <above> so that pixels and object graphics
-# can use the same colors.
-
-
-def rgb_color(color):
-    """ Returns (r,g,b), input '#rrggbb' or 'rrggbb' """
-    color = color.strip()
-    if color[0] == "#":
-        color = color[1:]
-    if len(color) != 6:
-        raise ValueError("#%s incorrect format use #rrggbb" % color)
-    r, g, b = color[:2], color[2:4], color[4:]
-    r, g, b = [int(n, 16) for n in (r, g, b)]
-    return (r, g, b)
-
-
 black = Color(0, 0, 0)
 white = Color(255, 255, 255)
 blue = Color(0, 0, 255)
@@ -1562,10 +1330,6 @@ cyan = Color(0, 255, 255)
 
 def makeWindow(*args, **kwargs):
     return GraphWin(*args, **kwargs)
-
-
-def makeImage(*args, **kwargs):
-    return Image(*args, **kwargs)
 
 
 def makeEntry(*args, **kwargs):
@@ -1600,299 +1364,7 @@ def makeText(*args, **kwargs):
     return Text(*args, **kwargs)
 
 
-class Sound:
-    def __init__(self, filename):
-        self.filename = filename
-        if not myro.globvars.sound:
-            _tkExec(tkSnack.initializeSnack, _root)
-            myro.globvars.sound = 1
-
-    def play(self):
-        return _tkCall(self._play)
-
-    def _play(self):
-        self.snd = tkSnack.Sound()
-        self.snd.read(self.filename)
-        self.snd.play()
-        return
-
-
-def makeSound(filename):
-    return Sound(filename)
-
-
-def play(sound):
-    sound.play()
-
-
-def _beep(duration, frequency1, frequency2):
-    if tkSnack != None:
-        if not myro.globvars.sound:
-            tkSnack.initializeSnack(_root)
-            myro.globvars.sound = 1
-        snd1 = tkSnack.Sound()
-        filt1 = tkSnack.Filter(
-            "generator", frequency1, 30000, 0.0, "sine", int(11500 * duration)
-        )
-        if frequency2 != None:
-            snd2 = tkSnack.Sound()
-            filt2 = tkSnack.Filter(
-                "generator", frequency2, 30000, 0.0, "sine", int(11500 * duration)
-            )
-            map2 = tkSnack.Filter("map", 1.0)
-            snd2.stop()
-            # blocking is choppy; sleep below
-            snd2.play(filter=filt2, blocking=0)
-        snd1.stop()
-        # blocking is choppy; sleep below
-        map1 = tkSnack.Filter("map", 1.0)
-        snd1.play(filter=filt1, blocking=0)
-        start = time.time()
-        while time.time() - start < duration:
-            myro.globvars.gui.update()
-            time.sleep(0.001)
-    elif Tkinter != None:
-        myro.globvars.gui.bell()
-        time.sleep(duration)
-    else:
-        time.sleep(duration)
-    time.sleep(0.1)  # simulated delay, like real robot
-
-
-class Joystick(tkinter.Toplevel):
-    def __init__(self, robot=None, showSensors=0):
-        _tkCall(self.__init_help, _root, robot, showSensors)
-
-    def __init_help(self, parent=None, robot=None, showSensors=0):
-        tkinter.Toplevel.__init__(self, parent)
-        self.debug = 0
-        self._running = 0
-        self.robot = robot
-        self.showSensors = showSensors
-        self.parent = parent
-        self.wm_title("Joystick")
-        moveToTop(self)
-        self.protocol("WM_DELETE_WINDOW", self.destroy)
-        self.frame = tkinter.Frame(self)
-        label = tkinter.Label(self.frame, text="Forward")
-        label.pack(side="top")
-        label = tkinter.Label(self.frame, text="Reverse")
-        label.pack(side="bottom")
-        label = tkinter.Label(self.frame, text="Turn\nLeft")
-        label.pack(side="left")
-        label = tkinter.Label(self.frame, text="Turn\nRight")
-        label.pack(side="right")
-        self.canvas = tkinter.Canvas(self.frame, width=220, height=220, bg="white")
-        self.widgets = {}
-        if self.showSensors:
-            newFrame = tkinter.Frame(self, relief=tkinter.RAISED, borderwidth=2)
-            items = []
-            if self.robot != None:
-                d = self.robot.get("config")
-                items = [(key, d[key]) for key in list(d.keys())]
-            self.addWidgets(newFrame, *items)
-            newFrame.pack(side="bottom", fill="both", expand="y")
-        self.initHandlers()
-        self.canvas.pack(side=tkinter.BOTTOM)
-
-        self.circle_dim = (10, 10, 210, 210)  # x0, y0, x1, y1
-        self.circle = self.canvas.create_oval(self.circle_dim, fill="white")
-        self.canvas.create_oval(105, 105, 115, 115, fill="black")
-
-        self.frame.pack()
-        self.translate = 0.0
-        self.rotate = 0.0
-        self.threshold = 0.10
-        self.delay = 0.10  # in seconds
-        self.running = 1
-        self.after(250, self._update_help)
-
-    def _update_help(self, delay=None):
-        if self.robot and self.showSensors:
-            config = self.robot.get("config")
-            data = self.robot.getAll()
-            for key in config:
-                item = data.get(key, [0] * config[key])
-                if type(item) not in [list, tuple]:
-                    item = [item]
-                for i in range(len(item)):
-                    self.updateWidget(key, i, item[i])
-        self.update()
-        if self.running:
-            self.after(250, self._update_help)
-
-    def destroy(self):
-        self.running = 0
-        if self.robot != None:
-            self.robot.lock.acquire()
-        tkinter.Toplevel.destroy(self)
-        if self.robot != None:
-            self.robot.lock.release()
-
-    def addWidgets(self, window, *items):
-        for name, size in items:
-            text = name + ":"
-            frame = tkinter.Frame(window)
-            self.widgets[name + ".label"] = tkinter.Label(frame, text=text, width=10)
-            self.widgets[name + ".label"].pack(side="left")
-            for i in range(size - 1, -1, -1):
-                self.widgets["%s%d.entry" % (name, i)] = tkinter.Entry(
-                    frame, bg="white", width=10
-                )
-                self.widgets["%s%d.entry" % (name, i)].insert(0, "")
-                self.widgets["%s%d.entry" % (name, i)].pack(
-                    side="right", fill="both", expand="y"
-                )
-            frame.pack(side="bottom", fill="both", expand="y")
-
-    def updateWidget(self, name, pos, value):
-        """Updates the device view window."""
-        if not self.showSensors:
-            return
-        try:
-            self.widgets["%s%d.entry" % (name, pos)].delete(0, "end")
-            self.widgets["%s%d.entry" % (name, pos)].insert(0, str(value))
-        except:
-            pass
-
-    def minorloop(self, delay=None):  # in milliseconds
-        """
-        As opposed to mainloop. This is a simple loop that works
-        in IDLE.
-        """
-        if delay != None:
-            self.delay = delay
-        self.running = 1
-        lastUpdated = 0
-        lastData = []
-        config = self.robot.get(
-            "config"
-        )  # {"ir": 2, "line": 2, "stall": 1, "light": 3}
-        while self.running:
-            # self.focus_set()
-            if self.robot and self.showSensors:
-                data = self.robot.getLastSensors()
-                now = time.time()
-                if data != lastData or now - lastUpdated > 1:
-                    if now - lastUpdated > 1:
-                        data = self.robot.getAll()
-                    for key in config:
-                        item = data.get(key, [0] * config[key])
-                        if type(item) not in [list, tuple]:
-                            item = [item]
-                        for i in range(len(item)):
-                            self.updateWidget(key, i, item[i])
-                    lastUpdated = time.time()
-                    lastData = data
-            self.update()
-            time.sleep(self.delay)
-
-    def initHandlers(self):
-        self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
-        self.canvas.bind("<Button-1>", self.canvas_clicked_down)
-        self.canvas.bind("<B1-Motion>", self.canvas_moved)
-
-    def getValue(self, event=None):
-        return self.translate, self.rotate
-
-    def move(self, translate, rotate):
-        self.translate = translate
-        if self.translate < 0.0:
-            self.translate += self.threshold
-        elif self.translate > 0.0:
-            self.translate -= self.threshold
-        self.rotate = rotate
-        if self.rotate < 0.0:
-            self.rotate += self.threshold
-        elif self.rotate > 0.0:
-            self.rotate -= self.threshold
-        if self.debug:
-            print(self.translate, self.rotate)
-        if self.robot != None:
-            # self.robot.lock.acquire()
-            self.robot.move(self.translate, self.rotate)
-            # self.robot.lock.release()
-
-    def canvas_clicked_up(self, event):
-        self.canvas.delete("lines")
-        self.move(0.0, 0.0)
-
-    def drawArrows(self, x, y, trans, rotate):
-        if trans == 0:
-            self.canvas.create_line(110, 110, 110, y, width=3, fill="blue", tag="lines")
-        else:
-            self.canvas.create_line(
-                110,
-                110,
-                110,
-                y,
-                width=3,
-                fill="blue",
-                tag="lines",
-                arrowshape=(10, 10, 3),
-                arrow="last",
-            )
-        if rotate == 0:
-            self.canvas.create_line(110, 110, x, 110, width=3, fill="red", tag="lines")
-        else:
-            self.canvas.create_line(
-                110,
-                110,
-                x,
-                110,
-                width=3,
-                fill="red",
-                tag="lines",
-                arrowshape=(10, 10, 3),
-                arrow="last",
-            )
-
-    def canvas_clicked_down(self, event):
-        if self.in_circle(event.x, event.y):
-            trans, rotate = self.calc_tr(event.x, event.y)
-            self.drawArrows(event.x, event.y, trans, rotate)
-            self.move(trans, rotate)
-
-    def canvas_moved(self, event):
-        if self.in_circle(event.x, event.y):
-            self.canvas.delete("lines")
-            trans, rotate = self.calc_tr(event.x, event.y)
-            self.drawArrows(event.x, event.y, trans, rotate)
-            self.move(trans, rotate)
-
-    def stop(self):
-        self.move(0.0, 0.0)
-
-    def in_circle(self, x, y):
-        r2 = ((self.circle_dim[2] - self.circle_dim[0]) / 2) ** 2
-
-        center = (
-            (self.circle_dim[2] + self.circle_dim[0]) / 2,
-            (self.circle_dim[3] + self.circle_dim[1]) / 2,
-        )
-        # x in?
-        dist2 = (center[0] - x) ** 2 + (center[1] - y) ** 2
-        if dist2 < r2:
-            return 1
-        else:
-            return 0
-
-    def calc_tr(self, x, y):
-        # right is negative
-        center = (
-            (self.circle_dim[2] + self.circle_dim[0]) / 2,
-            (self.circle_dim[3] + self.circle_dim[1]) / 2,
-        )
-        rot = float(center[0] - x) / float(center[0] - self.circle_dim[0])
-        trans = float(center[1] - y) / float(center[1] - self.circle_dim[1])
-        if abs(rot) < self.threshold:
-            rot = 0.0
-        if abs(trans) < self.threshold:
-            trans = 0.0
-        return (trans, rot)
-
-
-class senses(tkinter.Toplevel):
+class Senses(tkinter.Toplevel):
     def __init__(self, robot=None):
         _tkCall(self.__init_help, _root, robot)
 
@@ -1900,7 +1372,7 @@ class senses(tkinter.Toplevel):
         tkinter.Toplevel.__init__(self, parent)
         self.debug = 0
         self._running = 0
-        if robot == None:
+        if robot is None:
             self.robot = myro.globvars.robot
         else:
             self.robot = robot
@@ -1911,7 +1383,7 @@ class senses(tkinter.Toplevel):
         self.widgets = {}
         self.frame = tkinter.Frame(self, relief=tkinter.RAISED, borderwidth=2)
         items = []
-        if self.robot != None:
+        if self.robot is not None:
             d = self.robot.get("config")
             items = [(key, d[key]) for key in list(d.keys())]
         self.addWidgets(self.frame, *items)
@@ -1940,10 +1412,10 @@ class senses(tkinter.Toplevel):
 
     def destroy(self):
         self.running = 0
-        if self.robot != None:
+        if self.robot is not None:
             self.robot.lock.acquire()
         tkinter.Toplevel.destroy(self)
-        if self.robot != None:
+        if self.robot is not None:
             self.robot.lock.release()
 
     def addWidgets(self, window, *items):
@@ -1963,11 +1435,13 @@ class senses(tkinter.Toplevel):
             frame.pack(side="bottom", fill="both", expand="y")
 
     def updateWidget(self, name, pos, value):
-        """Updates the device view window."""
+        """
+        Updates the device view window.
+        """
         try:
             self.widgets["%s%d.entry" % (name, pos)].delete(0, "end")
             self.widgets["%s%d.entry" % (name, pos)].insert(0, str(value))
-        except:
+        except Exception:
             pass
 
     def minorloop(self, delay=None):  # in milliseconds
@@ -1975,7 +1449,7 @@ class senses(tkinter.Toplevel):
         As opposed to mainloop. This is a simple loop that works
         in IDLE.
         """
-        if delay != None:
+        if delay is not None:
             self.delay = delay
         self.running = 1
         lastUpdated = 0
@@ -2045,8 +1519,8 @@ class Calibrate(tkinter.Toplevel):
         self.canvas.pack(side=tkinter.BOTTOM)
 
         # self.circle_dim = (10, 100, 210, 120) #x0, y0, x1, y1
-        ##
-        ##        self.circle = self.canvas.create_rectangle(self.circle_dim, fill = 'white')
+        #
+        # self.circle = self.canvas.create_rectangle(self.circle_dim, fill = 'white')
 
         # Create bars for the 1, 0.5, 0, -0.5, and -1 settings (200 x 20 rect)
         self.canvas.create_rectangle((10, 5, 210, 25), fill="white")  # -1
@@ -2096,11 +1570,13 @@ class Calibrate(tkinter.Toplevel):
             frame.pack(side="bottom", fill="both", expand="y")
 
     def updateWidget(self, name, pos, value):
-        """Updates the device view window."""
+        """
+        Updates the device view window.
+        """
         try:
             self.widgets["%s%d.entry" % (name, pos)].delete(0, "end")
             self.widgets["%s%d.entry" % (name, pos)].insert(0, value)
-        except:
+        except Exception:
             pass
 
     def minorloop(self, delay=None):  # in milliseconds
@@ -2108,11 +1584,9 @@ class Calibrate(tkinter.Toplevel):
         As opposed to mainloop. This is a simple loop that works
         in IDLE.
         """
-        if delay != None:
+        if delay is not None:
             self.delay = delay
         self.running = 1
-        lastUpdated = 0
-        lastData = []
         while self.running:
             self.update()
             time.sleep(self.delay)
@@ -2127,18 +1601,22 @@ class Calibrate(tkinter.Toplevel):
 
     def move(self, translate, rotate):
         self.translate = translate
+
         if self.translate < 0.0:
             self.translate += self.threshold
         elif self.translate > 0.0:
             self.translate -= self.threshold
         self.rotate = rotate
+
         if self.rotate < 0.0:
             self.rotate += self.threshold
         elif self.rotate > 0.0:
             self.rotate -= self.threshold
+
         if self.debug:
             print(self.translate, self.rotate)
-        if self.robot != None:
+
+        if self.robot is not None:
             # self.robot.lock.acquire()
             self.robot.move(self.translate, self.rotate)
             # self.robot.lock.release()
@@ -2223,8 +1701,12 @@ class Calibrate(tkinter.Toplevel):
         return (trans, rot)
 
 
+# TODO: Switch everything to np arrays.
+# Then use either PIL/CV2 color conversion methods.
 def rgb2hsv(red, green, blue):
-    """Converts red, green, and blue to hue, saturation, and brightness """
+    """
+    Converts red, green, and blue to hue, saturation, and brightness
+    """
     return colorsys.rgb_to_hsv(red, green, blue)
 
 
@@ -2273,7 +1755,6 @@ _functions = (
     "pick A File",
     "pick A Color",
     "pick A Folder",
-    "make Pixmap",
     "make Window",
     "make Image",
     "make Entry",
