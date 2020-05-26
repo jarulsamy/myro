@@ -1,0 +1,5 @@
+setuptools
+pyserial
+pillow
+pylint
+mypy
