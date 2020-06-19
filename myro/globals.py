@@ -1,5 +1,7 @@
-from .__version__ import VERSION, AUTHOR
 import os
+
+from .__version__ import AUTHOR
+from .__version__ import VERSION
 
 
 def dummy_print(*args, **kwargs):
@@ -19,7 +21,6 @@ class Globals:
 
 
 class SerialTimeout:
-
     def __init__(self, ser, new_timeout):
         self.ser = ser
         self.old = ser.timeout

@@ -14,10 +14,12 @@ def ensure_init(func):
     """
     Decorator to ensure robot is initialized
     """
+
     def ensure_and_call(*args, **kwargs):
         if not Globals.robot:
             raise AttributeError("Need to initialize robot first")
         return func(*args, **kwargs)
+
     return ensure_and_call
 
 

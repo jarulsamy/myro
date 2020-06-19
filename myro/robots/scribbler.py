@@ -1,13 +1,12 @@
-
+import threading
+import time
+import tkinter as tk
 
 import serial
-import time
-import threading
+from PIL import Image
+
 from ..globals import Globals
 from ..globals import SerialTimeout
-
-from PIL import Image
-import tkinter as tk
 
 
 class Scribbler:
@@ -112,7 +111,7 @@ class Scribbler:
     # diable white balance on camera (default)
     SET_NO_WHITE_BALANCE = 130
     # with address and value, sets the camera parameter at that address
-    SET_CAM_PARAM = (131)
+    SET_CAM_PARAM = 131
 
     GET_JPEG_GRAY_HEADER = 135
     GET_JPEG_GRAY_SCAN = 136
@@ -325,14 +324,12 @@ class Scribbler:
     def get_info(self, *item):
         with SerialTimeout(self.ser, 4):
             self._manual_flush()
-            self.ser.write(
-                bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
+            self.ser.write(bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
             response = self.ser.readline()
 
             time.sleep(0.1)
 
-            self.ser.write(
-                bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
+            self.ser.write(bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
             response = self.ser.readline().decode(self.ENCODING_TYPE)
 
         if not response:
@@ -406,7 +403,8 @@ class Scribbler:
     def take_picture(self):
         raw_img = self._read_image()
         im = Image.frombuffer(
-            "L", (self.width, self.height), raw_img, decoder_name="raw")
+            "L", (self.width, self.height), raw_img, decoder_name="raw"
+        )
         im = im.rotate(180)
 
         return im
