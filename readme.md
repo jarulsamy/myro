@@ -1,8 +1,8 @@
 # Myro
 
-Myro is a library used to interface with various robots including the Scribbler and Scribbler 2.
+Myro is a library used to interface with the Scribbler and Scribbler 2 robots.
 
-Disclaimer: This package was formally only supported by Python &lt;= 2.7. Now, some portions, mostly related to Scribbler and Scribbler 2, are compatible with Python 3.7+.
+Disclaimer: This package was formally only supported by Python &lt;= 2.7. Now, some portions, mostly related to Scribbler and Scribbler 2, are compatible with **Python 3.6+**.
 
 ## Getting Started
 
