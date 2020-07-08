@@ -2,14 +2,6 @@ from .globals import Globals
 from .robots.scribbler import Scribbler
 
 
-def init(port: str):
-    Globals.robot = Scribbler(port)
-    Globals.mprint(f"Myro version: {Globals.version}")
-
-    for k, v in Globals.robot.get_info().items():
-        Globals.mprint(f"{k}: {v}")
-
-
 def ensure_init(func):
     """
     Decorator to ensure robot is initialized
@@ -23,14 +15,22 @@ def ensure_init(func):
     return ensure_and_call
 
 
-@ensure_init
-def translate(amount):
-    return Globals.robot.translate(amount)
+def init(port: str):
+    Globals.robot = Scribbler(port)
+    Globals.mprint(f"Myro version: {Globals.version}")
+
+    for k, v in Globals.robot.get_info().items():
+        Globals.mprint(f"{k}: {v}")
 
 
 @ensure_init
-def rotate(amount):
-    return Globals.robot.rotate(amount)
+def close():
+    Globals.robot.close()
+
+
+@ensure_init
+def restart():
+    return Globals.robot.restart()
 
 
 @ensure_init
@@ -64,5 +64,77 @@ def stop():
 
 
 @ensure_init
+def motors(left, right):
+    return Globals.robot.motors(left, right)
+
+
+@ensure_init
 def take_picture():
     return Globals.robot.take_picture()
+
+
+@ensure_init
+def get_angle():
+    return Globals.robot.get_angle()
+
+
+@ensure_init
+def set_angle(new_ang):
+    return Globals.robot.set_angle(new_ang)
+
+
+@ensure_init
+def turn_by(self, angle, radsOrDegrees="degrees"):
+    return Globals.robot.turn_by(angle, radsOrDegrees)
+
+
+@ensure_init
+def turn_to(self, angle, radsOrDegrees="degrees"):
+    return Globals.robot.turn_to(angle, radsOrDegrees)
+
+
+@ensure_init
+def get_light(*pos):
+    return Globals.robot.get("light", *pos)
+
+
+@ensure_init
+def get_IR(*pos):
+    return Globals.robot.get_IR(*pos)
+
+
+@ensure_init
+def get_line(*pos):
+    return Globals.robot.get_line(*pos)
+
+# TODO: add get_name into get_info()
+
+
+@ensure_init
+def get_forwardness():
+    return Globals.robot.get_forwardness()
+
+
+@ensure_init
+def get_battery():
+    return Globals.robot.getBattery()
+
+
+@ensure_init
+def update():
+    return Globals.robot.update()
+
+
+@ensure_init
+def setIRPower(value):
+    return Globals.robot.setIRPower(value)
+
+
+@ensure_init
+def set_white_balance(value):
+    return Globals.robot.set_white_balance(value)
+
+
+@ensure_init
+def set_led(value, position):
+    return Globals.robot.set_led(value, position)

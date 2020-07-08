@@ -18,13 +18,13 @@ def keydown(e):
     if key == "q":
         exit(0)
     elif key == "w":
-        motors(5, 5)
+        motors(1, 1)
     elif key == "s":
-        motors(-5, -5)
+        motors(-1, -1)
     elif key == "a":
-        motors(-5, 5)
+        motors(-1, 1)
     elif key == "d":
-        motors(5, -5)
+        motors(1, -1)
 
 
 root = Tk()

@@ -216,12 +216,19 @@ class Scribbler:
         self.baudrate = baudrate
         self.open()
 
+        # Turn on white balance, gain control, and exposure control
+        self._set_cam_param(self.CAM_COMA, self.CAM_COMA_WHITE_BALANCE_ON)
+        self._set_cam_param(self.CAM_COMB, self.CAM_COMB_GAIN_CONTROL_ON | self.CAM_COMB_EXPOSURE_CONTROL_ON,)
+
         Globals.robot = self
+
+    def __del__(self):
+        self.close()
 
     def open(self):
         """Connect to robot"""
         failed = False
-        for i in range(3):
+        for _ in range(3):
             try:
                 self.ser = serial.Serial(self.ser_port, timeout=10)
                 # For directly connected scribbler 2
@@ -232,7 +239,7 @@ class Scribbler:
                 failed = True
 
         if failed:
-            raise self.ser.SerialException("Connection failed!")
+            raise serial.SerialException("Connection failed!")
 
         self.get_info()
         if self.fluke_vers >= [3, 0, 0]:
@@ -309,6 +316,15 @@ class Scribbler:
         finally:
             self.lock.release()
 
+    def _set_cam_param(self, addr, byte):
+        self.lock.acquire()
+        self.ser.write(bytes(self.SET_CAM_PARAM), self.ENCODING_TYPE)
+        self.ser.write(bytes(chr(addr), self.ENCODING_TYPE))
+        self.ser.write(bytes(chr(byte), self.ENCODING_TYPE))
+        # Camera needs time to reconfigure
+        time.sleep(0.15)
+        self.lock.release()
+
     def _adjustSpeed(self):
         left = min(max(self._lastTranslate - self._lastRotate, -1), 1)
         right = min(max(self._lastTranslate + self._lastRotate, -1), 1)
@@ -369,16 +385,14 @@ class Scribbler:
         self.stop()
 
     def turn_left(self, speed=1, interval=0):
-        retval = self.move(0, speed)
+        self.move(0, speed)
         time.sleep(interval)
         self.stop()
-        return retval
 
     def turn_right(self, speed=1, interval=0):
-        retval = self.move(0, -speed)
+        self.move(0, -speed)
         time.sleep(interval)
         self.stop()
-        return retval
 
     def motors(self, left, right):
         trans = (right + left) / 2.0
@@ -407,3 +421,42 @@ class Scribbler:
         im = im.rotate(180)
 
         return im
+
+    def get_angle(self):
+        raise NotImplementedError
+
+    def set_angle(self):
+        raise NotImplementedError
+
+    def turn_by(self, angle, radsOrDegrees):
+        raise NotImplementedError
+
+    def turn_to(self, angle, radsOrDegrees):
+        raise NotImplementedError
+
+    def get_light(self, *pos):
+        raise NotImplementedError
+
+    def get_IR(self, *pos):
+        raise NotImplementedError
+
+    def get_line(self, *pos):
+        raise NotImplementedError
+
+    def get_forwardness(self):
+        raise NotImplementedError
+
+    def get_battery(self):
+        raise NotImplementedError
+
+    def update(self):
+        raise NotImplementedError
+
+    def set_IR_power(self, value):
+        raise NotImplementedError
+
+    def set_white_balance(self, value):
+        raise NotImplementedError
+
+    def set_led(self, value, position):
+        raise NotImplementedError

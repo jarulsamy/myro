@@ -8,10 +8,6 @@ help:
 	@echo "       run tests"
 	@echo "make lint"
 	@echo "       run pylint and mypy"
-	@echo "make run"
-	@echo "       run project"
-	@echo "make doc"
-	@echo "       build sphinx documentation"
 
 lint:
 	python -m pylint myro
