@@ -1,6 +1,5 @@
 import threading
 import time
-import tkinter as tk
 
 import serial
 from PIL import Image
@@ -172,7 +171,7 @@ class Scribbler:
     BY = 4
     # Used in movement commands, to means the heading you want to turn to
     TO = 2
-    # Used in movement commands, specifies using degress instead of S2 angle units
+    # Used in movement commands, specifies using degress instead of S2 angle
     DEG = 1
 
     # Camera
@@ -187,23 +186,21 @@ class Scribbler:
     CAM_COMA = 0x12
     CAM_COMA_DEFAULT = 0x14
 
+    CAM_COMA_WHITE_BALANCE_ON = CAM_COMA_DEFAULT | (1 << 2)
+    CAM_COMA_WHITE_BALANCE_OFF = CAM_COMA_DEFAULT & ~(1 << 2)
+
+    CAM_COMB = 0x13
+    CAM_COMB_DEFAULT = 0xA3
+    CAM_COMB_GAIN_CONTROL_ON = CAM_COMB_DEFAULT | (1 << 1)
+    CAM_COMB_GAIN_CONTROL_OFF = CAM_COMB_DEFAULT & ~(1 << 1)
+    CAM_COMB_EXPOSURE_CONTROL_ON = CAM_COMB_DEFAULT | (1 << 0)
+    CAM_COMB_EXPOSURE_CONTROL_OFF = CAM_COMB_DEFAULT & ~(1 << 0)
+
     def __init__(self, port: str, baudrate=38400):
         super().__init__()
         self.lock = threading.Lock()
 
-        # Tkinter window
-        self.root = tk.Tk()
-
         # Camera Addresses #
-        self.CAM_COMA_WHITE_BALANCE_ON = self.CAM_COMA_DEFAULT | (1 << 2)
-        self.CAM_COMA_WHITE_BALANCE_OFF = self.CAM_COMA_DEFAULT & ~(1 << 2)
-
-        self.CAM_COMB = 0x13
-        self.CAM_COMB_DEFAULT = 0xA3
-        self.CAM_COMB_GAIN_CONTROL_ON = self.CAM_COMB_DEFAULT | (1 << 1)
-        self.CAM_COMB_GAIN_CONTROL_OFF = self.CAM_COMB_DEFAULT & ~(1 << 1)
-        self.CAM_COMB_EXPOSURE_CONTROL_ON = self.CAM_COMB_DEFAULT | (1 << 0)
-        self.CAM_COMB_EXPOSURE_CONTROL_OFF = self.CAM_COMB_DEFAULT & ~(1 << 0)
         self.height = 0
         self.width = 0
 
@@ -322,14 +319,16 @@ class Scribbler:
         self._set(Scribbler.SET_MOTORS, right_power, left_power)
 
     def get_info(self, *item):
+        payload = bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE)
         with SerialTimeout(self.ser, 4):
             self._manual_flush()
-            self.ser.write(bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
+            self.ser.write(payload)
             response = self.ser.readline()
 
+            # HACK: Scribbler needs time to catch up.
             time.sleep(0.1)
 
-            self.ser.write(bytes(chr(self.GET_INFO) + (" " * 8), self.ENCODING_TYPE))
+            self.ser.write(payload)
             response = self.ser.readline().decode(self.ENCODING_TYPE)
 
         if not response:
